@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8" />
-<title>解題論壇（AI 助教展示）｜翰林雲端學院</title>
+<title>解題論壇（AI 助教）｜翰林雲端學院</title>
 
 <!-- UI -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -12,7 +12,7 @@
 <!-- Markdown -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<!-- 系統 JS -->
+<!-- System -->
 <script src="mockdata/users.js"></script>
 <script src="assets/js/auth.js"></script>
 <script src="assets/js/real_ai_tutor.js"></script>
@@ -28,7 +28,9 @@ body {
 }
 .markdown-body ul { list-style: disc; margin-left: 1.5rem; }
 .markdown-body p { margin-bottom: .5rem; }
-.typing-dot { animation: typing 1.4s infinite ease-in-out both; }
+.typing-dot {
+    animation: typing 1.4s infinite ease-in-out both;
+}
 .typing-dot:nth-child(1){animation-delay:-.32s}
 .typing-dot:nth-child(2){animation-delay:-.16s}
 @keyframes typing {
@@ -56,7 +58,16 @@ body {
     </div>
 
     <nav class="px-4 space-y-1 flex-grow">
-        <a class="block px-4 py-3 rounded hover:bg-gray-100" href="#">解題論壇</a>
+        <a class="block px-4 py-3 rounded bg-blue-50 text-blue-700 font-bold">
+            <i class="fas fa-comments"></i> 解題論壇
+        </a>
+
+        <!-- 教師專用 -->
+        <button id="dashboardBtn"
+            onclick="openDashboard()"
+            class="hidden w-full text-left px-4 py-3 rounded hover:bg-gray-100">
+            <i class="fas fa-chart-bar"></i> 教師 Dashboard
+        </button>
     </nav>
 
     <div class="p-4 border-t">
@@ -117,12 +128,27 @@ body {
 </main>
 
 <script>
+/* =========================
+ * 使用者身分
+ * ========================= */
 const currentUser = Auth.requireLogin();
 if(currentUser){
     sideUserName.textContent = currentUser.name;
-    sideUserRole.textContent = currentUser.grade || "學生";
+    sideUserRole.textContent = currentUser.role || "學生";
+
+    // 教師顯示 Dashboard
+    if(currentUser.role === "teacher"){
+        dashboardBtn.classList.remove("hidden");
+    }
 }
 
+function openDashboard(){
+    window.location.href = "dashboard_demo.html";
+}
+
+/* =========================
+ * Forum Logic
+ * ========================= */
 const dbKey = "forum_posts";
 
 function toggleForm(){
@@ -137,6 +163,7 @@ function loadPosts(){
 
 function renderPost(p){
     const isAI = p.reply && p.reply.author === RealAITutor.name;
+
     const replyHTML = p.reply ? `
         <div class="mt-4 p-4 rounded border ${isAI?'ai-card':'bg-gray-50'} flex gap-3">
             <i class="fas fa-robot text-indigo-600"></i>
