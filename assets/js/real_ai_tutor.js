@@ -162,56 +162,65 @@ const RealAITutor = {
     /* ===============================
      * 主入口（穩定版）
      * =============================== */
-    askGemini(title, content, onUpdate = () => {}) {
+    askGemini(title, content) {
         const key = title + content;
         if (this.answered.has(key)) {
-            onUpdate("🙂 這題我們已經討論過囉！");
-            return;
+            return Promise.resolve("🙂 這題我們之前已經討論過囉，先消化再繼續！");
         }
         this.answered.add(key);
-
+    
         const text = title + content;
         const qType = this.questionType(text);
         const unitKey = this.detectUnit(text);
-        const unit = this.unitDB[unitKey];
-
+        const unit = this.unitDB[unitKey] || this.unitDB.general;
+    
+        /* ===============================
+         * Dashboard 累積
+         * =============================== */
         this.updateDashboard(unitKey, qType);
-
-        // 假錯誤（依程度）
-        const rate = this.studentLevel === "basic" ? 0.4 : 0.2;
-        if (Math.random() < rate) this.errorCount++;
+    
+        /* ===============================
+         * 假錯誤產生（展示用）
+         * =============================== */
+        const fakeErrors = Math.floor(Math.random() * 3); // 0~2
+        this.errorCount += fakeErrors;
         this.errorHistory.push(this.errorCount);
-
-        const advice =
-            this.studentLevel === "basic"
-                ? "先理解概念，不急著算"
-                : "比較不同條件下的變化";
-
-        const examTone =
-            this.examMode === "gsat"
-                ? "學測取向：理解判斷"
-                : "指考取向：推導計算";
-
+        this.renderErrorTrend();
+    
         const blocks = [
             `📘【${this.name}】`,
+            ``,
             `📌 題型：${qType}`,
             `📚 單元：${unit.name}`,
-            `⚠️ 常見錯誤：\n• ${unit.mistakes.join("\n• ")}`,
-            `❌ 錯誤觀念：\n• ${unit.wrong.join("\n• ")}`,
-            `🧠 學習建議：${advice}`,
-            `🎓 ${examTone}`
+            ``,
+            `⚠️ 常見錯誤：`,
+            ...unit.mistakes.map(m => `• ${m}`),
+            ``,
+            `❌ 常見錯誤觀念：`,
+            ...unit.wrong.map(w => `• ${w}`),
+            ``,
+            `🧠 學習建議：${
+                this.studentLevel === "basic"
+                    ? "先穩住核心概念，不急著算"
+                    : "可比較不同題型與變化"
+            }`,
+            ``,
+            `🎓 考試取向：${this.examMode === "gsat"
+                ? "學測（重理解）"
+                : "指考（重計算）"
+            }`
         ];
-
+    
         if (this.teacherMode) {
             blocks.push(
-                `🧑‍🏫 教師提示：培養「${unit.ability}」`,
-                `📊 累計題數：${this.dashboard.totalQuestions}`
+                ``,
+                `🧑‍🏫 教師提示：本題重點在「${unit.ability}」`
             );
         }
-
-        onUpdate(blocks.join("\n\n"));
-        this.renderErrorTrend();
+    
+        return Promise.resolve(blocks.join("\n"));
     }
+
 };
 
 /* =====================================================
