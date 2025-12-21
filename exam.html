@@ -234,13 +234,48 @@
         els.qText.innerHTML = q.question.replace(/\n/g, '<br>');
         
         // --- 標籤與顏色處理 (強化防錯) ---
-        const conceptStr = String(q.concept || "綜合題型");
-        els.badge.textContent = conceptStr;
-        
-        let tagColor = "purple"; 
-        if (conceptStr.includes("分析") || conceptStr.includes("難")) tagColor = "red";
-        else if (conceptStr.includes("應用") || conceptStr.includes("素養")) tagColor = "green";
-        else if (conceptStr.includes("記憶") || conceptStr.includes("基礎")) tagColor = "blue";
+        // --- 標籤與顏色處理（超強防呆版） ---
+let conceptRaw = q.concept;
+
+// 保證一定轉成乾淨字串
+let conceptStr = "";
+if (conceptRaw === undefined || conceptRaw === null) {
+    conceptStr = "綜合題型";
+} else if (Array.isArray(conceptRaw)) {
+    conceptStr = conceptRaw.join(" / ");
+} else if (typeof conceptRaw === "object") {
+    conceptStr = JSON.stringify(conceptRaw);
+} else {
+    conceptStr = String(conceptRaw);
+}
+
+els.badge.textContent = conceptStr;
+
+// --- 顏色分類 ---
+let tagColor = "purple";
+
+if (
+    conceptStr.includes("分析") ||
+    conceptStr.includes("推論") ||
+    conceptStr.includes("難")
+) {
+    tagColor = "red";
+} else if (
+    conceptStr.includes("應用") ||
+    conceptStr.includes("素養") ||
+    conceptStr.includes("理解")
+) {
+    tagColor = "green";
+} else if (
+    conceptStr.includes("記憶") ||
+    conceptStr.includes("基礎")
+) {
+    tagColor = "blue";
+}
+
+els.badge.className =
+    `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-${tagColor}-100 text-${tagColor}-700 border-${tagColor}-200`;
+
 
         els.badge.className = `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-${tagColor}-100 text-${tagColor}-700 border-${tagColor}-200`;
 
