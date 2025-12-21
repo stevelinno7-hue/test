@@ -51,7 +51,8 @@
             console.log(`🔒 年級鎖定: ${coreGrade} (來源: ${targetGrade})`);
             
             // 過濾：題目標籤必須包含這個核心年級
-            pool = pool.filter(t => t.tags.includes(coreGrade));
+            // 修正：只要題目標籤"包含"核心年級關鍵字即可 (例如 "國七上" 也算符合 "國七")
+            pool = pool.filter(t => t.tags.some(tag => tag.includes(coreGrade)));
         } else {
             console.warn("⚠️ 未偵測到年級標籤，可能導致跨年級出題！");
         }
