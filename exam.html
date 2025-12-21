@@ -202,6 +202,12 @@ document.addEventListener('visibilitychange', () => {
 // 2️⃣ 準備測驗（此時 Generator 一定 Ready）
 // ==========================================
 function prepareExam() {
+    if (!window.PaperGenerator || !window.PAPER_GENERATOR_READY) {
+        console.warn("⏳ Generator 尚未 ready，延遲重試...");
+        setTimeout(prepareExam, 50);
+        return;
+    }
+
     console.log("⏳ 正在準備測驗...");
 
     const urlParams = new URLSearchParams(location.search);
