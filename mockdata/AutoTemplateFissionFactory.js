@@ -1,24 +1,24 @@
-(function(global){
+(function (global) {
     'use strict';
 
-    // 定義啟動函式
     function initFactory() {
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        
-        // 1. 如果引擎還沒好，等待一下
-        if (!G) {
+
+        if (!G || !G.registerTemplate || !G.utils) {
             setTimeout(initFactory, 50);
             return;
         }
 
+        const { pick } = G.utils;
+
         // ==========================================
-        //  1. 情境資料庫 (Context Database)
+        // 1️⃣ 情境資料庫
         // ==========================================
         const DB = {
             roles: [
-                "AI工程師", "全端工程師", "電競選手", "YouTuber", "外送員", 
-                "急診室醫生", "FBI探員", "黑客", "火星太空人", "時空旅人", 
-                "魔法學徒", "煉金術士", "馴龍高手", "深海潛水員", "忍者", 
+                "AI工程師", "全端工程師", "電競選手", "YouTuber", "外送員",
+                "急診室醫生", "FBI探員", "黑客", "火星太空人", "時空旅人",
+                "魔法學徒", "煉金術士", "馴龍高手", "深海潛水員", "忍者",
                 "海盜船長", "殭屍倖存者", "考古學家", "私家偵探", "米其林主廚"
             ],
             places: [
@@ -28,61 +28,71 @@
                 "在金字塔密室", "在古羅馬競技場", "在元宇宙", "在召喚峽谷"
             ],
             formats: [
-                { type: "news", tpl: (q)=>`【緊急快訊】據最新報導指出：\n${q}\n專家表示這將影響全球局勢。` },
-                { type: "diary", tpl: (q)=>`【探險日記 Day 42】\n今天發生了奇怪的事：\n${q}\n我該怎麼辦？` },
-                { type: "chat", tpl: (q)=>`A：「欸，考你一題。」\nB：「放馬過來。」\nA：「${q}」\nB：「這...」` },
-                { type: "post", tpl: (q)=>`#急 #在線等 #求救\n${q}\n答對的請喝珍奶！🥤` },
-                { type: "quest", tpl: (q)=>`【主線任務更新】\nNPC 給了你一個謎題：\n${q}\n解開後可獲得傳說裝備。` },
-                { type: "video", tpl: (q)=>`【抖音挑戰】一分鐘內回答：\n「${q}」\n你就是天才！` }
+                q => `【緊急快訊】\n${q}\n專家警告：後果不堪設想。`,
+                q => `【探險日記】\n今天遇到難題：\n${q}`,
+                q => `A：「我問你。」\nB：「說。」\nA：「${q}」`,
+                q => `#急 #求救\n${q}\n在線等！`,
+                q => `【主線任務】\nNPC 給你謎題：\n${q}`,
+                q => `【短影音挑戰】\n30 秒內回答：\n「${q}」`
             ]
         };
 
-        const CONTEXT_WRAPPERS = { 'standard': (q) => q };
-        const { pick } = G.utils;
+        // ==========================================
+        // 2️⃣ 情境包裝器
+        // ==========================================
+        const CONTEXT_WRAPPERS = [];
 
-        // 生成角色扮演情境
-        for (let i = 0; i < 30; i++) {
-            CONTEXT_WRAPPERS[`roleplay_${i}`] = (q) => {
+        // roleplay 類
+        for (let i = 0; i < 20; i++) {
+            CONTEXT_WRAPPERS.push((q) => {
                 const r = pick(DB.roles);
                 const p = pick(DB.places);
-                return `【情境：${r}】\n你現在${p}，面對一個難題：\n「${q}」\n身為專業的${r}，你該如何解決？`;
-            };
+                return `【情境：${r}】\n你現在${p}，面臨問題：\n「${q}」\n請做出判斷。`;
+            });
         }
-        // 生成格式情境
-        DB.formats.forEach(fmt => { CONTEXT_WRAPPERS[fmt.type] = fmt.tpl; });
+
+        // format 類
+        DB.formats.forEach(fn => CONTEXT_WRAPPERS.push(fn));
 
         // ==========================================
-        //  2. 掛載裂變功能 (Bootstrap 會呼叫這個)
+        // 3️⃣ 攔截 registerTemplate（關鍵）
         // ==========================================
-        G.autoFissionRegister = function(originalId, originalFunc, tags, rawRegister) {
-            // A. 註冊原始版本
-            rawRegister.call(G, originalId, originalFunc, tags);
+        const rawRegister = G.registerTemplate.bind(G);
 
-            // B. 註冊裂變版本 (隨機挑選一種情境)
-            const wrapperKeys = Object.keys(CONTEXT_WRAPPERS).filter(k => k !== 'standard');
-            const randomKey = pick(wrapperKeys);
-            const wrapperFunc = CONTEXT_WRAPPERS[randomKey];
-            const fissionId = `${originalId}_fission_${randomKey}`;
-            
-            const newFunc = function(ctx, rnd) {
-                const baseData = originalFunc(ctx, rnd);
-                if (baseData && typeof baseData.question === 'string') {
-                    return {
-                        ...baseData,
-                        question: wrapperFunc(baseData.question),
-                        concept: `${baseData.concept} (素養應用)`,
-                        templateId: fissionId
-                    };
-                }
-                return baseData;
+        G.registerTemplate = function (id, fn, tags) {
+            // A. 原始模板照常註冊
+            rawRegister(id, fn, tags);
+
+            // B. 裂變版本
+            const wrapper = pick(CONTEXT_WRAPPERS);
+            if (!wrapper) return;
+
+            const fissionId = `${id}__fission`;
+
+            const fissionFn = function (ctx, rnd) {
+                const base = fn(ctx, rnd);
+                if (!base || typeof base.question !== 'string') return base;
+
+                return {
+                    ...base,
+                    question: wrapper(base.question),
+                    concept: base.concept ? `${base.concept}（素養應用）` : "素養應用",
+                    templateId: fissionId
+                };
             };
-            rawRegister.call(G, fissionId, newFunc, [...tags, "素養題", "情境應用"]);
+
+            rawRegister(
+                fissionId,
+                fissionFn,
+                [...(tags || []), "素養題", "情境應用"]
+            );
         };
 
-        console.log(`✅ 自動裂變工廠已就緒：已生成 ${Object.keys(CONTEXT_WRAPPERS).length} 種情境模組。`);
+        console.log(
+            `✅ 自動裂變工廠已啟動：${CONTEXT_WRAPPERS.length} 種情境可用`
+        );
     }
 
-    // 立即啟動
     initFactory();
 
 })(window);
