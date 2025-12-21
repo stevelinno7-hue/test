@@ -1,8 +1,10 @@
 (function (window) {
   'use strict';
 
+  console.log("🔥 FINAL PaperGen LOADED");
+
   /* ================================
-   * 年級 alias 定義
+   * 年級 alias
    * ================================ */
   const GRADE_ALIAS = {
     "國七上": "國七", "國七下": "國七",
@@ -15,145 +17,111 @@
 
   const CORE_GRADES = ["國七", "國八", "國九", "高一", "高二", "高三"];
 
-  function normalizeTags(tags = []) {
-    return tags.map(t => GRADE_ALIAS[t] || t);
-  }
+  const normalizeTags = (tags = []) =>
+    tags.map(t => GRADE_ALIAS[t] || t);
 
   const G = window.RigorousGenerator || window.global?.RigorousGenerator;
-  if (!G) return;
+  if (!G) {
+    console.error("❌ RigorousGenerator not found");
+    return;
+  }
 
   /* ================================
    * 主入口
    * ================================ */
-  window.generatePaper = function (config) {
-    const {
+  window.generatePaper = function ({ subject, total = 10, tags = [] }) {
+    const normTags = normalizeTags(tags);
+
+    console.log("📥 PaperGen Request", {
       subject,
-      total = 10,
-      tags: rawTags = []
-    } = config;
-
-    const tags = normalizeTags(rawTags);
-
-    console.log(
-      `[PaperGen] 收到組卷請求`,
-      { subject, rawTags, normalizedTags: tags }
-    );
+      rawTags: tags,
+      normalizedTags: normTags
+    });
 
     const allTemplates = Object.values(G.templates);
 
     /* ================================
-     * 1. 科目過濾
+     * 1️⃣ 科目過濾
      * ================================ */
-    const prefixMap = {
-      math: 'math',
-      physics: 'phy',
-      chemistry: 'chm',
-      biology: 'bio',
-      english: 'eng',
-      chinese: 'chi',
-      history: 'his',
-      geography: 'geo',
-      civics: 'civ',
-      earth: 'ear',
-      earth_science: 'ear'
+    const subjectMap = {
+      math: ['math', '數學'],
+      english: ['eng', '英文'],
+      chinese: ['chi', '國文'],
+      physics: ['phy', '物理'],
+      chemistry: ['chm', '化學'],
+      biology: ['bio', '生物'],
+      history: ['his', '歷史'],
+      geography: ['geo', '地理'],
+      civics: ['civ', '公民'],
+      earth: ['ear', '地科']
     };
 
-    const subjectKey = prefixMap[subject] || subject;
+    const subjectKeys = subjectMap[subject] || [subject];
 
-    let pool = allTemplates.filter(t => {
-      if (!t.tags) return false;
-
-      const idMatch = t.id.toLowerCase().includes(subjectKey);
-
-      const tagMatch = t.tags.some(tag =>
-        tag === subject ||
-        tag === subjectKey ||
-        (subject === 'english' && tag === '英文') ||
-        (subject === 'math' && tag === '數學') ||
-        (subject === 'chinese' && tag === '國文') ||
-        (subject === 'physics' && tag === '物理') ||
-        (subject === 'chemistry' && tag === '化學') ||
-        (subject === 'biology' && tag === '生物') ||
-        (subject === 'history' && tag === '歷史') ||
-        (subject === 'geography' && tag === '地理') ||
-        (subject === 'civics' && tag === '公民')
-      );
-
-      return idMatch || tagMatch;
-    });
+    let pool = allTemplates.filter(t =>
+      t.tags?.some(tag => subjectKeys.includes(tag)) ||
+      subjectKeys.some(k => t.id.includes(k))
+    );
 
     /* ================================
-     * 2. 年級鎖定（核心）
+     * 2️⃣ 年級鎖定（語意式）
      * ================================ */
-    const targetGrade = tags.find(t => CORE_GRADES.includes(t));
-    let coreGrade = null;
+    const coreGrade = normTags.find(t => CORE_GRADES.includes(t));
 
-    if (targetGrade) {
-      coreGrade = targetGrade;
+    if (coreGrade) {
       console.log(`🔒 年級鎖定：${coreGrade}`);
 
       pool = pool.filter(t =>
-        Array.isArray(t.tags) && t.tags.includes(coreGrade)
+        t.tags?.some(tag => tag.includes(coreGrade))
       );
     } else {
-      console.warn("⚠️ 未指定年級，可能跨年級出題");
+      console.warn("⚠️ 未指定年級");
     }
 
-    if (pool.length === 0) {
-      console.warn(
-        `[PaperGen] 找不到題目`,
-        { subject, coreGrade, tags }
-      );
-      return fallback(total, `題庫建置中 (${subject} ${coreGrade || ''})`);
+    if (!pool.length) {
+      console.warn("❌ 題庫為空", { subject, coreGrade, tags: normTags });
+      return fallback(total, `題庫建置中（${subject} ${coreGrade || ''}）`);
     }
 
     /* ================================
-     * 3. 單元過濾（非年級、非科目）
+     * 3️⃣ 單元過濾（可選）
      * ================================ */
-    const unitTags = tags.filter(t =>
+    const unitTags = normTags.filter(t =>
       !CORE_GRADES.includes(t) &&
-      t !== subject &&
-      t !== subjectKey &&
-      !['數學', '國文', '英文', '自然', '社會', '會考核心', '學測核心', '模考'].includes(t)
+      !subjectKeys.includes(t) &&
+      !['會考核心', '學測核心', '模考', '核心'].includes(t)
     );
 
-    if (unitTags.length > 0) {
-      const strictPool = pool.filter(t =>
-        unitTags.some(ut => t.tags.some(tt => tt.includes(ut)))
+    if (unitTags.length) {
+      const strict = pool.filter(t =>
+        unitTags.some(u => t.tags?.some(tt => tt.includes(u)))
       );
-      if (strictPool.length > 0) pool = strictPool;
+      if (strict.length) pool = strict;
     }
 
     /* ================================
-     * 4. 選題
+     * 4️⃣ 出題
      * ================================ */
-    const questions = [];
-    let safety = 0;
+    const result = [];
+    let guard = 0;
 
-    while (questions.length < total && safety < 200) {
-      addRandom(pool, questions);
-      safety++;
+    while (result.length < total && guard++ < 200) {
+      const tmpl = pool[Math.floor(Math.random() * pool.length)];
+      try {
+        const q = tmpl.func({}, Math.random);
+        result.push({ ...q, templateId: tmpl.id });
+      } catch {}
     }
 
-    return G.utils.shuffle(questions).map((q, i) => ({
+    return G.utils.shuffle(result).map((q, i) => ({
       ...q,
       id: i + 1
     }));
   };
 
   /* ================================
-   * 工具函式
+   * fallback
    * ================================ */
-  function addRandom(pool, list) {
-    if (!pool.length) return;
-    const tmpl = pool[Math.floor(Math.random() * pool.length)];
-    try {
-      const q = tmpl.func({}, Math.random);
-      q.templateId = tmpl.id;
-      list.push(q);
-    } catch (e) {}
-  }
-
   function fallback(count, msg) {
     return Array.from({ length: count }, (_, i) => ({
       id: i + 1,
