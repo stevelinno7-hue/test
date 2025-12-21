@@ -1,102 +1,132 @@
 /* =====================================================
- * 翰林 AI 助教（高速展示完整版｜單檔案）
+ * 翰林 AI 助教（單檔穩定完整版）
  * ===================================================== */
 
 const RealAITutor = {
+
     /* ===============================
      * 基本設定
      * =============================== */
-    name: "翰林 AI 助教（高速展示版）",
-    gradeLevel: "senior",          // junior | senior
-    examMode: "gsat",              // gsat | ast
-    studentLevel: "basic",         // basic | advanced
+    name: "翰林 AI 助教",
+    gradeLevel: "senior",
+    examMode: "gsat",      // gsat | ast
+    studentLevel: "basic", // basic | advanced
     teacherMode: true,
 
+    /* ===============================
+     * 狀態追蹤
+     * =============================== */
     answered: new Set(),
+    mastery: {},
+    stuckCounter: {},
+    errorCount: 0,
+    errorHistory: [],
 
     /* ===============================
-     * Dashboard 資料
+     * Dashboard
      * =============================== */
     dashboard: {
         totalQuestions: 0,
-        typeCount: {
-            "選擇題": 0,
-            "計算題": 0,
-            "申論題": 0,
-            "綜合題": 0
-        },
+        typeCount: { "選擇題": 0, "計算題": 0, "申論題": 0, "綜合題": 0 },
         unitCount: {}
     },
 
     /* ===============================
-     * 錯誤趨勢（折線圖用）
-     * =============================== */
-    errorCount: 0,
-    errorHistory: [], // 每題累積錯誤數
-
-    /* ===============================
-     * 單元資料庫（精簡高速）
+     * 單元資料庫
      * =============================== */
     unitDB: {
         general: {
             name: "通用學習能力",
-            ability: "理解題意與基本推理",
-            mistakes: ["太快作答"],
-            wrong: ["背答案就會（錯）"]
+            ability: "題意理解與推理",
+            mistakes: ["急著作答"],
+            wrong: ["背答案就好（錯）"]
         },
         seniorCalculus: {
             name: "微分概念",
             ability: "變化率理解",
             mistakes: ["只背公式"],
-            wrong: ["微分只是計算（錯）"]
+            wrong: ["微分只是算數（錯）"]
         },
         physicsNewton: {
             name: "牛頓運動定律",
             ability: "因果推理",
             mistakes: ["力與運動混淆"],
             wrong: ["沒有力就不能動（錯）"]
-        },
-        chemEquilibrium: {
-            name: "化學平衡",
-            ability: "動態平衡理解",
-            mistakes: ["以為反應停止"],
-            wrong: ["平衡等於靜止（錯）"]
-        },
-        chineseReading: {
-            name: "閱讀理解",
-            ability: "主旨與推論",
-            mistakes: ["只找關鍵字"],
-            wrong: ["答案一定在原文（錯）"]
-        },
-        englishTense: {
-            name: "時態判斷",
-            ability: "語意與時間對應",
-            mistakes: ["只看時間副詞"],
-            wrong: ["看到過去就用過去式（錯）"]
         }
     },
 
     /* ===============================
-     * 關鍵字 → 單元
+     * Socratic 引導（分級）
      * =============================== */
-    unitKeywords: [
-        ["微分", "seniorCalculus"],
-        ["牛頓", "physicsNewton"],
-        ["化學平衡", "chemEquilibrium"],
-        ["閱讀", "chineseReading"],
-        ["時態", "englishTense"]
-    ],
-
-    detectUnit(text) {
-        for (const [k, v] of this.unitKeywords) {
-            if (text.includes(k)) return v;
+    socraticDB: {
+        general: {
+            0: ["題目主要在問什麼？"],
+            1: ["哪些資訊是解題一定要用的？"],
+            2: ["先列條件，不要急著計算。"]
+        },
+        seniorCalculus: {
+            0: ["這是在找瞬間變化還是平均變化？"],
+            1: ["你能用圖形想像這個變化嗎？"],
+            2: ["這一點的斜率代表什麼？"]
+        },
+        physicsNewton: {
+            0: ["物體現在有沒有受力？"],
+            1: ["哪些力實際作用在物體上？"],
+            2: ["先畫受力圖，再選定律。"]
         }
+    },
+
+    /* ===============================
+     * 補救教材推薦（Level 2）
+     * =============================== */
+    remedyDB: {
+        general: [
+            "題意拆解練習（文字 → 條件）",
+            "只判斷方向、不計算的題型"
+        ],
+        seniorCalculus: [
+            "微分定義與圖形對照練習",
+            "斜率正負判斷題"
+        ],
+        physicsNewton: [
+            "受力圖專項練習",
+            "單一力牛頓第二定律題"
+        ]
+    },
+
+    /* ===============================
+     * 歷屆試題標籤
+     * =============================== */
+    examTagDB: {
+        seniorCalculus: {
+            gsat: ["109學測", "111學測"],
+            ast: ["108指考"]
+        },
+        physicsNewton: {
+            gsat: ["110學測"],
+            ast: ["109指考"]
+        }
+    },
+
+    /* ===============================
+     * 錯誤知識圖譜
+     * =============================== */
+    errorGraph: {
+        reading: "題意理解",
+        concept: "核心概念",
+        application: "概念應用",
+        calculation: "計算執行"
+    },
+
+    /* ===============================
+     * 工具方法
+     * =============================== */
+    detectUnit(text) {
+        if (text.includes("微分")) return "seniorCalculus";
+        if (text.includes("牛頓")) return "physicsNewton";
         return "general";
     },
 
-    /* ===============================
-     * 題型判斷
-     * =============================== */
     questionType(text) {
         if (/[ABCD]|下列何者/.test(text)) return "選擇題";
         if (/計算|求|=/.test(text)) return "計算題";
@@ -104,9 +134,6 @@ const RealAITutor = {
         return "綜合題";
     },
 
-    /* ===============================
-     * Dashboard 累積
-     * =============================== */
     updateDashboard(unitKey, qType) {
         this.dashboard.totalQuestions++;
         this.dashboard.typeCount[qType]++;
@@ -114,118 +141,117 @@ const RealAITutor = {
             (this.dashboard.unitCount[unitKey] || 0) + 1;
     },
 
-    /* ===============================
-     * Canvas 折線圖（錯誤趨勢）
-     * =============================== */
-    renderErrorTrend() {
-        const c = document.getElementById("errorTrend");
-        if (!c) return;
+    diagnoseError(qType) {
+        if (qType === "申論題") return "reading";
+        if (qType === "選擇題") return "concept";
+        if (qType === "計算題") return "calculation";
+        return "application";
+    },
 
-        const ctx = c.getContext("2d");
-        const w = c.width;
-        const h = c.height;
-        const pad = 40;
+    getSocraticHints(unitKey, level) {
+        return (
+            this.socraticDB[unitKey]?.[level] ||
+            this.socraticDB.general[level]
+        );
+    },
 
-        ctx.clearRect(0, 0, w, h);
-
-        // 座標軸
-        ctx.strokeStyle = "#333";
-        ctx.beginPath();
-        ctx.moveTo(pad, pad);
-        ctx.lineTo(pad, h - pad);
-        ctx.lineTo(w - pad, h - pad);
-        ctx.stroke();
-
-        if (this.errorHistory.length === 0) return;
-
-        const maxY = Math.max(...this.errorHistory, 1);
-        const stepX =
-            (w - pad * 2) / Math.max(this.errorHistory.length - 1, 1);
-
-        ctx.strokeStyle = "#e74c3c";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-
-        this.errorHistory.forEach((v, i) => {
-            const x = pad + i * stepX;
-            const y = h - pad - (v / maxY) * (h - pad * 2);
-            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        });
-
-        ctx.stroke();
-
-        ctx.fillStyle = "#000";
-        ctx.font = "14px sans-serif";
-        ctx.fillText("錯誤趨勢（累積）", pad, 20);
+    getExamTags(unitKey) {
+        return this.examTagDB[unitKey]?.[this.examMode] || [];
     },
 
     /* ===============================
-     * 主入口（穩定版）
+     * 主入口
      * =============================== */
-    askGemini(title, content) {
+    askGemini(title, content, options = {}) {
+        const { answer, correctAnswer, requestHint = false } = options;
+        const text = title + content;
+        const unitKey = this.detectUnit(text);
+        const unit = this.unitDB[unitKey];
+        const qType = this.questionType(text);
+
+        /* ===== 主動提示模式 ===== */
+        if (requestHint) {
+            const level = Math.min(this.stuckCounter[unitKey] || 0, 2);
+            const hints = this.getSocraticHints(unitKey, level);
+            return Promise.resolve([
+                "🤝【提示模式】",
+                `📚 單元：${unit.name}`,
+                `🤔 引導（Level ${level}）：`,
+                ...hints.map(h => `• ${h}`)
+            ].join("\n"));
+        }
+
         const key = title + content;
         if (this.answered.has(key)) {
-            return Promise.resolve("🙂 這題我們之前已經討論過囉，先消化再繼續！");
+            return Promise.resolve("🙂 這題已經討論過囉！");
         }
         this.answered.add(key);
-    
-        const text = title + content;
-        const qType = this.questionType(text);
-        const unitKey = this.detectUnit(text);
-        const unit = this.unitDB[unitKey] || this.unitDB.general;
-    
-        /* ===============================
-         * Dashboard 累積
-         * =============================== */
+
         this.updateDashboard(unitKey, qType);
-    
-        /* ===============================
-         * 假錯誤產生（展示用）
-         * =============================== */
-        const fakeErrors = Math.floor(Math.random() * 3); // 0~2
-        this.errorCount += fakeErrors;
+
+        /* ===== 正確性判斷 ===== */
+        let isCorrect = true;
+        if (answer !== undefined && correctAnswer !== undefined) {
+            isCorrect = answer === correctAnswer;
+        }
+
+        /* ===== 卡關追蹤 ===== */
+        if (!this.stuckCounter[unitKey]) this.stuckCounter[unitKey] = 0;
+        if (!isCorrect) {
+            this.errorCount++;
+            this.stuckCounter[unitKey]++;
+        } else {
+            this.stuckCounter[unitKey] = 0;
+        }
+
         this.errorHistory.push(this.errorCount);
-        this.renderErrorTrend();
-    
+
+        /* ===== 熟練度 ===== */
+        if (!this.mastery[unitKey]) {
+            this.mastery[unitKey] = { correct: 0, wrong: 0 };
+        }
+        isCorrect
+            ? this.mastery[unitKey].correct++
+            : this.mastery[unitKey].wrong++;
+
+        const level = Math.min(this.stuckCounter[unitKey], 2);
+        const hints = this.getSocraticHints(unitKey, level);
+        const examTags = this.getExamTags(unitKey);
+        const errorNode = !isCorrect ? this.diagnoseError(qType) : null;
+        const remedy =
+            level >= 2 ? this.remedyDB[unitKey] || this.remedyDB.general : null;
+
+        /* ===== 輸出 ===== */
         const blocks = [
             `📘【${this.name}】`,
-            ``,
             `📌 題型：${qType}`,
             `📚 單元：${unit.name}`,
-            ``,
-            `⚠️ 常見錯誤：`,
-            ...unit.mistakes.map(m => `• ${m}`),
-            ``,
-            `❌ 常見錯誤觀念：`,
-            ...unit.wrong.map(w => `• ${w}`),
-            ``,
-            `🧠 學習建議：${
-                this.studentLevel === "basic"
-                    ? "先穩住核心概念，不急著算"
-                    : "可比較不同題型與變化"
-            }`,
-            ``,
-            `🎓 考試取向：${this.examMode === "gsat"
-                ? "學測（重理解）"
-                : "指考（重計算）"
-            }`
-        ];
-    
+            "",
+            ...hints.map((h, i) => `🤔 引導 ${i + 1}：${h}`),
+            "",
+            examTags.length ? `📎 歷屆標籤：${examTags.join("、")}` : null,
+            errorNode ? `🧩 錯誤節點：${this.errorGraph[errorNode]}` : null,
+            level >= 2 ? "🆘 已連續卡關，建議補救學習：" : null,
+            ...(remedy ? remedy.map(r => `• ${r}`) : [])
+        ].filter(Boolean);
+
         if (this.teacherMode) {
             blocks.push(
-                ``,
-                `🧑‍🏫 教師提示：本題重點在「${unit.ability}」`
+                "",
+                "🧑‍🏫 教師診斷：",
+                `• 核心能力：${unit.ability}`,
+                `• 卡關等級：Level ${level}`,
+                `• 對 / 錯：${this.mastery[unitKey].correct} / ${this.mastery[unitKey].wrong}`
             );
         }
-    
+
         return Promise.resolve(blocks.join("\n"));
     }
-
 };
 
-/* =====================================================
- * 教師 / 學生模式切換（可選）
- * ===================================================== */
+/* ===============================
+ * 教師 / 學生模式切換
+ * =============================== */
 function setRole(role) {
     RealAITutor.teacherMode = role === "teacher";
 }
