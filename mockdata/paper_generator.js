@@ -1,146 +1,139 @@
-// ===============================
-// 📄 Paper Generator v2025-SAFE
-// ===============================
+/* =========================================================
+ *  Paper Generator v2 SAFE
+ *  Compatible with AutoTemplateFissionFactory v2
+ * ========================================================= */
 
-(function (global) {
+(function () {
   'use strict';
 
-  console.log("📄 [PaperGen] 🔥 PAPER GEN VERSION 2025-SAFE loaded");
+  const log = (...args) => console.log("📄 [PaperGen]", ...args);
 
-  // -------------------------------
-  // 等 Factory Ready
-  // -------------------------------
-  function waitFactory(cb) {
-    if (
-      global.AutoTemplateFissionFactory &&
-      global.AutoTemplateFissionFactory.ready
-    ) {
-      cb();
-    } else {
-      setTimeout(() => waitFactory(cb), 50);
+  function waitForFactory(cb) {
+    if (!window.AutoTemplateFissionFactory?.ready) {
+      setTimeout(() => waitForFactory(cb), 50);
+      return;
     }
+    cb();
   }
 
-  // -------------------------------
-  // 題目正規化（唯一標準）
-  // -------------------------------
-  function normalizeQuestion(raw, meta = {}) {
-    if (!raw || typeof raw !== "object") return null;
-
-    // ✅ 新格式（你現在全部科目用的）
-    if (
-      typeof raw.question === "string" &&
-      Array.isArray(raw.options) &&
-      typeof raw.answer === "number"
-    ) {
-      return {
-        question: raw.question,
-        options: raw.options,
-        answer: raw.answer,
-        explanation: raw.explanation || [],
-        concept: raw.concept,
-        meta
-      };
-    }
-
-    return null;
-  }
-
-  // -------------------------------
-  // 安全取題（不炸）
-  // -------------------------------
   function safeGenerate(subject, grade) {
-    const Factory = global.AutoTemplateFissionFactory;
+    const Factory = window.AutoTemplateFissionFactory;
     const T = Factory.templates;
 
+    // ❌ 找不到科目 / 年級
     if (!T?.[subject]?.[grade]) {
-      return {
-        question: `❌ 找不到題庫：${subject} ${grade}`,
-        options: ["請檢查模板是否有註冊"],
-        answer: 0,
-        explanation: []
-      };
+      return errorQuestion(
+        `❌ 找不到題庫`,
+        `${subject} / ${grade}`,
+        `templates[${subject}][${grade}] 不存在`
+      );
     }
 
     const pool = T[subject][grade];
+
+    // ❌ pool 為空
     if (!Array.isArray(pool) || pool.length === 0) {
-      return {
-        question: `⚠️ 題庫為空：${subject} ${grade}`,
-        options: ["沒有可用模板"],
-        answer: 0,
-        explanation: []
-      };
+      return errorQuestion(
+        `⚠️ 題庫為空`,
+        `${subject} / ${grade}`,
+        `pool.length === 0`
+      );
     }
 
     const fn = pool[Math.floor(Math.random() * pool.length)];
-    let q = null;
 
+    // ❌ 不是函式
+    if (typeof fn !== "function") {
+      return errorQuestion(
+        `⚠️ 模板格式錯誤`,
+        `${subject} / ${grade}`,
+        `typeof template !== function`
+      );
+    }
+
+    let q;
     try {
       q = fn();
     } catch (e) {
-      return {
-        question: `💥 模板執行錯誤：${subject} ${grade}`,
-        options: [String(e)],
-        answer: 0,
-        explanation: []
-      };
+      return errorQuestion(
+        `💥 模板執行錯誤`,
+        `${subject} / ${grade}`,
+        e.message
+      );
     }
 
+    // ❌ 回傳 null
     if (!q) {
-      return {
-        question: `⚠️ 模板回傳 null：${subject} ${grade}`,
-        options: ["資料不足或過濾條件過嚴"],
-        answer: 0,
-        explanation: []
-      };
+      return errorQuestion(
+        `⚠️ 模板回傳 null`,
+        `${subject} / ${grade}`,
+        `資料不足或過濾條件過嚴`
+      );
     }
+
+    // ✅ 成功
+    q.__debug = {
+      subject,
+      grade,
+      template: fn.name || "anonymous"
+    };
 
     return q;
   }
 
-  // -------------------------------
-  // 📘 產生試卷（主 API）
-  // -------------------------------
-  function generatePaper({
-    subject,
-    grade,
-    count = 5
-  }) {
-    const paper = [];
-    let guard = 0;
-
-    while (paper.length < count && guard++ < count * 5) {
-      const raw = safeGenerate(subject, grade);
-      const q = normalizeQuestion(raw, {
-        subject,
-        grade
-      });
-
-      if (q) {
-        paper.push(q);
-      } else {
-        paper.push({
-          question: `❌ 題目格式錯誤：${subject} ${grade}`,
-          options: ["請檢查模板回傳格式"],
-          answer: 0,
-          explanation: []
-        });
-      }
-    }
-
-    return paper;
+  function errorQuestion(title, location, detail) {
+    return {
+      question: title,
+      options: [
+        `📍 ${location}`,
+        `🧪 ${detail}`
+      ],
+      answer: 0,
+      explanation: [],
+      __error: true
+    };
   }
 
-  // -------------------------------
-  // 對外掛 API
-  // -------------------------------
-  waitFactory(() => {
-    global.PaperGenerator = {
-      generatePaper
-    };
+  // ===============================
+  // 對外 API（給 exam.html 用）
+  // ===============================
+  window.PaperGeneratorV2 = {
+    generate(subject, grade) {
+      return safeGenerate(subject, grade);
+    }
+  };
 
-    console.log("🚦 PaperGeneratorReady dispatched");
+  // ===============================
+  // Debug 面板（右下角）
+  // ===============================
+  function mountDebugPanel() {
+    const el = document.createElement("div");
+    el.style.cssText = `
+      position: fixed;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,.75);
+      color: #0f0;
+      font-size: 12px;
+      padding: 6px 8px;
+      z-index: 9999;
+      font-family: monospace;
+    `;
+    el.innerText = "PaperGen v2 SAFE";
+
+    document.body.appendChild(el);
+
+    document.addEventListener("paper:rendered", e => {
+      const d = e.detail?.__debug;
+      if (!d) return;
+      el.innerText = `📄 ${d.subject}｜${d.grade}\n🧩 ${d.template}`;
+    });
+  }
+
+  waitForFactory(() => {
+    log("🔥 PAPER GEN v2 SAFE 已啟動");
+    mountDebugPanel();
     document.dispatchEvent(new Event("PaperGeneratorReady"));
   });
 
-})(window);
+})();
