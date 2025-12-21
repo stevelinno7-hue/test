@@ -27,7 +27,6 @@
 
         log("generatePaper()", params);
 
-        // 1️⃣ 找出可用 templates（允許題型重複）
         const templates = Object.keys(G.templates).filter(name => {
             if (templatePrefix && !name.startsWith(templatePrefix)) return false;
             return name.includes(grade);
@@ -38,15 +37,13 @@
             return [];
         }
 
-        log("可用 templates", templates);
-
-        // 2️⃣ 出題（題幹不可重複）
         const paper = [];
         const usedStems = new Set();
 
         let attempts = 0;
-        const MAX_ATTEMPTS = count * 20; // 防無限迴圈
+        const MAX_ATTEMPTS = count * 20;
 
+        // ✅ 這個 while 是你原本少掉的
         while (paper.length < count && attempts < MAX_ATTEMPTS) {
             attempts++;
 
@@ -64,7 +61,7 @@
 
             const stem = q.question.trim();
             if (usedStems.has(stem)) {
-                continue; // 🚫 題幹重複，直接跳過
+                continue; // 🚫 題幹重複
             }
 
             usedStems.add(stem);
@@ -83,11 +80,10 @@
         return paper;
     }
 
-    // 3️⃣ 對外掛載
     global.PaperGenerator = {
         generatePaper
     };
 
-    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO FALLBACK / NO DUP STEM）已載入");
+    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP STEM）已載入");
 
 })(window);
