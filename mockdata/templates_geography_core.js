@@ -1,66 +1,74 @@
-// templates_geography_core.js
-// 地理（地形氣候、人地互動、地圖判讀、資源與永續）5 類模板
 (function(global){
-  'use strict';
-  if (!global.RigorousGenerator) throw new Error('RigorousGenerator not found.');
+    'use strict';
 
-  function sample(arr, rnd){ return arr[Math.floor(rnd()*arr.length)]; }
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) {
+            setTimeout(init, 100);
+            return;
+        }
 
-  // 1) geo_physical: 地形與地貌（概念判斷）
-  function geo_physical(ctx, rnd){
-    const opts = ['板塊運動','風化作用','光合作用','電離作用'];
-    return {
-      question: '造成山脈形成的主要地質過程為何？',
-      options: opts,
-      answer: 0,
-      explanation: ['山脈多由板塊擠壓或碰撞抬升形成，屬於板塊構造作用。']
-    };
-  }
+        const { pick, shuffle } = G.utils;
 
-  // 2) geo_climate: 氣候與天氣（因果與判讀）
-  function geo_climate(ctx, rnd){
-    return {
-      question: '若某地區年降雨量顯著減少，最可能的影響為何？',
-      options: ['農業減產與水資源短缺','海平面上升','地震頻繁','火山爆發'],
-      answer: 0,
-      explanation: ['降雨減少直接影響農業灌溉與水資源供應，進而影響糧食生產。']
-    };
-  }
+        // ==========================================
+        // 地理科核心資料庫 (Geography Core Database)
+        // ==========================================
+        const socialDB = [
+            // ----------------------------------------------------
+            // [地理] (Physical & Human)
+            // ----------------------------------------------------
+            { s:"地理", t:["國七","地形"], e:"河谷地形", y:"V型谷", p:"河流侵蝕", k:"上游", d:"河流上游侵蝕力強，下切形成深谷" },
+            { s:"地理", t:["國七","地形"], e:"沖積扇", y:"扇狀堆積", p:"河流堆積", k:"谷口", d:"河流出谷口流速減緩，泥沙堆積成扇狀" },
+            { s:"地理", t:["國七","地形"], e:"三角洲", y:"河口堆積", p:"河流", k:"出海口", d:"河流入海處流速極慢，泥沙堆積成三角形" },
+            { s:"地理", t:["國七","地形"], e:"石灰岩地形", y:"喀斯特", p:"溶蝕作用", k:"鐘乳石", d:"地下水溶蝕石灰岩層形成的特殊地形" },
+            { s:"地理", t:["國七","地形"], e:"沙洲與潟湖", y:"波浪堆積", p:"沿海", k:"濱外沙洲", d:"沿岸流與波浪搬運堆積形成的海積地形" },
+            { s:"地理", t:["國七","氣候"], e:"季風氣候", y:"夏雨冬乾", p:"海陸性質差異", k:"轉向", d:"夏季吹海風多雨，冬季吹陸風乾燥" },
+            { s:"地理", t:["國七","氣候"], e:"地形雨", y:"迎風坡多雨", p:"地形抬升", k:"背風坡", d:"氣流受山脈阻擋抬升，冷卻凝結降雨" },
+            { s:"地理", t:["國七","產業"], e:"集約農業", y:"投入多產出高", p:"水稻", k:"勞力密集", d:"單位面積投入大量勞力與資金的農業" },
+            { s:"地理", t:["國八","中國"], e:"黃土高原", y:"窯洞", p:"風力堆積", k:"水土流失", d:"土質疏鬆，易受流水侵蝕，形成溝壑縱橫" },
+            { s:"地理", t:["國八","中國"], e:"坎兒井", y:"乾燥氣候", p:"新疆", k:"暗渠", d:"減少水分蒸發的古老水利設施" },
+            { s:"地理", t:["國八","中國"], e:"長江三角洲", y:"水鄉澤國", p:"水運", k:"魚米之鄉", d:"河網密布，中國經濟最發達的地區" },
+            { s:"地理", t:["國九","世界"], e:"熱帶雨林", y:"亞馬遜", p:"赤道", k:"對流雨", d:"全年高溫多雨，生物多樣性高" },
+            { s:"地理", t:["國九","世界"], e:"熱帶莽原", y:"乾溼分明", p:"獅子斑馬", k:"薩凡納", d:"受赤道低壓與副熱帶高壓交替控制，乾溼季明顯" },
+            { s:"地理", t:["國九","世界"], e:"地中海型氣候", y:"夏乾冬雨", p:"西風帶", k:"橄欖葡萄", d:"夏季乾燥少雨，冬季受西風吹拂多雨" },
+            { s:"地理", t:["國九","世界"], e:"溫帶海洋性", y:"全年有雨", p:"西歐", k:"西風吹拂", d:"終年受西風與暖流影響，氣候溫和濕潤" },
+            { s:"地理", t:["高一","地圖"], e:"麥卡托投影", y:"角度正確", p:"航海", k:"高緯放大", d:"適合航海導航，但高緯度面積嚴重變形" },
+            { s:"地理", t:["高一","地圖"], e:"等高線", y:"地形起伏", p:"地形圖", k:"閉合曲線", d:"連線上海拔高度相同的點，顯示地形坡度" },
+            { s:"地理", t:["高一","GIS"], e:"向量資料", y:"點線面", p:"GIS", k:"幾何圖形", d:"用座標與點線面來儲存地理資訊" },
+            { s:"地理", t:["高一","GIS"], e:"網格資料", y:"像元", p:"衛星影像", k:"解析度", d:"將地表切割成網格，紀錄屬性數值" }
+        ];
 
-  // 3) geo_human_environment: 人地互動與都市化（案例分析）
-  function geo_human_environment(ctx, rnd){
-    return {
-      question: '都市化快速擴張常帶來哪三項主要問題？',
-      options: ['交通擁擠、空氣污染、綠地減少','海洋酸化、火山爆發、地震','森林再生、物種增加、空氣清新','無影響'],
-      answer: 0,
-      explanation: ['都市化常伴隨基礎設施壓力、污染與生態空間喪失。']
-    };
-  }
+        // 註冊模板
+        const subjCode = "geo";
+        const subjName = "地理";
 
-  // 4) geo_map_reading: 地圖判讀（比例尺、方向、等高線）
-  function geo_map_reading(ctx, rnd){
-    return {
-      question: '地圖上等高線密集表示地形的哪一特徵？',
-      options: ['坡度陡峭','坡度平緩','水域','植被豐富'],
-      answer: 0,
-      explanation: ['等高線密集代表高度變化快，表示坡度陡峭。']
-    };
-  }
+        // 特徵題
+        G.registerTemplate(`${subjCode}_feat`, (ctx, rnd) => {
+            const item = pick(socialDB);
+            const wrong = shuffle(socialDB.filter(x => x !== item)).slice(0, 3).map(x => x.y);
+            const opts = shuffle([item.y, ...wrong]);
+            return {
+                question: `【${item.s}】關於「${item.e}」，下列何者為其關鍵特徵？`,
+                options: opts, answer: opts.indexOf(item.y), concept: item.t[1],
+                explanation: [`${item.e}：${item.y}`]
+            };
+        }, [subjName, "社會", "記憶"]);
 
-  // 5) geo_resources: 資源與永續（評估與政策）
-  function geo_resources(ctx, rnd){
-    return {
-      question: '在規劃水資源管理政策時，下列哪一項最重要？',
-      options: ['整合供需管理與長期監測','只增加供水設施','忽略用水效率','只依賴降雨預測'],
-      answer: 0,
-      explanation: ['永續管理需同時考量供給、需求、效率與長期監測與調適。']
-    };
-  }
+        // 關鍵字題
+        G.registerTemplate(`${subjCode}_key`, (ctx, rnd) => {
+            const item = pick(socialDB);
+            const wrong = shuffle(socialDB.filter(x => x !== item)).slice(0, 3).map(x => x.k);
+            const opts = shuffle([item.k, ...wrong]);
+            return {
+                question: `【${item.s}】提到「${item.e}」，通常會聯想到哪個關鍵詞？`,
+                options: opts, answer: opts.indexOf(item.k), concept: item.t[1],
+                explanation: [`${item.e} 關鍵詞：${item.k}`]
+            };
+        }, [subjName, "社會", "關鍵字"]);
 
-  global.RigorousGenerator.registerTemplate('geo_physical', geo_physical);
-  global.RigorousGenerator.registerTemplate('geo_climate', geo_climate);
-  global.RigorousGenerator.registerTemplate('geo_human_environment', geo_human_environment);
-  global.RigorousGenerator.registerTemplate('geo_map_reading', geo_map_reading);
-  global.RigorousGenerator.registerTemplate('geo_resources', geo_resources);
+        console.log("✅ 地理題庫已載入完成。");
+    }
 
-})(typeof window !== 'undefined' ? window : global);
+    init();
+
+})(window);
