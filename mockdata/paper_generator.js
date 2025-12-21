@@ -83,6 +83,12 @@
     global.PaperGenerator = {
         generatePaper
     };
+    // 🔔 相容舊系統 / exam.html 偵測用
+    global.paperGenerator = global.PaperGenerator;
+    global.PAPER_GENERATOR_READY = true;
+    
+    // 如果 exam 有監聽事件（保險）
+    window.dispatchEvent(new Event("PaperGeneratorReady"));
 
     log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP STEM）已載入");
 
