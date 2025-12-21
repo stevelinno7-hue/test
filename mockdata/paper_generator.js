@@ -1,39 +1,38 @@
-(function (global) {
-    'use strict';
+// mockdata/paper_generator.js
+(function () {
+    console.log("📄 [PaperGen] 初始化中...");
 
-    const log  = (...a) => console.log("📄 [PaperGen]", ...a);
-    const warn = (...a) => console.warn("⚠️ [PaperGen]", ...a);
-    const err  = (...a) => console.error("❌ [PaperGen]", ...a);
+    function generatePaper(config) {
+        const { subject, total, tags } = config;
 
-    function generatePaper(params) {
-        const {
-            subject,
-            grade,
-            count = 10,
-            templatePrefix
-        } = params || {};
-
-        const G = global.RigorousGenerator;
-
-        if (!G || !G.templates || !G.generateFromTemplate) {
-            err("Generator 尚未就緒");
-            return [];
+        const factory = window.AutoTemplateFissionFactory;
+        if (!factory || !factory.ready) {
+            throw new Error("AutoTemplateFissionFactory 尚未完成初始化");
         }
 
-        if (!subject || !grade) {
-            err("缺少 subject 或 grade", params);
-            return [];
+        const pool = factory.getTemplates(subject);
+
+        if (!pool.length) {
+            throw new Error(`題庫為空：${subject}`);
         }
 
-        log("generatePaper()", params);
+        // 簡單洗牌
+        const shuffled = [...pool].sort(() => Math.random() - 0.5);
 
-        const templates = Object.keys(G.templates).filter(name => {
-            if (templatePrefix && !name.startsWith(templatePrefix)) return false;
-            return name.includes(grade);
-        });
+        // 產題
+        const questions = shuffled.slice(0, total).map((q, idx) => ({
+            id: `${subject}_${Date.now()}_${idx}`,
+            ...q
+        }));
 
-        if (templates.length === 0) {
-            err("找不到任何 template", { grade, subject });
+        return questions;
+    }
+
+    // 🔑 一定要掛 window
+    window.generatePaper = generatePaper;
+
+    console.log("🔥 PAPER GEN VERSION 2025-01-SAFE 已載入");
+})();
             return [];
         }
 
