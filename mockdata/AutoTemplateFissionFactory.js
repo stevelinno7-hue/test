@@ -1,3 +1,4 @@
+window.addEventListener('load', function() {
 (function(global){
     'use strict';
     if (!global.RigorousGenerator) return;
@@ -122,3 +123,4 @@
     console.log(`✅ 自動裂變工廠已就緒：已生成 ${Object.keys(CONTEXT_WRAPPERS).length} 種情境模組。`);
 
 })(this);
+});
