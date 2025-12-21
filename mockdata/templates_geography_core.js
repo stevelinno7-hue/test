@@ -1,22 +1,15 @@
 (function (global) {
+  'use strict';
   function init() {
-    const G = global.RigorousGenerator || global?.global?.RigorousGenerator;
-    if (!G || !G.registerTemplate) return setTimeout(init, 100);
-
+    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
     const { pick, shuffle } = G.utils;
-    const gradeOrder = ["國七","國八","國九","高一"];
 
-    function allow(item, ctx) {
-      const g = ctx.tags.find(t => gradeOrder.includes(t));
-      if (!g) return false;
-      return g.startsWith("國")
-        ? item.t[0] === g
-        : gradeOrder.indexOf(item.t[0]) <= gradeOrder.indexOf(g);
-    }
-
-    // === 地理題庫（你原本的）===
     const db = [
-      { s:"地理", t:["國七","地形"], e:"河谷地形", y:"V型谷", p:"河流侵蝕", k:"上游", d:"河流上游侵蝕力強，下切形成深谷" },
+      // ----------------------------------------------------
+        // [地理] (Physical & Human)
+        // ----------------------------------------------------
+        { s:"地理", t:["國七","地形"], e:"河谷地形", y:"V型谷", p:"河流侵蝕", k:"上游", d:"河流上游侵蝕力強，下切形成深谷" },
         { s:"地理", t:["國七","地形"], e:"沖積扇", y:"扇狀堆積", p:"河流堆積", k:"谷口", d:"河流出谷口流速減緩，泥沙堆積成扇狀" },
         { s:"地理", t:["國七","地形"], e:"三角洲", y:"河口堆積", p:"河流", k:"出海口", d:"河流入海處流速極慢，泥沙堆積成三角形" },
         { s:"地理", t:["國七","地形"], e:"石灰岩地形", y:"喀斯特", p:"溶蝕作用", k:"鐘乳石", d:"地下水溶蝕石灰岩層形成的特殊地形" },
@@ -35,29 +28,29 @@
         { s:"地理", t:["高一","地圖"], e:"等高線", y:"地形起伏", p:"地形圖", k:"閉合曲線", d:"連線上海拔高度相同的點，顯示地形坡度" },
         { s:"地理", t:["高一","GIS"], e:"向量資料", y:"點線面", p:"GIS", k:"幾何圖形", d:"用座標與點線面來儲存地理資訊" },
         { s:"地理", t:["高一","GIS"], e:"網格資料", y:"像元", p:"衛星影像", k:"解析度", d:"將地表切割成網格，紀錄屬性數值" }
-      
-       ];
-        // ----------------------
-    G.registerTemplate("geography_basic", ctx => {
-      const pool = db.filter(x => allow(x, ctx));
-      if (!pool.length) return null;
+
+    ];
+
+    
+
+    G.registerTemplate('geography_core', (ctx) => {
+      let pool = db;
+      if (ctx && ctx.tags) {
+        const targetGrade = ctx.tags.find(t => t.includes("國") || t.includes("高"));
+        if (targetGrade) pool = db.filter(item => item.t[0] === targetGrade);
+      }
 
       const item = pick(pool);
-      const opts = shuffle([
-        item.y,
-        ...shuffle(pool.filter(x => x !== item)).slice(0,3).map(x => x.y)
-      ]);
+      const wrong = shuffle(db.filter(x => x.a !== item.a)).slice(0, 3).map(x => x.a);
+      const opts = shuffle([item.a, ...wrong]);
 
       return {
-        question: `【地理】「${item.e}」最正確的說明是？`,
+        question: `【地理】「${item.q}」是指下列哪種地理概念？`,
         options: opts,
-        answer: opts.indexOf(item.y),
-        explanation: [`${item.e}：${item.d}`]
+        answer: opts.indexOf(item.a),
+        concept: item.e || "地理通論"
       };
-    }, ["地理","國七","國八","國九","高一"]);
-
-    console.log("✅ 地理題庫載入完成");
+    }, ["geography", "地理", "社會"]);
   }
-
   init();
-})(window);
+})(this);
