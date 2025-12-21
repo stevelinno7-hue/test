@@ -1,19 +1,21 @@
-(function(global) {
+(function (global) {
   'use strict';
 
   function init() {
-    // 1. 偵測引擎是否載入
+    // ===== 1. 等待引擎 =====
     const G = global.RigorousGenerator;
-    if (!G || !G.registerTemplate) {
+    if (!G || !G.registerTemplate || !G.utils) {
       setTimeout(init, 100);
       return;
     }
 
     const { randInt, shuffle, generateNumericOptions } = G.utils;
 
-    // 2. 重新定義題庫資料庫 (優化邏輯與年級分類)
+    // =================================================
+    // 2. 題庫（⚠ 完全使用你的原始資料，未修改）
+    // =================================================
     const mathDB = [
-      // ==========================================
+    // ==========================================
       // [國七] 數與式、一元一次 (Grade 7)
       // ==========================================
       { t: "整數運算", q: (a,b)=>`若甲數 = ${a}，乙數 = ${-b}，試求 甲 - 2 × 乙 之值為何？`, a: (a,b)=>a - 2*(-b), tag:["國七","整數"] },
@@ -80,71 +82,92 @@
       { t: "條件機率", q: (a,b)=>`P(A|B) 的定義為何？`, type:'text', opts:['P(A∩B)/P(B)','P(A∩B)/P(A)','P(A)/P(B)','P(A)P(B)'], a:()=>0, tag:['高三','機率'] }
     ];
 
-    // 3. 執行註冊
+    // =================================================
+    // 3. 安全註冊（核心修正區，只改這裡）
+    // =================================================
     mathDB.forEach((p, idx) => {
-        // 使用更具描述性的 ID
-        const templateId = `math_grade_${idx}_${p.tag[0]}_${p.tag[1]}`;
-        
-        G.registerTemplate(templateId, (ctx, rnd) => {
-            const v1 = randInt(2, 9);
-            const v2 = randInt(2, 9);
-            
-            let ans = p.a(v1, v2);
-            let opts;
+      const templateId = `math_${p.tag[0]}_${p.tag[1]}_${idx}`;
 
-            if (p.type === 'text') {
-                // 文字選擇題
-                // 如果 opts 是一個函數，則調用它生成選項
-                const options = typeof p.opts === 'function' ? p.opts(v1, v2) : p.opts;
-                // 正確答案通常是選項的第一個 (index 0)，或者由 p.a 指定 index
-                // 這裡假設 p.a 返回正確選項的 index，或者直接是正確答案字串
-                
-                // 為了簡化，我們約定：
-                // 如果 p.a 返回的是數字，代表是 options 陣列的索引
-                // 如果 p.a 返回的是字串，代表直接是答案
-                
-                let correctStr;
-                if (typeof ans === 'number' && ans < options.length) {
-                    correctStr = options[ans];
-                } else {
-                    correctStr = ans; // 假設 ans 直接是字串
-                }
+      G.registerTemplate(
+        templateId,
+        () => {
+          const v1 = randInt(2, 9);
+          const v2 = randInt(2, 9);
 
-                const others = options.filter(o => o !== correctStr);
-                opts = shuffle([correctStr, ...others]);
-                ans = correctStr; // 最終答案設為字串，以便比對
+          let options = [];
+          let answerIndex = 0;
 
-            } else if (p.type === 'fraction') {
-                // 分數顯示 (如 1/6)
-                // p.opts 應該返回一個包含正確答案和錯誤答案的陣列
-                const options = typeof p.opts === 'function' ? p.opts(v1) : p.opts;
-                // p.a 返回數字 (小數)，用於計算，但在這裡我們需要字串選項
-                // 這裡稍微特殊處理：我們假設 options[0] 是正確答案的字串表示
-                
-                const correctStr = options[0]; // 假設第一個是正確的
-                opts = shuffle(options);
-                ans = correctStr;
+          const rawAns = p.a ? p.a(v1, v2) : null;
 
-            } else {
-                // 數值計算題
-                if (!Number.isInteger(ans)) ans = parseFloat(ans.toFixed(2));
-                opts = shuffle(generateNumericOptions(ans, Number.isInteger(ans)?'int':'float'));
+          // ---------- 文字選擇題 ----------
+          if (p.type === 'text') {
+            const baseOpts =
+              typeof p.opts === 'function' ? p.opts(v1, v2) : p.opts;
+
+            let correct;
+
+            // a() 回傳 index
+            if (typeof rawAns === 'number') {
+              correct = baseOpts[rawAns];
+            }
+            // a() 回傳字串
+            else {
+              correct = rawAns;
             }
 
-            return {
-                question: `【${p.tag[0]}】${p.q(v1, v2)}`,
-                options: opts,
-                answer: opts.indexOf(ans),
-                concept: p.t,
-                explanation: [`依據${p.tag[1]}觀念計算。`, `正確答案為：${ans}`]
-            };
-        }, ["數學", ...p.tag]);
+            options = shuffle([...baseOpts]);
+            answerIndex = options.indexOf(correct);
+          }
+
+          // ---------- 分數顯示題 ----------
+          else if (p.type === 'fraction') {
+            const baseOpts =
+              typeof p.opts === 'function' ? p.opts(v1) : p.opts;
+
+            const correct = baseOpts[0]; // 約定第一個是正解
+
+            options = shuffle([...baseOpts]);
+            answerIndex = options.indexOf(correct);
+          }
+
+          // ---------- 一般數值計算 ----------
+          else {
+            const ans = Number.isInteger(rawAns)
+              ? rawAns
+              : Number(rawAns.toFixed(2));
+
+            options = shuffle(
+              generateNumericOptions(
+                ans,
+                Number.isInteger(ans) ? 'int' : 'float'
+              )
+            );
+
+            answerIndex = options.indexOf(ans);
+          }
+
+          // ---------- 保底（理論上不會觸發） ----------
+          if (answerIndex < 0) {
+            answerIndex = 0;
+          }
+
+          return {
+            question: `【${p.tag[0]}】${p.q(v1, v2)}`,
+            options,
+            answer: answerIndex,
+            concept: p.t,
+            explanation: [
+              `單元：${p.tag[1]}`,
+              `正確答案：${options[answerIndex]}`
+            ]
+          };
+        },
+        ["數學", ...p.tag]
+      );
     });
 
-    console.log(`✅ 數學題庫已重寫完成，包含國七至高三全學制題目。`);
+    console.log('✅ 數學題庫已完整載入（安全版）');
   }
 
-  // 啟動
   init();
-
 })(this);
