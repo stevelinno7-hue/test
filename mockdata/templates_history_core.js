@@ -1,24 +1,23 @@
 (function (global) {
-  'use strict';
-
   function init() {
-    const G = global.RigorousGenerator || window.global?.RigorousGenerator;
+    const G = global.RigorousGenerator || global?.global?.RigorousGenerator;
     if (!G || !G.registerTemplate) return setTimeout(init, 100);
 
     const { pick, shuffle } = G.utils;
-    const gradeOrder = ["國七", "國八", "國九", "高一"];
+    const gradeOrder = ["國七","國八","國九","高一"];
 
     function allow(item, ctx) {
       const g = ctx.tags.find(t => gradeOrder.includes(t));
       if (!g) return false;
-
       return g.startsWith("國")
         ? item.t[0] === g
         : gradeOrder.indexOf(item.t[0]) <= gradeOrder.indexOf(g);
     }
 
+    // === 歷史題庫（你的）===
     const db = [
-      
+     // ----------------------------------------------------
+        // [歷史 - 台灣史] (Prehistory ~ Modern)
         // ----------------------------------------------------
         { s:"歷史", t:["國七","台灣史"], e:"長濱文化", y:"舊石器時代", p:"早期人類", k:"八仙洞", d:"台灣已知最早的史前文化，以敲打石器為主，已知用火" },
         { s:"歷史", t:["國七","台灣史"], e:"大坌坑文化", y:"新石器早期", p:"南島語族祖先", k:"繩紋陶", d:"台灣最早的新石器文化，開始有農業與定居生活" },
@@ -96,26 +95,25 @@
 
     ];
 
-    G.registerTemplate("soc_history_basic", (ctx) => {
+    G.registerTemplate("history_basic", ctx => {
       const pool = db.filter(x => allow(x, ctx));
       if (!pool.length) return null;
 
       const item = pick(pool);
       const opts = shuffle([
         item.y,
-        ...shuffle(pool.filter(x => x !== item)).slice(0, 3).map(x => x.y)
+        ...shuffle(pool.filter(x => x !== item)).slice(0,3).map(x => x.y)
       ]);
 
       return {
-        question: `【歷史】關於「${item.e}」，下列何者正確？`,
+        question: `【歷史】下列何者最符合「${item.e}」？`,
         options: opts,
         answer: opts.indexOf(item.y),
-        concept: item.t[1],
         explanation: [`${item.e}：${item.d}`]
       };
-    }, ["社會","歷史","國七","國八","國九","高一"]);
+    }, ["歷史","國七","國八","國九","高一"]);
 
-    console.log("✅ 社會（歷史）題庫載入完成");
+    console.log("✅ 歷史題庫載入完成");
   }
 
   init();
