@@ -3,7 +3,7 @@
 
     // 定義啟動函式
     function init() {
-        // 1. 檢查引擎是否就緒
+        // 1. 檢查引擎是否就緒 (等待機制)
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         
         // 如果引擎還沒好，等待 100ms 後重試
@@ -16,10 +16,9 @@
         const { pick, shuffle } = G.utils;
 
         // ==========================================
-        //  注意：資料庫與註冊邏輯必須在 init 函式裡面！
+        //  國文科核心資料庫 (Chinese Core Database)
+        //  注意：資料必須放在 init 函式裡面！
         // ==========================================
-
-        // 國文科核心資料庫 (Chinese Core Database)
         const chiData = [
             // ------------------------------------------
             // 1. 成語判讀 (Idioms)
@@ -218,7 +217,7 @@
             };
         }, ["國文", "應用"]);
 
-    } // <---- init 函式的結束大括號必須在這裡！
+    } // 這是 init 函式的正確結束位置
 
     // 啟動！
     init();
