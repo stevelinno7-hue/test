@@ -1,23 +1,20 @@
 (function () {
-    'use strict';
+  'use strict';
 
-    function init() {
-        const G = window.RigorousGenerator;
-        if (!G || !G.utils || !G.registerTemplate) {
-            setTimeout(init, 50);
-            return;
-        }
+  function init() {
+    const G = window.RigorousGenerator;
+    if (!G || !G.utils || !G.registerTemplate) {
+      setTimeout(init, 50);
+      return;
+    }
 
-        const { pick, shuffle } = G.utils;
+    const { pick, shuffle } = G.utils;
 
     // ==========================================
-    // 國文科核心資料庫 (Chinese Core Database)
+    // 國文科核心資料
     // ==========================================
     const chiData = [
-        // ------------------------------------------
-        // 1. 成語判讀 (Idioms)
-        // ------------------------------------------
-        { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
+       { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
         { q: "指鹿為馬", a: "比喻混淆是非", tag: ["國七","成語"] },
         { q: "畫蛇添足", a: "比喻多此一舉", tag: ["國七","成語"] },
         { q: "杯弓蛇影", a: "比喻疑神疑鬼，自相驚擾", tag: ["國七","成語"] },
@@ -159,54 +156,89 @@
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
     ];
 
-    
-    // ------------------------------------------
-    G.registerTemplate('chi_definition', (ctx, rnd) => {
-        const item = pick(chiData);
-        const sameCat = chiData.filter(x => x.tag[1] === item.tag[1] && x.q !== item.q);
-        const pool = sameCat.length >= 3 ? sameCat : chiData.filter(x => x.q !== item.q);
-        const wrongOpts = shuffle(pool).slice(0, 3).map(x => x.a);
-        const opts = shuffle([item.a, ...wrongOpts]);
 
-        let qText = "";
-        // 根據類型調整問法
-        if(item.tag[1] === "成語") qText = `【成語】「${item.q}」的意思為何？`;
-        else if(item.tag[1] === "修辭") qText = `【修辭】「${item.q}」這句話運用了哪種修辭技巧？`;
-        else if(item.tag[1] === "古文" || item.tag[1] === "唐詩") qText = `【文學】「${item.q}」這句話出自何處或何人？`;
-        else qText = `【${item.tag[1]}】關於「${item.q}」，下列敘述何者正確？`;
+    // ==========================================
+    // Template 1：正向定義題
+    // ==========================================
+    G.registerTemplate('chi_definition', () => {
+      const item = pick(chiData);
 
-        return {
-            question: qText,
-            options: opts,
-            answer: opts.indexOf(item.a),
-            concept: item.tag[1],
-            explanation: [`答案：${item.a}`]
-        };
-    }, ["國文", "語文"]);
+      const sameCat = chiData.filter(
+        x => x.tag[1] === item.tag[1] && x.q !== item.q
+      );
 
-    // ------------------------------------------
-    // 模板 2: 反向題 (判讀)
-    // ------------------------------------------
-    G.registerTemplate('chi_reverse', (ctx, rnd) => {
-        const item = pick(chiData);
-        const sameCat = chiData.filter(x => x.tag[1] === item.tag[1] && x.q !== item.q);
-        const pool = sameCat.length >= 3 ? sameCat : chiData.filter(x => x.q !== item.q);
-        const wrongOpts = shuffle(pool).slice(0, 3).map(x => x.q);
-        const opts = shuffle([item.q, ...wrongOpts]);
+      const pool = sameCat.length >= 3
+        ? sameCat
+        : chiData.filter(x => x.q !== item.q);
 
-        let qText = "";
-        if(item.tag[1] === "成語") qText = `【成語】下列哪一個成語的意思是「${item.a}」？`;
-        else if(item.tag[1] === "修辭") qText = `【修辭】下列哪一個句子使用了「${item.a}」法？`;
-        else if(item.tag[1] === "古文" || item.tag[1] === "現代文") qText = `【文學】下列何者是「${item.a}」的作品或名句？`;
-        else qText = `【${item.tag[1]}】下列何者符合「${item.a}」的描述？`;
+      const wrong = shuffle(pool).slice(0, 3).map(x => x.a);
+      const options = shuffle([item.a, ...wrong]);
 
-        return {
-            question: qText,
-            options: opts,
-            answer: opts.indexOf(item.q),
-            concept: item.tag[1],
-            explanation: [`「${item.q}」對應的是：${item.a}`]
-        };
-    }, ["國文", "應用"]);
+      let question;
+      switch (item.tag[1]) {
+        case "成語":
+          question = `【成語】「${item.q}」的意思為何？`;
+          break;
+        case "修辭":
+          question = `【修辭】「${item.q}」使用了哪一種修辭？`;
+          break;
+        case "古文":
+        case "現代文":
+          question = `【文學】「${item.q}」的作者或出處為何？`;
+          break;
+        default:
+          question = `【國文】關於「${item.q}」的敘述何者正確？`;
+      }
 
-})(this);
+      return {
+        question,
+        options,
+        answer: options.indexOf(item.a),
+        concept: item.tag[1],
+        explanation: [`正確答案是：${item.a}`]
+      };
+    }, ["國文"]);
+
+    // ==========================================
+    // Template 2：反向判讀題
+    // ==========================================
+    G.registerTemplate('chi_reverse', () => {
+      const item = pick(chiData);
+
+      const sameCat = chiData.filter(
+        x => x.tag[1] === item.tag[1] && x.q !== item.q
+      );
+
+      const pool = sameCat.length >= 3
+        ? sameCat
+        : chiData.filter(x => x.q !== item.q);
+
+      const wrong = shuffle(pool).slice(0, 3).map(x => x.q);
+      const options = shuffle([item.q, ...wrong]);
+
+      let question;
+      switch (item.tag[1]) {
+        case "成語":
+          question = `【成語】下列哪一個成語的意思是「${item.a}」？`;
+          break;
+        case "修辭":
+          question = `【修辭】下列哪一句話使用了「${item.a}」？`;
+          break;
+        default:
+          question = `【國文】下列何者符合「${item.a}」的描述？`;
+      }
+
+      return {
+        question,
+        options,
+        answer: options.indexOf(item.q),
+        concept: item.tag[1],
+        explanation: [`「${item.q}」的意思是：${item.a}`]
+      };
+    }, ["國文"]);
+
+    console.log("✅ 國文題庫（統一格式）載入完成");
+  }
+
+  init();
+})();
