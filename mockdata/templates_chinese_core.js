@@ -1,17 +1,30 @@
 (function () {
   'use strict';
 
+  // ===============================
+  // 自帶 utils（不依賴 Factory）
+  // ===============================
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function shuffle(arr) {
+    return arr
+      .map(v => [Math.random(), v])
+      .sort((a, b) => a[0] - b[0])
+      .map(v => v[1]);
+  }
+
   function init() {
-    if (!window.AutoTemplateFissionFactory?.utils) {
+    if (!window.AutoTemplateFissionFactory?.register) {
       setTimeout(init, 50);
       return;
     }
 
     const Factory = window.AutoTemplateFissionFactory;
-    const { pick, shuffle } = Factory.utils;
 
     // ===============================
-    // 國文資料（簡化示例，可自行擴充）
+    // 國文逼真安全題庫
     // ===============================
     const DB = [
         // ------------------------------------------
@@ -159,19 +172,14 @@
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
     ];
 
-
-    function byGrade(g) {
-      return DB.filter(x => x.g === g);
-    }
-
     function makeQuestion(grade) {
-      const pool = byGrade(grade);
-      if (pool.length < 4) return null;
+      const pool = DB.filter(x => x.g === grade);
+      if (pool.length < 2) return null;
 
       const base = pick(pool);
-      const wrong = shuffle(pool.filter(x => x !== base))
-        .slice(0, 3)
-        .map(x => x.a);
+      const wrong = shuffle(
+        DB.filter(x => x.a !== base.a).map(x => x.a)
+      ).slice(0, 3);
 
       const options = shuffle([base.a, ...wrong]);
 
@@ -185,13 +193,13 @@
     }
 
     // ===============================
-    // 註冊
+    // 註冊（關鍵）
     // ===============================
     ["國七", "國八", "國九", "高一", "高二", "高三"].forEach(g => {
       Factory.register("chinese", g, () => makeQuestion(g));
     });
 
-    console.log("✅ 國文題庫（SAFE）已載入");
+    console.log("✅ 國文題庫（完全獨立 SAFE）已載入");
   }
 
   init();
