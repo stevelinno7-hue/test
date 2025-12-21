@@ -101,5 +101,12 @@
             id: i + 1, question: msg, options: ["A", "B", "C", "D"], answer: 0, concept: "系統訊息"
         }));
     }
+    // ===============================
+    // ✅ PaperGenerator Ready Signal
+    // ===============================
+    window.PAPER_GENERATOR_READY = true;
+    window.dispatchEvent(new Event("PaperGeneratorReady"));
+    
+    console.log("🚦 PaperGeneratorReady dispatched");
 
 })(window);
