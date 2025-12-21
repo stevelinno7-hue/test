@@ -1,80 +1,65 @@
 (function (global) {
   'use strict';
 
-  const PaperGenerator = {
-    ready: false,
+  function normalizeQuestion(q, id) {
+    if (!q) return null;
 
-    init() {
-      const G = global.RigorousGenerator;
-      if (!G || !G.registerTemplate || !G.utils) {
-        setTimeout(() => this.init(), 50);
-        return;
-      }
-
-      this.G = G;
-      this.ready = true;
-
-      console.log("📄 [PaperGen] 🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP STEM / NO FALLBACK）已載入");
-
-      // 通知外部「我已就緒」
-      window.dispatchEvent(new Event("PaperGeneratorReady"));
-      console.log("🚦 PaperGeneratorReady dispatched");
-    },
-
-    /**
-     * 產生整份試卷
-     * @param {Object} cfg
-     * @param {String} cfg.subject
-     * @param {String} cfg.grade
-     * @param {Number} cfg.count
-     * @param {Array} cfg.tags
-     */
-    generate(cfg) {
-      if (!this.ready) {
-        throw new Error("[PaperGen] Generator 尚未就緒");
-      }
-
-      const { subject, grade, count } = cfg;
-
-      // ① 找出所有可用模板
-      const templates = this.G.getTemplates({
-        subject,
-        grade
-      });
-
-      if (!templates || templates.length === 0) {
-        throw new Error("題庫回傳空陣列");
-      }
-
-      const questions = [];
-      const usedStems = new Set();
-      let guard = 0;
-
-      // ② 安全抽題（不重複題幹）
-      while (questions.length < count && guard++ < count * 10) {
-        const tpl = this.G.utils.pick(templates);
-        const q = tpl();
-
-        if (!q || !q.question) continue;
-        if (usedStems.has(q.question)) continue;
-
-        usedStems.add(q.question);
-        questions.push(q);
-      }
-
-      if (questions.length === 0) {
-        throw new Error("生成題目失敗：所有模板皆回傳 null");
-      }
-
-      console.log(`✅ [PaperGen] 成功產生 ${questions.length} 題`);
-      return questions;
+    // 已是標準格式
+    if (
+      typeof q.question === "string" &&
+      Array.isArray(q.options) &&
+      typeof q.answer === "number"
+    ) {
+      return {
+        id,
+        question: q.question,
+        options: q.options,
+        answer: q.answer,
+        concept: q.concept || "",
+        explanation: q.explanation || []
+      };
     }
-  };
 
-  // 掛到全域
-  global.PaperGenerator = PaperGenerator;
+    // ❌ 其他未知格式 → 丟棄
+    console.warn("⚠️ 無法辨識的題目格式", q);
+    return null;
+  }
 
-  // 啟動
-  PaperGenerator.init();
+  function generatePaper({ templates, count }) {
+    const G = global.RigorousGenerator;
+    if (!G || !G.isReady || !G.isReady()) {
+      throw new Error("❌ Generator 尚未就緒");
+    }
 
+    const paper = [];
+    const usedStem = new Set();
+
+    for (let tpl of templates) {
+      if (paper.length >= count) break;
+
+      let raw;
+      try {
+        raw = tpl();
+      } catch (e) {
+        console.warn("❌ 模板執行失敗", e);
+        continue;
+      }
+
+      const q = normalizeQuestion(raw, paper.length + 1);
+      if (!q) continue;
+
+      const stem = q.question.trim();
+      if (usedStem.has(stem)) continue;
+
+      usedStem.add(stem);
+      paper.push(q);
+    }
+
+    return paper;
+  }
+
+  global.PaperGenerator = { generatePaper };
+
+  document.dispatchEvent(new Event("PaperGeneratorReady"));
+  console.log("🔥 PaperGenerator READY (backward compatible)");
 })(window);
