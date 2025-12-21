@@ -237,11 +237,23 @@ function prepareExam() {
     console.log("🎯 出題條件", { subject, grade, count });
 
     // ===== 🔥 正確 API + 題數硬限制 =====
-    const paper = PaperGenerator.generate({
-        subject,
-        grade,
-        count
-    });
+    // ===== 🔥 新版：安全單題生成 + 題數硬限制 =====
+    const paper = [];
+    for (let i = 0; i < count; i++) {
+        const q = PaperGeneratorV2.generate(subject, grade);
+        paper.push(q);
+    
+        // 🔎 Debug：每一題是誰生的
+        document.dispatchEvent(
+            new CustomEvent("paper:rendered", { detail: q })
+        );
+        if (!Array.isArray(paper) || paper.length !== count) {
+    alert(`❌ 題庫不足：需要 ${count} 題`);
+    return;
+}
+
+    }
+
 
     if (!Array.isArray(paper)) {
         alert("❌ 題庫回傳格式錯誤");
