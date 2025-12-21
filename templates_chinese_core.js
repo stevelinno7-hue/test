@@ -11,10 +11,10 @@
         const { pick, shuffle } = G.utils;
 
         // ===============================
-        // 國文題庫（你的原始資料）
+        // 你的國文資料（完全不動）
         // ===============================
         const chineseDB = [
-        { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
+             { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
         { q: "指鹿為馬", a: "比喻混淆是非", tag: ["國七","成語"] },
         { q: "畫蛇添足", a: "比喻多此一舉", tag: ["國七","成語"] },
         { q: "杯弓蛇影", a: "比喻疑神疑鬼，自相驚擾", tag: ["國七","成語"] },
@@ -154,13 +154,10 @@
         { q: "狼之獨步", a: "紀弦 (現代詩)", tag: ["高三","現代文"] },
         { q: "一桿稱仔", a: "賴和 (台灣新文學之父)", tag: ["高三","現代文"] },
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
- 
+   
 
         ];
 
-        // ===============================
-        // 工具：嚴格過濾（不跨年級）
-        // ===============================
         function byGrade(grade) {
             return chineseDB.filter(x => x.tag[0] === grade);
         }
@@ -171,31 +168,27 @@
             );
         }
 
-        // ===============================
-        // 安全出題（單選 4 選項）
-        // ===============================
-        function makeChineseQuestion(grade) {
-            const gradePool = byGrade(grade);
-            if (gradePool.length < 4) return null;
+        function makeQuestion(grade) {
+            const pool = byGrade(grade);
+            if (pool.length < 4) return null;
 
-            let item, pool;
+            let item, wrongPool;
             let tries = 0;
 
             while (tries < 20) {
-                item = pick(gradePool);
-                pool = byGradeAndType(grade, item.tag[1])
+                item = pick(pool);
+                wrongPool = byGradeAndType(grade, item.tag[1])
                     .filter(x => x.q !== item.q);
-                if (pool.length >= 3) break;
+                if (wrongPool.length >= 3) break;
                 tries++;
             }
 
-            if (!item || pool.length < 3) return null;
+            if (!item || wrongPool.length < 3) return null;
 
-            const wrong = shuffle(pool)
-                .slice(0, 3)
-                .map(x => x.a);
-
-            const options = shuffle([item.a, ...wrong]);
+            const options = shuffle([
+                item.a,
+                ...shuffle(wrongPool).slice(0, 3).map(x => x.a)
+            ]);
 
             return {
                 question: `【國文｜${grade}｜${item.tag[1]}】${item.q}`,
@@ -206,18 +199,15 @@
             };
         }
 
-        // ===============================
-        // 註冊模板（分年級）
-        // ===============================
         ["國七","國八","國九","高一","高二","高三"].forEach(grade => {
             G.registerTemplate(
                 `chinese_${grade}`,
-                () => makeChineseQuestion(grade),
+                () => makeQuestion(grade),
                 ["chinese", "國文", grade]
             );
         });
 
-        console.log("✅ 國文題庫（v2.0｜你的資料格式）已載入完成");
+        console.log("✅ 國文題庫（v2.0｜API 已統一）載入完成");
     }
 
     init();
