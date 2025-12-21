@@ -24,53 +24,25 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 
-    <script>
-        // 建立 RigorousGenerator 命名空間防止 templates 報錯
-        window.RigorousGenerator = {
-            _templates: {},
-            _templateTags: {},
-            utils: {
-                pick: arr => arr[Math.floor(Math.random() * arr.length)],
-                shuffle: arr => [...arr].sort(() => Math.random() - 0.5),
-                randInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
-                generateNumericOptions: (ans, type) => {
-                    const step = type === 'float' ? 0.5 : 1;
-                    return [ans, ans + step, ans - step, ans + step * 2];
-                }
-            },
-            registerTemplate: function(id, func, tags = []) {
-                this._templates[id] = func;
-                this._templateTags[id] = tags;
-            },
-            generateQuestion: function(id) {
-                const ctx = { tags: this._templateTags[id] || [] };
-                return this._templates[id](ctx, Math.random());
-            }
-        };
-    </script>
-
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
+    <script src="assets/js/generator_engine.js"></script>
     
     <script src="mockdata/AutoTemplateFissionFactory.js"></script>
     <script src="mockdata/auto_fission_bootstrap.js"></script>
-    
+    <script src="mockdata/paper_generator.js"></script>
+
+    <script src="mockdata/curriculum_integrated.js"></script>
+
     <script src="mockdata/templates_math_algebra_geometry.js"></script>
     <script src="mockdata/templates_physics_multistep.js"></script>
     <script src="mockdata/templates_chemistry_core.js"></script>
-    <script src="mockdata/templates_biology_core.js"></script> 
+    <script src="mockdata/templates_biology_core.js"></script>
     <script src="mockdata/templates_english_core.js"></script>
     <script src="mockdata/templates_english_vocab_7000.js"></script>
     <script src="mockdata/templates_chinese_core.js"></script>
     <script src="mockdata/templates_history_core.js"></script>
-    <script src="mockdata/templates_geography_core.js"></script>
-    <script src="mockdata/templates_civics_core.js"></script>
-    <script src="mockdata/templates_earth_science_core.js"></script>
-
-    <script src="mockdata/paper_generator.js"></script>
-    <script src="mockdata/curriculum_integrated.js"></script>
 </head>
-
 <body class="h-screen flex flex-col overflow-hidden">
 
     <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex-shrink-0 z-20 relative">
@@ -137,126 +109,238 @@
         </div>
     </main>
 
-<script>
-/* =========================================================
- * PaperGen Safe Exam Script (2025 FINAL)
- * ========================================================= */
+    <script>
+        // 全域變數
+        let mockQuestions = [];
+        let currentQIndex = 0;
+        let userAnswers = [];
+        let timeLeft = 0;
+        let timerInterval;
+        let examInfo = {};
 
-let mockQuestions = [];
-let currentQIndex = 0;
-let userAnswers = [];
-let timeLeft = 0;
-let timerInterval;
-
-const els = {
-    title: document.getElementById('examTitle'),
-    sub: document.getElementById('examSubject'),
-    qText: document.getElementById('questionText'),
-    opts: document.getElementById('optionsContainer'),
-    currNum: document.getElementById('currentQNum'),
-    totalNum: document.getElementById('totalQNum'),
-    progress: document.getElementById('progressBar'),
-    prev: document.getElementById('prevBtn'),
-    next: document.getElementById('nextBtn'),
-    timer: document.getElementById('timer'),
-    badge: document.getElementById('conceptBadge'),
-    palette: document.getElementById('questionPalette')
-};
-
-// 安全啟動入口
-function startExamSafely() {
-    // 檢查 Auth
-    if (window.Auth && !Auth.requireLogin()) return;
-
-    console.log("🚦 正在偵測生成引擎...");
-
-    // 檢查 generatePaper 是否存在，若無則重試一次 (處理異步加載)
-    if (typeof window.generatePaper !== 'function') {
-        setTimeout(() => {
-            if (typeof window.generatePaper === 'function') prepareExam();
-            else alert("系統組件載入失敗，請重新整理頁面。");
-        }, 500);
-        return;
-    }
-    prepareExam();
-}
-
-window.onload = startExamSafely;
-
-function prepareExam() {
-    const urlParams = new URLSearchParams(location.search);
-    const subject = urlParams.get('subject') || 'math';
-    const count = Number(urlParams.get('count')) || 10;
-    const grade = urlParams.get('grade') || '國七';
-
-    console.log("🎯 生成測驗中...", { subject, grade, count });
-
-    // 呼叫核心生成函數
-    const paper = window.generatePaper({
-        subject: subject,
-        total: count,
-        tags: [grade]
-    });
-
-    if (!paper || paper.length === 0) {
-        alert("無法生成題目，請檢查科目設置或題庫是否完整。");
-        return;
-    }
-
-    mockQuestions = paper;
-    userAnswers = new Array(paper.length).fill(null);
-    
-    els.title.textContent = `${grade}${subject.toUpperCase()} 智慧評量`;
-    els.sub.textContent = subject.toUpperCase();
-    els.totalNum.textContent = paper.length;
-
-    renderQuestion();
-}
-
-function renderQuestion() {
-    const q = mockQuestions[currentQIndex];
-    els.currNum.textContent = currentQIndex + 1;
-    els.qText.innerHTML = q.question.replace(/\n/g, '<br>');
-    els.badge.textContent = q.concept || '核心觀念';
-
-    // MathJax 重新排版
-    if (window.MathJax) MathJax.typesetPromise([els.qText]);
-
-    els.opts.innerHTML = '';
-    q.options.forEach((opt, idx) => {
-        const selected = userAnswers[currentQIndex] === idx;
-        const btn = document.createElement('button');
-        btn.className = `option-card w-full p-4 rounded-xl flex items-center ${selected ? 'selected' : ''}`;
-        btn.innerHTML = `
-            <span class="w-8 h-8 mr-4 rounded-full flex items-center justify-center font-bold
-                ${selected ? 'bg-blue-600 text-white' : 'bg-gray-100'}">${String.fromCharCode(65 + idx)}</span>
-            <span class="text-lg">${opt}</span>
-        `;
-        btn.onclick = () => {
-            userAnswers[currentQIndex] = idx;
-            renderQuestion();
+        // DOM 元素
+        const els = {
+            title: document.getElementById('examTitle'),
+            sub: document.getElementById('examSubject'),
+            qText: document.getElementById('questionText'),
+            opts: document.getElementById('optionsContainer'),
+            currNum: document.getElementById('currentQNum'),
+            totalNum: document.getElementById('totalQNum'),
+            progress: document.getElementById('progressBar'),
+            prev: document.getElementById('prevBtn'),
+            next: document.getElementById('nextBtn'),
+            timer: document.getElementById('timer'),
+            submit: document.getElementById('submitBtnTop'),
+            badge: document.getElementById('conceptBadge'),
+            palette: document.getElementById('questionPalette')
         };
-        els.opts.appendChild(btn);
-    });
 
-    els.progress.style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
-}
+        // 1. 系統初始化 (確保資料載入順序)
+        window.onload = function() {
+            if (!Auth.requireLogin()) return;
 
-// 導航控制
-els.next.onclick = () => {
-    if (currentQIndex < mockQuestions.length - 1) {
-        currentQIndex++;
-        renderQuestion();
-    }
-};
+            // A. 先載入課程資料
+            window.initCurriculumData = function() {
+                let all = [];
+                if (window.CurriculumLibrary && window.CurriculumLibrary.data) {
+                    if(window.CurriculumLibrary.data.junior_all) all = all.concat(window.CurriculumLibrary.data.junior_all);
+                    if(window.CurriculumLibrary.data.senior_all) all = all.concat(window.CurriculumLibrary.data.senior_all);
+                }
+                window.Curriculum108 = all;
+            };
+            if(window.initCurriculumData) window.initCurriculumData();
 
-els.prev.onclick = () => {
-    if (currentQIndex > 0) {
-        currentQIndex--;
-        renderQuestion();
-    }
-};
+            // B. 延遲啟動測驗 (確保資料庫 Ready)
+            setTimeout(() => {
+                prepareExam();
+            }, 100);
+        };
 
-</script>
+        // 2. 準備測驗資料
+        function prepareExam() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const courseId = urlParams.get('id');
+            let subject = urlParams.get('subject') || 'math';
+            const count = parseInt(urlParams.get('count')) || 10;
+
+            if (subject === 'earth_science' || subject === 'earth') subject = 'earth'; 
+            if (subject === 'social') subject = 'history';
+
+            // 尋找課程物件
+            let targetCourse = null;
+            if (window.Curriculum108) {
+                // 從所有課程書本中搜尋
+                for (let book of window.Curriculum108) {
+                    if (book.courses) {
+                        const found = book.courses.find(c => c.id === courseId);
+                        if (found) { targetCourse = found; break; }
+                    }
+                }
+            }
+
+            // 取得標籤 (這裡最重要！)
+            const courseTags = targetCourse ? targetCourse.tags : [];
+            console.log(`🎯 目標課程: ${targetCourse ? targetCourse.name : '未知'}, 標籤:`, courseTags);
+
+            // 設定考卷資訊
+            examInfo = {
+                subject: subject.toUpperCase(),
+                title: targetCourse ? targetCourse.name : `${subject} 測驗`,
+                timeLimit: count * 60
+            };
+            timeLeft = examInfo.timeLimit;
+
+            // 生成題目
+            if (window.generatePaper) {
+                mockQuestions = window.generatePaper({
+                    subject: subject,
+                    total: count,
+                    tags: courseTags, // 傳入正確的標籤
+                    distribution: { memory: 0.2, understand: 0.3, apply: 0.3, analyze: 0.2 }
+                });
+            } else {
+                // Fallback
+                for(let i=0; i<count; i++) mockQuestions.push({question:"系統載入中...", options:["A"], answer:0});
+            }
+
+            userAnswers = new Array(mockQuestions.length).fill(null);
+            
+            // UI 初始化
+            els.title.textContent = examInfo.title;
+            els.sub.textContent = examInfo.subject;
+            els.totalNum.textContent = mockQuestions.length;
+            
+            renderPalette();
+            renderQuestion();
+            startTimer();
+            updateNav();
+        }
+
+        // 3. 渲染題目
+        function renderQuestion() {
+            const q = mockQuestions[currentQIndex];
+            els.currNum.textContent = currentQIndex + 1;
+            
+            // 處理題目文字 (支援換行)
+            els.qText.innerHTML = q.question.replace(/\n/g, '<br>');
+            
+            // 觸發 MathJax 重新渲染 (如果是數學公式)
+            if (window.MathJax) {
+                MathJax.typesetPromise([els.qText]).then(() => {});
+            }
+
+            // 標籤
+            els.badge.textContent = q.concept || "綜合題型";
+            const tagColor = q.concept.includes("分析") ? "red" : q.concept.includes("應用") ? "green" : "purple";
+            els.badge.className = `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-${tagColor}-100 text-${tagColor}-700 border-${tagColor}-200`;
+
+            // 選項
+            els.opts.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                const isSelected = userAnswers[currentQIndex] === idx;
+                const label = String.fromCharCode(65 + idx);
+                
+                btn.className = `option-card w-full text-left p-4 rounded-xl flex items-center group relative ${isSelected ? 'selected' : 'bg-white text-gray-700'}`;
+                btn.innerHTML = `
+                    <span class="option-badge w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full font-bold mr-4 border transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}">${label}</span>
+                    <span class="text-lg leading-snug font-medium">${opt}</span>
+                `;
+                
+                // MathJax Render for Options
+                if (window.MathJax) {
+                    MathJax.typesetPromise([btn]).then(() => {});
+                }
+
+                btn.onclick = () => {
+                    userAnswers[currentQIndex] = idx;
+                    renderQuestion();
+                    updatePaletteStatus();
+                };
+                els.opts.appendChild(btn);
+            });
+
+            // 進度條
+            els.progress.style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
+            updateNav();
+        }
+
+        function renderPalette() {
+            els.palette.innerHTML = '';
+            mockQuestions.forEach((q, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `q-nav-btn ${idx === 0 ? 'active' : ''}`;
+                btn.textContent = idx + 1;
+                btn.id = `palette-btn-${idx}`;
+                btn.onclick = () => { currentQIndex = idx; renderQuestion(); };
+                els.palette.appendChild(btn);
+            });
+        }
+
+        function updatePaletteStatus() {
+            mockQuestions.forEach((q, idx) => {
+                const btn = document.getElementById(`palette-btn-${idx}`);
+                if (btn) {
+                    btn.className = 'q-nav-btn';
+                    if (userAnswers[idx] !== null) btn.classList.add('answered');
+                    if (idx === currentQIndex) btn.classList.add('active');
+                }
+            });
+        }
+
+        function updateNav() {
+            els.prev.disabled = currentQIndex === 0;
+            if (currentQIndex === mockQuestions.length - 1) {
+                els.next.innerHTML = '交卷 <i class="fas fa-check ml-2"></i>';
+                els.next.className = "bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-green-700 transition flex items-center gap-2";
+                els.next.onclick = finishExam;
+            } else {
+                els.next.innerHTML = '下一題 <i class="fas fa-arrow-right ml-2"></i>';
+                els.next.className = "bg-white border border-gray-300 hover:border-blue-500 text-gray-700 px-6 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-2";
+                els.next.onclick = () => { currentQIndex++; renderQuestion(); };
+            }
+        }
+
+        els.prev.onclick = () => { if(currentQIndex > 0) { currentQIndex--; renderQuestion(); }};
+        els.submit.onclick = finishExam;
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                const s = (timeLeft % 60).toString().padStart(2, '0');
+                els.timer.textContent = `${m}:${s}`;
+                if (timeLeft <= 0) finishExam();
+            }, 1000);
+        }
+
+        function finishExam() {
+            clearInterval(timerInterval);
+            const unanswered = userAnswers.filter(a => a === null).length;
+            if (unanswered > 0 && !confirm(`還有 ${unanswered} 題未作答，確定交卷？`)) {
+                startTimer(); return;
+            }
+
+            let correctCount = 0;
+            let wrongList = [];
+            mockQuestions.forEach((q, idx) => {
+                if (userAnswers[idx] === q.answer) correctCount++;
+                else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
+            });
+
+            const newRecord = {
+                id: Date.now(), date: new Date().toLocaleString(), subject: examInfo.subject, title: examInfo.title,
+                score: Math.round((correctCount / mockQuestions.length) * 100), correctCount, totalCount: mockQuestions.length, wrongList
+            };
+
+            const storageKey = `history_${currentUser.username}`;
+            let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
+            history.push(newRecord);
+            localStorage.setItem(storageKey, JSON.stringify(history));
+            localStorage.setItem('examResult', JSON.stringify(newRecord));
+            
+            window.location.href = "analysis.html";
+        }
+    </script>
 </body>
 </html>
