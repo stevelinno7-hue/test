@@ -1,33 +1,31 @@
-// mockdata/auto_fission_bootstrap.js
-(function () {
-  console.log("⏳ [Bootstrap] 等待 AutoTemplateFissionFactory 與題庫註冊...");
+window.addEventListener('load', function() {
+    'use strict';
+    console.log("⏳ [Bootstrap] 準備啟動裂變系統...");
 
-  function isFactoryReallyReady() {
-    const F = window.AutoTemplateFissionFactory;
-    if (!F || !F.templates) return false;
-
-    // 🚨 核心判斷：至少要有一科
-    return Object.keys(F.templates).length > 0;
-  }
-
-  function onReady() {
-    if (window.AutoTemplateFissionBootstrapped) return;
-
-    window.AutoTemplateFissionBootstrapped = true;
-
-    console.log(
-      "🚀 [Bootstrap] Factory Ready，系統完成啟動：",
-      Object.keys(window.AutoTemplateFissionFactory.templates)
-    );
-  }
-
-  function waitLoop() {
-    if (isFactoryReallyReady()) {
-      onReady();
+    const G = window.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+    
+    // 等待工廠就緒
+    if (!G || !G.autoFissionRegister) {
+        setTimeout(() => {
+             if (G && G.autoFissionRegister) startBootstrap(G);
+             else console.warn("⚠️ [Bootstrap] 工廠未就緒，將使用原始模式。");
+        }, 500);
     } else {
-      setTimeout(waitLoop, 30);
+        startBootstrap(G);
     }
-  }
 
-  waitLoop();
-})();
+    function startBootstrap(G) {
+        if (!G._rawRegister) G._rawRegister = G.registerTemplate;
+        
+        // 攔截註冊函數，改用工廠的裂變註冊
+        G.registerTemplate = function(name, func, tags = []) {
+            try {
+                G.autoFissionRegister(name, func, tags, G._rawRegister);
+            } catch (e) {
+                console.error("裂變失敗，回退原始註冊:", e);
+                G._rawRegister.call(G, name, func, tags);
+            }
+        };
+        console.log("🚀 [Bootstrap] 裂變攔截器啟動成功！");
+    }
+});」
