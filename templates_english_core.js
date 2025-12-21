@@ -1,18 +1,13 @@
 (function(global){
     'use strict';
 
-    // 定義啟動函式
     function init() {
-        // 1. 檢查引擎是否就緒
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        
-        // 如果引擎還沒好，等待 100ms 後重試
         if (!G || !G.registerTemplate) {
             setTimeout(init, 100);
             return;
         }
 
-        // 引擎已就緒，取出工具
         const { pick, shuffle } = G.utils;
 
         // ==========================================
