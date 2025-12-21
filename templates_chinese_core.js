@@ -1,22 +1,19 @@
-(function(global){
+(function (global) {
     'use strict';
 
     function init() {
-        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.registerTemplate) {
+        const G = global.RigorousGenerator || window.RigorousGenerator;
+        if (!G || !G.registerTemplate || !G.utils) {
             setTimeout(init, 100);
             return;
         }
 
         const { pick, shuffle } = G.utils;
 
-    // ==========================================
-    // 國文科核心資料庫 (Chinese Core Database)
-    // ==========================================
-    const chiData = [
-        // ------------------------------------------
-        // 1. 成語判讀 (Idioms)
-        // ------------------------------------------
+        // ===============================
+        // 國文題庫（你的原始資料）
+        // ===============================
+        const chineseDB = [
         { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
         { q: "指鹿為馬", a: "比喻混淆是非", tag: ["國七","成語"] },
         { q: "畫蛇添足", a: "比喻多此一舉", tag: ["國七","成語"] },
@@ -157,56 +154,71 @@
         { q: "狼之獨步", a: "紀弦 (現代詩)", tag: ["高三","現代文"] },
         { q: "一桿稱仔", a: "賴和 (台灣新文學之父)", tag: ["高三","現代文"] },
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
-    ];
+ 
 
-    
-    // ------------------------------------------
-    G.registerTemplate('chi_definition', (ctx, rnd) => {
-        const item = pick(chiData);
-        const sameCat = chiData.filter(x => x.tag[1] === item.tag[1] && x.q !== item.q);
-        const pool = sameCat.length >= 3 ? sameCat : chiData.filter(x => x.q !== item.q);
-        const wrongOpts = shuffle(pool).slice(0, 3).map(x => x.a);
-        const opts = shuffle([item.a, ...wrongOpts]);
+        ];
 
-        let qText = "";
-        // 根據類型調整問法
-        if(item.tag[1] === "成語") qText = `【成語】「${item.q}」的意思為何？`;
-        else if(item.tag[1] === "修辭") qText = `【修辭】「${item.q}」這句話運用了哪種修辭技巧？`;
-        else if(item.tag[1] === "古文" || item.tag[1] === "唐詩") qText = `【文學】「${item.q}」這句話出自何處或何人？`;
-        else qText = `【${item.tag[1]}】關於「${item.q}」，下列敘述何者正確？`;
+        // ===============================
+        // 工具：嚴格過濾（不跨年級）
+        // ===============================
+        function byGrade(grade) {
+            return chineseDB.filter(x => x.tag[0] === grade);
+        }
 
-        return {
-            question: qText,
-            options: opts,
-            answer: opts.indexOf(item.a),
-            concept: item.tag[1],
-            explanation: [`答案：${item.a}`]
-        };
-    }, ["國文", "語文"]);
+        function byGradeAndType(grade, type) {
+            return chineseDB.filter(
+                x => x.tag[0] === grade && x.tag[1] === type
+            );
+        }
 
-    // ------------------------------------------
-    // 模板 2: 反向題 (判讀)
-    // ------------------------------------------
-    G.registerTemplate('chi_reverse', (ctx, rnd) => {
-        const item = pick(chiData);
-        const sameCat = chiData.filter(x => x.tag[1] === item.tag[1] && x.q !== item.q);
-        const pool = sameCat.length >= 3 ? sameCat : chiData.filter(x => x.q !== item.q);
-        const wrongOpts = shuffle(pool).slice(0, 3).map(x => x.q);
-        const opts = shuffle([item.q, ...wrongOpts]);
+        // ===============================
+        // 安全出題（單選 4 選項）
+        // ===============================
+        function makeChineseQuestion(grade) {
+            const gradePool = byGrade(grade);
+            if (gradePool.length < 4) return null;
 
-        let qText = "";
-        if(item.tag[1] === "成語") qText = `【成語】下列哪一個成語的意思是「${item.a}」？`;
-        else if(item.tag[1] === "修辭") qText = `【修辭】下列哪一個句子使用了「${item.a}」法？`;
-        else if(item.tag[1] === "古文" || item.tag[1] === "現代文") qText = `【文學】下列何者是「${item.a}」的作品或名句？`;
-        else qText = `【${item.tag[1]}】下列何者符合「${item.a}」的描述？`;
+            let item, pool;
+            let tries = 0;
 
-        return {
-            question: qText,
-            options: opts,
-            answer: opts.indexOf(item.q),
-            concept: item.tag[1],
-            explanation: [`「${item.q}」對應的是：${item.a}`]
-        };
-    }, ["國文", "應用"]);
+            while (tries < 20) {
+                item = pick(gradePool);
+                pool = byGradeAndType(grade, item.tag[1])
+                    .filter(x => x.q !== item.q);
+                if (pool.length >= 3) break;
+                tries++;
+            }
 
-})(this);
+            if (!item || pool.length < 3) return null;
+
+            const wrong = shuffle(pool)
+                .slice(0, 3)
+                .map(x => x.a);
+
+            const options = shuffle([item.a, ...wrong]);
+
+            return {
+                question: `【國文｜${grade}｜${item.tag[1]}】${item.q}`,
+                options,
+                answer: options.indexOf(item.a),
+                concept: item.tag[1],
+                explanation: [`正確答案：${item.a}`]
+            };
+        }
+
+        // ===============================
+        // 註冊模板（分年級）
+        // ===============================
+        ["國七","國八","國九","高一","高二","高三"].forEach(grade => {
+            G.registerTemplate(
+                `chinese_${grade}`,
+                () => makeChineseQuestion(grade),
+                ["chinese", "國文", grade]
+            );
+        });
+
+        console.log("✅ 國文題庫（v2.0｜你的資料格式）已載入完成");
+    }
+
+    init();
+})(window);
