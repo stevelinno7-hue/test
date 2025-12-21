@@ -112,5 +112,13 @@
     window.dispatchEvent(new Event("PaperGeneratorReady"));
 
     log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP STEM / NO FALLBACK）已載入");
+    // ===============================
+    // ✅ PaperGenerator Ready Signal
+    // ===============================
+    window.PAPER_GENERATOR_READY = true;
+    window.dispatchEvent(new Event("PaperGeneratorReady"));
+    
+    console.log("🚦 PaperGeneratorReady dispatched");
+    
 
 })(window);
