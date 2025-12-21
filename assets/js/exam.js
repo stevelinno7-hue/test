@@ -188,6 +188,24 @@ function finishExam() {
         }
     }, 50);
 }
+function showFatalError(msg) {
+  document.body.innerHTML = `
+    <div style="padding:40px;font-family:sans-serif;">
+      <h1 style="color:red;">⚠️ 題目產生失敗</h1>
+      <p>${msg}</p>
+      <p>請聯絡系統管理員或重新整理</p>
+    </div>
+  `;
+}
+
+function renderDebugPanel() {
+  const panel = document.getElementById("debugPanel");
+  const content = document.getElementById("debugContent");
+  const logs = PaperGenerator.getDebugLog();
+
+  panel.style.display = "block";
+  content.textContent = JSON.stringify(logs, null, 2);
+}
 
 // 啟動
 initExam();
