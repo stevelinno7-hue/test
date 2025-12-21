@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  console.log("🔥 PaperGen v3.0 LOADED");
+  console.log("🔥 PaperGen v3.1 LOADED");
 
   /* ================================
    * 年級 alias
@@ -82,16 +82,14 @@
     const coreGrade = normTags.find(t => CORE_GRADES.includes(t));
     if (coreGrade) {
       pool = pool.filter(t => t.tags?.includes(coreGrade));
-      console.log(`🔒 年級鎖定：${coreGrade}`);
     }
 
     if (!pool.length) {
-      console.warn("❌ 題庫為空");
       return fallback(total, `題庫建置中（${subject} ${coreGrade || ''}）`);
     }
 
     /* ================================
-     * 3️⃣ 單元過濾（可選）
+     * 3️⃣ 單元過濾
      * ================================ */
     const unitTags = normTags.filter(t =>
       !CORE_GRADES.includes(t) &&
@@ -115,8 +113,8 @@
     const usedKeys = new Set();
     const templateCount = {};
 
-    const MAX_PER_TEMPLATE = 2;   // 每模板最多幾題
-    const COOLDOWN_RATE = 0.25;   // 超過後保留機率
+    const MAX_PER_TEMPLATE = 2;
+    const COOLDOWN_RATE = 0.25;
 
     let guard = 0;
 
@@ -146,14 +144,7 @@
       usedKeys.add(key);
       templateCount[tmpl.id] = (templateCount[tmpl.id] || 0) + 1;
 
-      result.push({
-        ...q,
-        templateId: tmpl.id
-      });
-    }
-
-    if (result.length < total) {
-      console.warn(`⚠️ 題庫不足：${result.length}/${total}`);
+      result.push({ ...q, templateId: tmpl.id });
     }
 
     return G.utils.shuffle(result).map((q, i) => ({
