@@ -1,14 +1,25 @@
 (function(global){
     'use strict';
-    if (!global.RigorousGenerator) return;
-    const { pick, shuffle } = global.RigorousGenerator.utils;
 
-    // ============================================================
-    // 7000單字精華資料庫 (涵蓋 Level 1-6 各級距高頻字彙)
-    // 欄位: w=單字, m=中文, l=級別(1-6), p=詞性(n, v, adj, adv, prep)
-    // ============================================================
-    
-    const vocabDatabase = [
+    // 定義啟動函式 (加入等待機制)
+    function init() {
+        // 1. 檢查引擎是否就緒
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        
+        // 如果引擎還沒好，等待 100ms 後重試，確保不會直接失敗
+        if (!G || !G.registerTemplate) {
+            setTimeout(init, 100);
+            return;
+        }
+
+        // 引擎已就緒，取出工具
+        const { pick, shuffle } = G.utils;
+
+        // ============================================================
+        // 7000單字精華資料庫
+        // 欄位: w=單字, m=中文, l=級別(1-6), p=詞性
+        // ============================================================
+        const vocabDatabase = [
         { w: "a", m: "一個", l: 1, p: "art" },
         { w: "able", m: "能夠的", l: 1, p: "adj" },
         { w: "about", m: "關於/大約", l: 1, p: "prep/adv" },
@@ -2274,112 +2285,75 @@
         { w: "zero-based budgeting", m: "零基預算制", l: 3, p: "n" },
         
 
+        ]; // <--- 這是 vocabDatabase 陣列的結尾
 
-    ];
-    // ... (上方的 vocabDatabase 資料請保留) ... 
+        // ==========================================
+        // 邏輯處理：生成單字題
+        // ==========================================
+        function generateVocabQuestion(targetLevel, rnd) {
+            // 1. 根據等級篩選
+            let pool = [];
+            if (targetLevel === "junior_high") pool = vocabDatabase.filter(x => x.l <= 2); // L1-L2
+            else if (targetLevel === "high_school") pool = vocabDatabase.filter(x => x.l >= 3 && x.l <= 4); // L3-L4
+            else if (targetLevel === "advanced") pool = vocabDatabase.filter(x => x.l >= 5); // L5-L6
+            else pool = vocabDatabase; // 全部
 
-    // ==========================================
-    // 智慧單字題生成器 (Smart Vocab Generator) - 修復版
-    // ==========================================
-    function generateVocabQuestion(targetLevel, rnd) {
-        // 1. 取得工具函數 (若無引擎則使用內建備用方案)
-        const utils = (global.RigorousGenerator && global.RigorousGenerator.utils) || {
-            pick: (arr) => arr[Math.floor(Math.random() * arr.length)],
-            shuffle: (arr) => arr.sort(() => Math.random() - 0.5)
-        };
-        
-        const { pick, shuffle } = utils;
+            // 防呆
+            if (pool.length === 0) pool = vocabDatabase;
 
-        // 2. 篩選出符合等級的單字
-        let pool = [];
-        if (targetLevel === "junior_high") {
-            // 國中：L1 ~ L2
-            pool = vocabDatabase.filter(item => item.l <= 2);
-        } else if (targetLevel === "high_school") {
-            // 高中：L3 ~ L4
-            pool = vocabDatabase.filter(item => item.l >= 3 && item.l <= 4);
-        } else if (targetLevel === "advanced") {
-            // 進階：L5 ~ L6
-            pool = vocabDatabase.filter(item => item.l >= 5);
-        } else {
-            // 混合：全部
-            pool = vocabDatabase;
+            const target = pick(pool);
+
+            // 2. 智慧誘答 (優先找同詞性)
+            const samePos = vocabDatabase.filter(x => x.p === target.p && x.w !== target.w);
+            const others = vocabDatabase.filter(x => x.w !== target.w);
+            
+            // 如果同詞性夠多就用同詞性，不夠就混雜
+            const wrongPool = samePos.length >= 3 ? samePos : others;
+            const wrongOpts = shuffle(wrongPool).slice(0, 3).map(x => x.m);
+            
+            const options = shuffle([target.m, ...wrongOpts]);
+
+            return {
+                question: `【單字 Level ${target.l}】請問單字「${target.w}」的意思為何？`,
+                options: options,
+                answer: options.indexOf(target.m),
+                concept: `單字 (${target.p}.)`,
+                explanation: [
+                    `單字：${target.w}`,
+                    `詞性：${target.p}.`,
+                    `釋義：${target.m}`,
+                    `級別：Level ${target.l}`
+                ]
+            };
         }
 
-        // 若該等級沒資料，就用全部資料庫 (避免當機)
-        if (pool.length === 0) pool = vocabDatabase;
-
-        // 3. 隨機選一個目標單字
-        const target = pick(pool);
-
-        // 4. 智慧誘答：優先選「同一詞性」的錯誤選項
-        // 例如目標是動詞，錯誤選項最好也是動詞，增加難度
-        const samePosWords = vocabDatabase.filter(item => 
-            item.w !== target.w && item.p === target.p 
-        );
+        // ==========================================
+        // 註冊模板
+        // ==========================================
         
-        // 嘗試找 3 個同詞性錯誤選項
-        let wrongOpts = shuffle(samePosWords).slice(0, 3).map(i => i.m);
-        
-        // 如果同詞性不夠 (少於3個)，就從全部資料庫隨便補
-        if (wrongOpts.length < 3) {
-            const backup = shuffle(vocabDatabase.filter(i => i.w !== target.w)).slice(0, 3 - wrongOpts.length).map(i => i.m);
-            wrongOpts.push(...backup);
-        }
-
-        // 5. 組合選項並打亂
-        // 這裡做一次去重檢查，避免運氣極差時出現重複
-        let options = [target.m, ...wrongOpts];
-        options = [...new Set(options)]; // 去除重複
-        
-        // 萬一去重後選項不足4個，再補 (極端情況)
-        while(options.length < 4) {
-            options.push("其他"); 
-        }
-        
-        const finalOptions = shuffle(options);
-
-        return {
-            type: 'concept',
-            question: `【Level ${target.l}】Choose the correct meaning of: "${target.w}"`,
-            options: finalOptions,
-            answer: finalOptions.indexOf(target.m),
-            concept: `單字 (${target.p}.)`,
-            explanation: [
-                `單字：${target.w}`,
-                `詞性：${target.p}.`,
-                `釋義：${target.m}`,
-                `級別：Level ${target.l}`
-            ]
-        };
-    }
-
-    // ==========================================
-    // 註冊模板 (分級註冊)
-    // ==========================================
-    
-    if (global.RigorousGenerator) {
-        // 1. 國中英文 (Junior High) -> 使用 L1-L2
-        global.RigorousGenerator.registerTemplate('eng_vocab_junior', (ctx, rnd) => {
+        // 1. 國中 (L1-L2)
+        G.registerTemplate('eng_vocab_junior', (ctx, rnd) => {
             return generateVocabQuestion("junior_high", rnd);
         }, ["英文", "國中", "七上", "七下", "八上", "八下", "九上", "九下"]);
 
-        // 2. 高中英文 (Senior High) -> 使用 L3-L4
-        global.RigorousGenerator.registerTemplate('eng_vocab_senior', (ctx, rnd) => {
+        // 2. 高中 (L3-L4)
+        G.registerTemplate('eng_vocab_senior', (ctx, rnd) => {
             return generateVocabQuestion("high_school", rnd);
         }, ["英文", "高中", "高一", "高二", "學測"]);
 
-        // 3. 進階英文 (Advanced) -> 使用 L5-L6
-        global.RigorousGenerator.registerTemplate('eng_vocab_advanced', (ctx, rnd) => {
+        // 3. 進階 (L5-L6)
+        G.registerTemplate('eng_vocab_advanced', (ctx, rnd) => {
             return generateVocabQuestion("advanced", rnd);
         }, ["英文", "高三", "分科", "指考", "進階"]);
 
-        // 4. 混合題 (Mixed)
-        global.RigorousGenerator.registerTemplate('eng_vocab_all', (ctx, rnd) => {
+        // 4. 混合全範圍
+        G.registerTemplate('eng_vocab_all', (ctx, rnd) => {
             return generateVocabQuestion("all", rnd);
         }, ["英文", "總複習"]);
-    } else {
-        console.warn("RigorousGenerator not found. Vocab templates not registered.");
-    }
 
-})(this);
+    } // <--- init 函式在這裡結束
+
+    // 啟動！
+    init();
+
+})(window);
