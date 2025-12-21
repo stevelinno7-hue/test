@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  console.log('🔥 PAPER GEN VERSION 2025-01-SAFE');
+  console.log('🔥 PAPER GEN VERSION 2025-01-SAFE-FINAL');
 
   /* ================================
    * 基本設定
@@ -29,7 +29,28 @@
   };
 
   /* ================================
-   * fallback（保命用）
+   * 工具：tag 正規化（系統級）
+   * ================================ */
+  function normalizeTags(tags = []) {
+    const out = new Set();
+
+    tags.forEach(t => {
+      if (typeof t !== 'string') return;
+
+      if (t.startsWith('國七')) out.add('國七');
+      else if (t.startsWith('國八')) out.add('國八');
+      else if (t.startsWith('國九')) out.add('國九');
+      else if (t.startsWith('高一')) out.add('高一');
+      else if (t.startsWith('高二')) out.add('高二');
+      else if (t.startsWith('高三')) out.add('高三');
+      else out.add(t);
+    });
+
+    return Array.from(out);
+  }
+
+  /* ================================
+   * fallback（保命）
    * ================================ */
   function fallback(total, msg) {
     return Array.from({ length: total }, (_, i) => ({
@@ -37,16 +58,23 @@
       question: msg,
       options: ['A', 'B', 'C', 'D'],
       answer: 0,
-      concept: '系統提示'
+      concept: '系統提示',
+      templateId: 'fallback'
     }));
   }
 
   /* ================================
-   * 主函式（exam.html 只吃這個）
+   * 主函式（exam.html 唯一入口）
    * ================================ */
   window.generatePaper = function ({ subject, total = 10, tags = [] }) {
 
-    console.log('📥 generatePaper()', { subject, total, tags });
+    const normTags = normalizeTags(tags);
+
+    console.log('📥 generatePaper()', {
+      subject,
+      total,
+      tags: normTags
+    });
 
     const subjectKeys = SUBJECT_MAP[subject] || [subject];
     const templates = Object.values(G.templates);
@@ -64,21 +92,26 @@
     );
 
     /* ================================
-     * 2️⃣ 年級鎖定（如果有）
+     * 2️⃣ 年級鎖定
      * ================================ */
-    const grade = tags.find(t => CORE_GRADES.includes(t));
+    const grade = normTags.find(t => CORE_GRADES.includes(t));
     if (grade) {
       pool = pool.filter(t => t.tags?.includes(grade));
     }
 
     if (!pool.length) {
-      console.warn('⚠️ 題庫為空，使用 fallback');
+      console.warn('⚠️ 題庫為空，直接 fallback');
       return fallback(total, `題庫建置中（${subject}）`);
     }
 
     /* ================================
-     * 3️⃣ 出題（不重複 + 冷卻）
+     * 3️⃣ 出題核心
      * ================================ */
+    const ctx = Object.freeze({
+      subject,
+      tags: normTags
+    });
+
     const result = [];
     const used = new Set();
     const templateCount = {};
@@ -101,17 +134,22 @@
       let q;
 
       try {
-        q = tmpl.func({}, Math.random);
+        q = tmpl.func(ctx, Math.random);
       } catch (e) {
+        console.warn(`⚠️ template ${tmpl.id} throw error`, e);
         continue;
       }
 
+      if (!q) continue;
+
       if (
-        !q ||
         typeof q.question !== 'string' ||
         !Array.isArray(q.options) ||
         typeof q.answer !== 'number'
-      ) continue;
+      ) {
+        console.warn(`⚠️ template ${tmpl.id} 回傳格式錯誤`);
+        continue;
+      }
 
       const key = `${tmpl.id}::${q.question}`;
       if (used.has(key)) continue;
@@ -130,11 +168,15 @@
     }
 
     /* ================================
-     * 4️⃣ 保底
+     * 4️⃣ 不足補 fallback（重要）
      * ================================ */
-    if (!result.length) {
-      console.error('❌ 出題失敗，全部 fallback');
-      return fallback(total, `題庫異常（${subject}）`);
+    if (result.length < total) {
+      console.warn(`⚠️ 題目不足 ${result.length}/${total}，補 fallback`);
+      const fill = fallback(total - result.length, `題庫補題中（${subject}）`);
+      fill.forEach(q => {
+        q.id = result.length + 1;
+        result.push(q);
+      });
     }
 
     return result;
