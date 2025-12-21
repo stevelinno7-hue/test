@@ -1,10 +1,9 @@
-// mockdata/paper_generator.js
 (function (global) {
     'use strict';
 
-    const log = (...args) => console.log("📄 [PaperGen]", ...args);
-    const warn = (...args) => console.warn("⚠️ [PaperGen]", ...args);
-    const err = (...args) => console.error("❌ [PaperGen]", ...args);
+    const log  = (...a) => console.log("📄 [PaperGen]", ...a);
+    const warn = (...a) => console.warn("⚠️ [PaperGen]", ...a);
+    const err  = (...a) => console.error("❌ [PaperGen]", ...a);
 
     function generatePaper(params) {
         const {
@@ -17,7 +16,7 @@
         const G = global.RigorousGenerator;
 
         if (!G || !G.templates || !G.generateFromTemplate) {
-            err("RigorousGenerator 尚未就緒");
+            err("Generator 尚未就緒");
             return [];
         }
 
@@ -28,7 +27,7 @@
 
         log("generatePaper()", params);
 
-        // 1️⃣ 找出可用 templates（鎖年級）
+        // 1️⃣ 找出可用 templates（允許題型重複）
         const templates = Object.keys(G.templates).filter(name => {
             if (templatePrefix && !name.startsWith(templatePrefix)) return false;
             return name.includes(grade);
@@ -41,42 +40,34 @@
 
         log("可用 templates", templates);
 
-        // 2️⃣ 出題（題幹唯一，抽不到就停）
+        // 2️⃣ 出題（題幹不可重複）
         const paper = [];
-        const usedQuestions = new Set();
+        const usedStems = new Set();
 
-        let consecutiveFail = 0;
-        const MAX_CONSECUTIVE_FAIL = 10;
+        let attempts = 0;
+        const MAX_ATTEMPTS = count * 20; // 防無限迴圈
 
-        while (paper.length < count) {
-            let q = null;
-            let tries = 0;
+        while (paper.length < count && attempts < MAX_ATTEMPTS) {
+            attempts++;
 
-            while (!q && tries < 10) {
-                const tplName = templates[Math.floor(Math.random() * templates.length)];
-                try {
-                    q = G.generateFromTemplate(tplName);
-                } catch (e) {
-                    warn("template 失敗", tplName, e);
-                }
-                tries++;
-            }
+            const tplName = templates[Math.floor(Math.random() * templates.length)];
+            let q;
 
-            if (!q || !q.question) {
-                consecutiveFail++;
-                if (consecutiveFail >= MAX_CONSECUTIVE_FAIL) break;
+            try {
+                q = G.generateFromTemplate(tplName);
+            } catch (e) {
+                warn("template 失敗", tplName, e);
                 continue;
             }
 
-            if (usedQuestions.has(q.question)) {
-                consecutiveFail++;
-                if (consecutiveFail >= MAX_CONSECUTIVE_FAIL) break;
-                continue;
+            if (!q || typeof q.question !== 'string') continue;
+
+            const stem = q.question.trim();
+            if (usedStems.has(stem)) {
+                continue; // 🚫 題幹重複，直接跳過
             }
 
-            // ✅ 成功新題
-            consecutiveFail = 0;
-            usedQuestions.add(q.question);
+            usedStems.add(stem);
 
             paper.push({
                 id: paper.length + 1,
@@ -84,15 +75,19 @@
             });
         }
 
+        if (paper.length < count) {
+            warn(`題目不足，只能出 ${paper.length} 題`);
+        }
+
         log(`完成出題 ${paper.length}/${count}`);
         return paper;
     }
 
-    // 對外掛載
+    // 3️⃣ 對外掛載
     global.PaperGenerator = {
         generatePaper
     };
 
-    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP / STOP ON EXHAUST）已載入");
+    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO FALLBACK / NO DUP STEM）已載入");
 
 })(window);
