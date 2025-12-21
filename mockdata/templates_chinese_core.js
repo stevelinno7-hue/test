@@ -1,37 +1,12 @@
-(function () {
+(function (global) {
   'use strict';
-
-  // =====================================================
-  // utils（完全獨立，不依賴 Factory.utils）
-  // =====================================================
-  function pick(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-  }
-
-  function shuffle(arr) {
-    return arr
-      .map(v => [Math.random(), v])
-      .sort((a, b) => a[0] - b[0])
-      .map(v => v[1]);
-  }
-
-  // =====================================================
-  // 等待 Factory
-  // =====================================================
   function init() {
-    if (!window.AutoTemplateFissionFactory?.register) {
-      setTimeout(init, 50);
-      return;
-    }
+    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+    const { pick, shuffle } = G.utils;
 
-    const Factory = window.AutoTemplateFissionFactory;
-
-    // =====================================================
-    // 國文題庫資料（統一欄位）
-    // g = 年級, c = 類型, q = 題幹, a = 正解
-    // =====================================================
     const DB = [
-      // ------------------------------------------
+          // ------------------------------------------
         // 1. 成語判讀 (Idioms)
         // ------------------------------------------
         { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
@@ -176,18 +151,12 @@
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
     ];
 
-    // =====================================================
-    // 出題器（單一格式，PaperGen 相容）
-    // =====================================================
+
     function makeQuestion(grade) {
       const pool = DB.filter(x => x.g === grade);
       if (pool.length < 2) return null;
-
       const base = pick(pool);
-      const wrong = shuffle(
-        DB.filter(x => x.a !== base.a).map(x => x.a)
-      ).slice(0, 3);
-
+      const wrong = shuffle(DB.filter(x => x.a !== base.a).map(x => x.a)).slice(0, 3);
       const options = shuffle([base.a, ...wrong]);
 
       return {
@@ -195,30 +164,13 @@
         options,
         answer: options.indexOf(base.a),
         concept: base.c,
-        explanation: [`正確答案：${base.a}`],
-        source: "templates_chinese_core"
+        explanation: [`正確答案：${base.a}`]
       };
     }
 
-    // =====================================================
-    // Factory 註冊（唯一正確方式）
-    // =====================================================
-    const grades = ["國七", "國八", "國九", "高一", "高二", "高三"];
-
-    grades.forEach(g => {
-      Factory.register("chinese", g, () => makeQuestion(g));
+    ["國七", "國八", "國九", "高一", "高二", "高三"].forEach(g => {
+      G.registerTemplate(`chinese_${g}`, () => makeQuestion(g), ["chinese", "國文", g]);
     });
-
-    // =====================================================
-    // 額外暴露（給健康掃描 / Debug 用）
-    // =====================================================
-    window.ChineseTemplates = {};
-    grades.forEach(g => {
-      window.ChineseTemplates[g] = [() => makeQuestion(g)];
-    });
-
-    console.log("✅ 國文題庫（完全獨立 SAFE）已載入");
   }
-
   init();
-})();
+})(this);
