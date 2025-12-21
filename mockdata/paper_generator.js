@@ -1,65 +1,84 @@
 (function (global) {
   'use strict';
 
-  function normalizeQuestion(q, id) {
-    if (!q) return null;
+  const debugLog = [];
 
-    // 已是標準格式
+  function normalizeQuestion(q, meta) {
+    if (!q) {
+      debugLog.push({ ...meta, status: "NULL_RETURN" });
+      return null;
+    }
+
     if (
       typeof q.question === "string" &&
       Array.isArray(q.options) &&
       typeof q.answer === "number"
     ) {
+      debugLog.push({ ...meta, status: "OK" });
       return {
-        id,
+        id: meta.index,
         question: q.question,
         options: q.options,
         answer: q.answer,
         concept: q.concept || "",
-        explanation: q.explanation || []
+        explanation: q.explanation || [],
+        __meta: meta
       };
     }
 
-    // ❌ 其他未知格式 → 丟棄
-    console.warn("⚠️ 無法辨識的題目格式", q);
+    debugLog.push({ ...meta, status: "INVALID_FORMAT", payload: q });
     return null;
   }
 
   function generatePaper({ templates, count }) {
-    const G = global.RigorousGenerator;
-    if (!G || !G.isReady || !G.isReady()) {
-      throw new Error("❌ Generator 尚未就緒");
-    }
-
     const paper = [];
-    const usedStem = new Set();
+    const used = new Set();
 
-    for (let tpl of templates) {
-      if (paper.length >= count) break;
+    templates.forEach((tpl, i) => {
+      if (paper.length >= count) return;
 
       let raw;
       try {
-        raw = tpl();
+        raw = tpl.fn();
       } catch (e) {
-        console.warn("❌ 模板執行失敗", e);
-        continue;
+        debugLog.push({
+          index: i + 1,
+          template: tpl.name,
+          tags: tpl.tags,
+          status: "EXCEPTION",
+          error: e.message
+        });
+        return;
       }
 
-      const q = normalizeQuestion(raw, paper.length + 1);
-      if (!q) continue;
+      const q = normalizeQuestion(raw, {
+        index: paper.length + 1,
+        template: tpl.name,
+        tags: tpl.tags
+      });
 
-      const stem = q.question.trim();
-      if (usedStem.has(stem)) continue;
+      if (!q) return;
 
-      usedStem.add(stem);
+      if (used.has(q.question)) {
+        debugLog.push({
+          ...q.__meta,
+          status: "DUPLICATE"
+        });
+        return;
+      }
+
+      used.add(q.question);
       paper.push(q);
-    }
+    });
 
     return paper;
   }
 
-  global.PaperGenerator = { generatePaper };
+  global.PaperGenerator = {
+    generatePaper,
+    getDebugLog: () => debugLog
+  };
 
   document.dispatchEvent(new Event("PaperGeneratorReady"));
-  console.log("🔥 PaperGenerator READY (backward compatible)");
+  console.log("🔥 PaperGenerator READY (debug + compatible)");
 })(window);
