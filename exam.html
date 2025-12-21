@@ -222,22 +222,42 @@
         };
         timeLeft = examInfo.timeLimit;
 
-        if (window.generatePaper) {
-            try {
-                mockQuestions = window.generatePaper({
-                    subject: subject,
-                    total: count,
-                    tags: courseTags, 
-                    distribution: { memory: 0.2, understand: 0.3, apply: 0.3, analyze: 0.2 }
-                });
-            } catch (e) {
-                console.error("生成題目失敗:", e);
-                alert("題目生成發生錯誤");
-            }
-        } else {
-            console.error("❌ Paper Generator 未載入");
-            alert("系統錯誤：題庫引擎未載入");
+       // ===============================
+// 產生題目（PaperGenerator v2025）
+// ===============================
+if (window.PaperGenerator && typeof PaperGenerator.generatePaper === 'function') {
+    try {
+        // 👉 從課程標籤推導年級（安全）
+        const grade =
+            courseTags.find(t => t.includes('國七')) ||
+            courseTags.find(t => t.includes('國八')) ||
+            courseTags.find(t => t.includes('國九')) ||
+            courseTags.find(t => t.includes('高一')) ||
+            courseTags.find(t => t.includes('高二')) ||
+            courseTags.find(t => t.includes('高三')) ||
+            '國七';
+
+        mockQuestions = PaperGenerator.generatePaper({
+            subject: subject,
+            grade: grade,
+            count: count
+        });
+
+        if (!Array.isArray(mockQuestions) || mockQuestions.length === 0) {
+            throw new Error("題庫回傳空陣列");
         }
+
+    } catch (e) {
+        console.error("❌ 生成題目失敗:", e);
+        alert("題目生成失敗，請重新整理或聯絡管理員");
+        return;
+    }
+} else {
+    console.error("❌ PaperGenerator 尚未就緒");
+    alert("系統錯誤：PaperGenerator 未載入");
+    return;
+}
+
 
         userAnswers = new Array(mockQuestions.length).fill(null);
         timeLog = new Array(mockQuestions.length).fill(0);
