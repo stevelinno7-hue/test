@@ -107,9 +107,11 @@
                 <div class="h-10"></div>
             </div>
         </div>
-    </main>
-<script>
+    </main> 
+    <script>
+    // ==========================================
     // 全域變數
+    // ==========================================
     let mockQuestions = [];
     let currentQIndex = 0;
     let userAnswers = [];
@@ -117,7 +119,7 @@
     let timerInterval;
     let examInfo = {};
 
-    // DOM 元素快取
+    // DOM 快取
     const els = {
         title: document.getElementById('examTitle'),
         sub: document.getElementById('examSubject'),
@@ -134,38 +136,41 @@
         palette: document.getElementById('questionPalette')
     };
 
-    // 1. 系統初始化
+    // ==========================================
+    // 1. 初始化與啟動
+    // ==========================================
     window.onload = function() {
         if (typeof Auth !== 'undefined' && !Auth.requireLogin()) return;
 
-        // 初始化課程資料
+        // 初始化課程資料庫
         if (window.initCurriculumData) {
             window.initCurriculumData();
         } else if (window.CurriculumLibrary && window.CurriculumLibrary.data) {
             let all = [];
-            if(window.CurriculumLibrary.data.junior_all) all = all.concat(window.CurriculumLibrary.data.junior_all);
-            if(window.CurriculumLibrary.data.senior_all) all = all.concat(window.CurriculumLibrary.data.senior_all);
+            const d = window.CurriculumLibrary.data;
+            if(d.junior_all) all = all.concat(d.junior_all);
+            if(d.senior_all) all = all.concat(d.senior_all);
             window.Curriculum108 = all;
         }
 
-        // 確保引擎就緒後啟動
-        setTimeout(() => {
-            prepareExam();
-        }, 300);
+        // 確保引擎加載完成後啟動
+        setTimeout(prepareExam, 200);
     };
 
-    // 2. 準備測驗資料
+    // ==========================================
+    // 2. 測驗準備與生成
+    // ==========================================
     function prepareExam() {
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
         let subject = urlParams.get('subject') || 'math';
         const count = parseInt(urlParams.get('count')) || 10;
 
-        // 科目名稱校正
-        if (subject === 'earth_science' || subject === 'earth') subject = 'earth'; 
+        // 科目 Mapping
+        if (subject === 'earth_science') subject = 'earth'; 
         if (subject === 'social') subject = 'history';
 
-        // 尋找目標課程
+        // 尋找課程與標籤
         let targetCourse = null;
         if (window.Curriculum108) {
             for (let book of window.Curriculum108) {
@@ -175,9 +180,32 @@
                 }
             }
         }
-
         const courseTags = targetCourse ? targetCourse.tags : [];
-        
+
+        // 生成考卷
+        if (window.generatePaper) {
+            mockQuestions = window.generatePaper({
+                subject: subject,
+                total: count,
+                tags: courseTags
+            });
+        }
+
+        // 題目格式標準化 (防止 concept 或 options 缺失導致報錯)
+        mockQuestions = mockQuestions.map(q => ({
+            ...q,
+            question: q.question || "題目內容缺失",
+            options: q.options || ["無選項"],
+            answer: typeof q.answer === 'number' ? q.answer : 0,
+            concept: q.concept || (q.tag ? q.tag[1] : "一般題型") // 支援不同題庫格式
+        }));
+
+        if (mockQuestions.length === 0) {
+            alert("目前該章節無可用題目，請嘗試切換科目。");
+            return;
+        }
+
+        userAnswers = new Array(mockQuestions.length).fill(null);
         examInfo = {
             subject: subject.toUpperCase(),
             title: targetCourse ? targetCourse.name : `${subject} 測驗`,
@@ -185,30 +213,6 @@
         };
         timeLeft = examInfo.timeLimit;
 
-        // 生成題目
-        if (window.generatePaper) {
-            mockQuestions = window.generatePaper({
-                subject: subject,
-                total: count,
-                tags: courseTags,
-                distribution: { memory: 0.2, understand: 0.3, apply: 0.3, analyze: 0.2 }
-            });
-        }
-
-        // Fallback: 如果生成失敗，提供佔位題
-        if (mockQuestions.length === 0) {
-            for(let i=0; i<count; i++) {
-                mockQuestions.push({
-                    question: "題目載入中或該章節暫無題目...",
-                    options: ["選項 A", "選項 B", "選項 C", "選項 D"],
-                    answer: 0,
-                    concept: "系統提示"
-                });
-            }
-        }
-
-        userAnswers = new Array(mockQuestions.length).fill(null);
-        
         // UI 初始化
         els.title.textContent = examInfo.title;
         els.sub.textContent = examInfo.subject;
@@ -219,29 +223,30 @@
         startTimer();
     }
 
-    // 3. 渲染題目 (修復報錯點)
+    // ==========================================
+    // 3. 題目渲染 (修復 .includes 報錯)
+    // ==========================================
     function renderQuestion() {
         const q = mockQuestions[currentQIndex];
         if (!q) return;
 
         els.currNum.textContent = currentQIndex + 1;
-        els.qText.innerHTML = (q.question || "").replace(/\n/g, '<br>');
+        els.qText.innerHTML = q.question.replace(/\n/g, '<br>');
         
-        // 處理標籤與顏色 (安全檢查)
-        const concept = q.concept || "綜合題型";
-        els.badge.textContent = concept;
+        // --- 標籤與顏色處理 (強化防錯) ---
+        const conceptStr = String(q.concept || "綜合題型");
+        els.badge.textContent = conceptStr;
         
-        let tagColor = "purple"; // 預設紫色
-        if (concept.includes("分析") || concept.includes("難")) tagColor = "red";
-        else if (concept.includes("應用") || concept.includes("素養")) tagColor = "green";
-        else if (concept.includes("記憶") || concept.includes("基礎")) tagColor = "blue";
+        let tagColor = "purple"; 
+        if (conceptStr.includes("分析") || conceptStr.includes("難")) tagColor = "red";
+        else if (conceptStr.includes("應用") || conceptStr.includes("素養")) tagColor = "green";
+        else if (conceptStr.includes("記憶") || conceptStr.includes("基礎")) tagColor = "blue";
 
         els.badge.className = `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-${tagColor}-100 text-${tagColor}-700 border-${tagColor}-200`;
 
-        // 選項渲染
+        // --- 選項渲染 ---
         els.opts.innerHTML = '';
-        const options = q.options || ["無選項"];
-        options.forEach((opt, idx) => {
+        q.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             const isSelected = userAnswers[currentQIndex] === idx;
             const label = String.fromCharCode(65 + idx);
@@ -260,9 +265,9 @@
             els.opts.appendChild(btn);
         });
 
-        // 公式渲染
-        if (window.MathJax && MathJax.typesetPromise) {
-            MathJax.typesetPromise([els.qText, els.opts]).catch((err) => console.log(err));
+        // MathJax 渲染
+        if (window.MathJax) {
+            MathJax.typesetPromise([els.qText, els.opts]).catch(err => console.warn(err));
         }
 
         // 進度條
@@ -271,12 +276,14 @@
         updatePaletteStatus();
     }
 
-    // 4. 側邊欄與導航
+    // ==========================================
+    // 4. UI 操作組件
+    // ==========================================
     function renderPalette() {
         els.palette.innerHTML = '';
         mockQuestions.forEach((_, idx) => {
             const btn = document.createElement('button');
-            btn.className = `q-nav-btn`;
+            btn.className = 'q-nav-btn';
             btn.textContent = idx + 1;
             btn.id = `palette-btn-${idx}`;
             btn.onclick = () => { currentQIndex = idx; renderQuestion(); };
@@ -309,7 +316,9 @@
     els.prev.onclick = () => { if(currentQIndex > 0) { currentQIndex--; renderQuestion(); }};
     els.submit.onclick = finishExam;
 
-    // 5. 計時器與交卷
+    // ==========================================
+    // 5. 計時與交卷邏輯
+    // ==========================================
     function startTimer() {
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
@@ -319,7 +328,6 @@
             els.timer.textContent = `${m}:${s}`;
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                alert("測驗時間到！系統將自動交卷。");
                 finishExam(true);
             }
         }, 1000);
@@ -332,37 +340,34 @@
         }
 
         clearInterval(timerInterval);
-
         let correctCount = 0;
         let wrongList = [];
+
         mockQuestions.forEach((q, idx) => {
-            if (userAnswers[idx] === q.answer) {
-                correctCount++;
-            } else {
+            if (userAnswers[idx] === q.answer) correctCount++;
+            else {
                 wrongList.push({
                     question: q.question,
                     options: q.options,
                     correctAns: q.answer,
                     yourAns: userAnswers[idx],
-                    explanation: q.explanation || "暫無解析",
-                    concept: q.concept || "綜合題型"
+                    explanation: q.explanation || "參考課本相關內容",
+                    concept: q.concept || "一般題型"
                 });
             }
         });
 
-        const score = Math.round((correctCount / mockQuestions.length) * 100);
         const record = {
             id: Date.now(),
             date: new Date().toLocaleString(),
             subject: examInfo.subject,
             title: examInfo.title,
-            score: score,
+            score: Math.round((correctCount / mockQuestions.length) * 100),
             correctCount,
             totalCount: mockQuestions.length,
             wrongList
         };
 
-        // 儲存至本地 (增加 currentUser 安全檢查)
         const username = (window.currentUser && window.currentUser.username) || "guest";
         const storageKey = `history_${username}`;
         let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -370,7 +375,6 @@
         
         localStorage.setItem(storageKey, JSON.stringify(history));
         localStorage.setItem('examResult', JSON.stringify(record));
-        
         window.location.href = "analysis.html";
     }
 </script>
