@@ -1,65 +1,72 @@
-// templates_civics_core.js
-// 公民（憲政與權利、法治、社會議題、公共參與、媒體素養）5 類模板
 (function(global){
-  'use strict';
-  if (!global.RigorousGenerator) throw new Error('RigorousGenerator not found.');
+    'use strict';
 
-  function sample(arr, rnd){ return arr[Math.floor(rnd()*arr.length)]; }
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) {
+            setTimeout(init, 100);
+            return;
+        }
 
-  // 1) civics_constitution: 憲政與權利（概念題）
-  function civics_constitution(ctx, rnd){
-    return {
-      question: '憲法保障的基本權利通常包括下列哪幾項？',
-      options: ['言論自由、宗教自由、平等權','只保障財產','只保障軍事權','只保障商業權'],
-      answer: 0,
-      explanation: ['憲法通常保障公民的基本自由與平等權利。']
-    };
-  }
+        const { pick, shuffle } = G.utils;
 
-  // 2) civics_rule_of_law: 法治與程序正義（案例判斷）
-  function civics_rule_of_law(ctx, rnd){
-    return {
-      question: '程序正義的核心要素不包括哪一項？',
-      options: ['公開透明、平等對待、正當程序','任意決定、秘密審理','可上訴機制','獨立司法'],
-      answer: 1,
-      explanation: ['程序正義強調公開、平等、正當程序與司法獨立，任意與秘密審理違反程序正義。']
-    };
-  }
+        // ==========================================
+        // 公民科核心資料庫 (Civics Core Database)
+        // ==========================================
+        const socialDB = [
+            // ----------------------------------------------------
+            // [公民] (Social, Law, Economics)
+            // ----------------------------------------------------
+            { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
+            { s:"公民", t:["國七","社會"], e:"家庭功能", y:"社會化", p:"教育", k:"生育", d:"家庭教導子女社會規範與價值觀的過程" },
+            { s:"公民", t:["國八","政治"], e:"主權", y:"國家最高權力", p:"國家要素", k:"對內最高", d:"國家對內擁有最高統治權，對外獨立自主" },
+            { s:"公民", t:["國八","政治"], e:"基本人權", y:"憲法保障", p:"自由權", k:"平等權", d:"人民與生俱來的權利，政府應予以保障" },
+            { s:"公民", t:["國八","政治"], e:"權力分立", y:"制衡", p:"孟德斯鳩", k:"三權分立", d:"行政、立法、司法互相制衡，避免專制" },
+            { s:"公民", t:["國八","法律"], e:"罪刑法定主義", y:"法律保留", p:"刑法", k:"不溯及既往", d:"行為時法律未規定者，不得處罰" },
+            { s:"公民", t:["國八","法律"], e:"契約自由", y:"私法自治", p:"民法", k:"誠信原則", d:"個人可依自由意志訂立契約，法律原則不干涉" },
+            { s:"公民", t:["國八","法律"], e:"行政處分", y:"公權力", p:"行政機關", k:"罰單", d:"行政機關就公法上具體事件所做的單方決定" },
+            { s:"公民", t:["國九","經濟"], e:"機會成本", y:"代價", p:"選擇", k:"價值最高", d:"做出選擇時，所放棄的選項中價值最高者" },
+            { s:"公民", t:["國九","經濟"], e:"需求法則", y:"反向變動", p:"消費者", k:"價格", d:"其他條件不變下，價格上漲，需求量減少" },
+            { s:"公民", t:["國九","經濟"], e:"供給法則", y:"正向變動", p:"生產者", k:"價格", d:"其他條件不變下，價格上漲，供給量增加" },
+            { s:"公民", t:["國九","經濟"], e:"外部效果", y:"市場失靈", p:"庇古", k:"成本內部化", d:"經濟行為對無關第三人造成的影響(如汙染)" },
+            { s:"公民", t:["國九","經濟"], e:"公共財", y:"共享性", p:"國防", k:"無法排他", d:"具有共享性與無法排他性的財貨" },
+            { s:"公民", t:["國九","經濟"], e:"GDP", y:"國內生產毛額", p:"經濟成長", k:"最終產品", d:"一國境內在一定期間內生產的最終產品與勞務總值" },
+            { s:"公民", t:["高一","政治"], e:"內閣制", y:"虛位元首", p:"英國", k:"信任投票", d:"行政權對立法權負責，國會可提不信任案" },
+            { s:"公民", t:["高一","政治"], e:"總統制", y:"覆議權", p:"美國", k:"分立制衡", d:"總統由人民直選，行政與立法權完全分立" },
+            { s:"公民", t:["高一","法律"], e:"比例原則", y:"憲法第23條", p:"大法官", k:"最小侵害", d:"國家限制人民權利手段必須必要且適當" }
+        ];
 
-  // 3) civics_public_participation: 公共參與與公民責任（行動與影響）
-  function civics_public_participation(ctx, rnd){
-    return {
-      question: '公民參與公共事務的方式不包括下列哪一項？',
-      options: ['投票、參與公聽會、倡議、暴力破壞'],
-      answer: 0,
-      explanation: ['合法且理性的參與方式包括投票、倡議、參與諮詢等，暴力破壞不屬於正當參與。']
-    };
-  }
+        // 註冊模板
+        const subjCode = "civ";
+        const subjName = "公民";
 
-  // 4) civics_media_literacy: 媒體素養與資訊判讀
-  function civics_media_literacy(ctx, rnd){
-    return {
-      question: '判斷一則網路資訊可信度時，最重要的檢查項目為何？',
-      options: ['來源是否具權威性與可查證','字數是否多','是否有圖片','是否有分享數'],
-      answer: 0,
-      explanation: ['來源與可查證性是判斷資訊可信度的關鍵。']
-    };
-  }
+        // 特徵題
+        G.registerTemplate(`${subjCode}_feat`, (ctx, rnd) => {
+            const item = pick(socialDB);
+            const wrong = shuffle(socialDB.filter(x => x !== item)).slice(0, 3).map(x => x.y);
+            const opts = shuffle([item.y, ...wrong]);
+            return {
+                question: `【${item.s}】關於「${item.e}」，下列何者為其關鍵特徵？`,
+                options: opts, answer: opts.indexOf(item.y), concept: item.t[1],
+                explanation: [`${item.e}：${item.y}`]
+            };
+        }, [subjName, "社會", "記憶"]);
 
-  // 5) civics_social_issues: 社會議題分析（利弊評估）
-  function civics_social_issues(ctx, rnd){
-    return {
-      question: '在討論最低工資調整時，應同時考量哪些面向？',
-      options: ['勞工生活、企業成本、就業影響、物價變動','只考慮企業利潤','只考慮政府支出','只考慮國際關係'],
-      answer: 0,
-      explanation: ['政策評估需兼顧多方利害關係與可能的經濟社會影響。']
-    };
-  }
+        // 關鍵字題
+        G.registerTemplate(`${subjCode}_key`, (ctx, rnd) => {
+            const item = pick(socialDB);
+            const wrong = shuffle(socialDB.filter(x => x !== item)).slice(0, 3).map(x => x.k);
+            const opts = shuffle([item.k, ...wrong]);
+            return {
+                question: `【${item.s}】提到「${item.e}」，通常會聯想到哪個關鍵詞？`,
+                options: opts, answer: opts.indexOf(item.k), concept: item.t[1],
+                explanation: [`${item.e} 關鍵詞：${item.k}`]
+            };
+        }, [subjName, "社會", "關鍵字"]);
 
-  global.RigorousGenerator.registerTemplate('civics_constitution', civics_constitution);
-  global.RigorousGenerator.registerTemplate('civics_rule_of_law', civics_rule_of_law);
-  global.RigorousGenerator.registerTemplate('civics_public_participation', civics_public_participation);
-  global.RigorousGenerator.registerTemplate('civics_media_literacy', civics_media_literacy);
-  global.RigorousGenerator.registerTemplate('civics_social_issues', civics_social_issues);
+        console.log("✅ 公民題庫已載入完成。");
+    }
 
-})(typeof window !== 'undefined' ? window : global);
+    init();
+
+})(window);
