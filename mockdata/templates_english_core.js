@@ -1,20 +1,21 @@
-(function(global){
-    'use strict';
+(function (window) {
+  'use strict';
 
-    function init() {
-        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.registerTemplate) {
-            setTimeout(init, 100);
-            return;
-        }
+  function init() {
+    const G = window.RigorousGenerator;
+    if (!G || !G.registerTemplate || !G.utils) {
+      setTimeout(init, 100);
+      return;
+    }
 
-        const { pick, shuffle } = G.utils;
+    const { pick, shuffle } = G.utils;
 
-        // ==========================================
-        // 英文文法資料庫（含年級標記）
-        // ==========================================
-        const grammarDB = [ 
-            // ----------------------------------------------------
+    // ==========================================
+    // 英文文法題庫（唯一版本，無重複）
+    // q: 題目 / a: 正解 / o: 干擾選項 / tag: [年級, 文法]
+    // ==========================================
+    const grammarDB = [
+       // ----------------------------------------------------
         // [Topic 1] 基本時態 (Tenses) - 國七/國八
         // ----------------------------------------------------
         { q: "Listen! The baby _____ in the bedroom.", a: "is crying", o: ["cries","cried","cry"], tag: ["國七","時態"] },
@@ -142,84 +143,36 @@
         { q: "The book is _____ the table.", a: "on", o: ["in","at","to"], tag: ["國七","介系詞"] },
         { q: "We insist _____ your leaving.", a: "on", o: ["in","at","of"], tag: ["高二","片語"] },
         { q: "He is famous _____ his novels.", a: "for", o: ["as","in","to"], tag: ["國九","片語"] }
-    
-        ];
+    ];
+    const JUNIOR = ["國七","國八","國九"];
+    const SENIOR = ["國七","國八","國九","高一","高二","高三"];
 
-        // ==========================================
-        // 年級過濾工具
-        // ==========================================
-        const JUNIOR = ["國七","國八","國九"];
-        const SENIOR = ["國七","國八","國九","高一","高二","高三"];
+    const filterByGrade = grades =>
+      grammarDB.filter(q => grades.includes(q.tag[0]));
 
-        function byGrades(gradeList){
-            return grammarDB.filter(q => gradeList.includes(q.tag[0]));
-        }
+    const buildQuestion = (item, label) => {
+      const options = shuffle([...new Set([item.a, ...item.o])]);
+      return {
+        question: item.q,
+        options,
+        answer: options.indexOf(item.a),
+        concept: `${item.tag[1]}（${label}）`,
+        explanation: [`Level: ${item.tag[0]}`, `Answer: ${item.a}`]
+      };
+    };
 
-        // ==========================================
-        // ① 國中英文文法（只出國中）
-        // ==========================================
-        G.registerTemplate('eng_grammar_junior', () => {
-            const pool = byGrades(JUNIOR);
-            const item = pick(pool);
-            const opts = shuffle([item.a, ...item.o]);
+    G.registerTemplate('eng_grammar_junior', () =>
+      buildQuestion(pick(filterByGrade(JUNIOR)), "國中"),
+      ["英文","文法","國中"]
+    );
 
-            return {
-                question: item.q,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                concept: `${item.tag[1]}（國中）`,
-                explanation: [`Correct answer: ${item.a}`]
-            };
-        }, ["英文","文法","國中"]);
+    G.registerTemplate('eng_grammar_senior', () =>
+      buildQuestion(pick(filterByGrade(SENIOR)), "高中"),
+      ["英文","文法","高中"]
+    );
 
-        // ==========================================
-        // ② 高中英文文法（可出國中＋高中）
-        // ==========================================
-        G.registerTemplate('eng_grammar_senior', () => {
-            const pool = byGrades(SENIOR);
-            const item = pick(pool);
-            const opts = shuffle([item.a, ...item.o]);
+    console.log("✅ 英文題庫已載入（結構修正完成）");
+  }
 
-            return {
-                question: item.q,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                concept: `${item.tag[1]}（高中）`,
-                explanation: [
-                    `Level: ${item.tag[0]}`,
-                    `Correct answer: ${item.a}`
-                ]
-            };
-        }, ["英文","文法","高中"]);
-
-        // ==========================================
-        // ③ 英文對話題（全年級共用）
-        // ==========================================
-        const dialogues = [
-            { a:"How have you been recently?", b:"I've been doing great, thanks.",
-              o:["I am doing homework.","Yes, I am.","See you later."], t:"問候" },
-            { a:"May I take your order?", b:"Yes, I'd like a steak, please.",
-              o:["No, I don't like it.","Here is the menu.","Check, please."], t:"餐廳" },
-            { a:"Excuse me, how do I get to the station?", b:"Go straight and turn left.",
-              o:["It is 5 o'clock.","I am taking a bus.","Yes, it is."], t:"問路" }
-        ];
-
-        G.registerTemplate('eng_dialogue', () => {
-            const item = pick(dialogues);
-            const opts = shuffle([item.b, ...item.o]);
-
-            return {
-                question: `A: ${item.a}\nB: __________`,
-                options: opts,
-                answer: opts.indexOf(item.b),
-                concept: `會話（${item.t}）`,
-                explanation: [`A: ${item.a}`, `B: ${item.b}`]
-            };
-        }, ["英文","會話"]);
-
-        console.log("✅ 英文題庫（國中 / 高中 分流完成）");
-    }
-
-    init();
+  init();
 })(window);
-
