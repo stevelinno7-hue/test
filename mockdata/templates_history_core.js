@@ -1,9 +1,17 @@
 (function(global){
     'use strict';
-    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G) return;
-    const { pick, shuffle } = G.utils;
 
+    // 定義一個啟動函式
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        
+        // 檢查：如果引擎還沒好，就等 100 毫秒後再試一次
+        if (!G || !G.registerTemplate) {
+            setTimeout(init, 100);
+            return;
+        }
+
+        const { pick, shuffle } = G.utils;
     // ==========================================
     // 社會科全方位資料庫 (Social Studies Mega DB)
     // 包含：歷史(台/中/世)、地理、公民
