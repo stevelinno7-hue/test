@@ -6,24 +6,20 @@
     const warn = (...args) => console.warn("⚠️ [PaperGen]", ...args);
     const err = (...args) => console.error("❌ [PaperGen]", ...args);
 
-    function waitForGenerator(cb) {
-        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.templates || !G.generateFromTemplate) {
-            setTimeout(() => waitForGenerator(cb), 100);
-            return;
-        }
-        cb(G);
-    }
-
     function generatePaper(params) {
         const {
             subject,
             grade,
             count = 10,
-            templatePrefix // optional
-        } = params;
+            templatePrefix
+        } = params || {};
 
         const G = global.RigorousGenerator;
+
+        if (!G || !G.templates || !G.generateFromTemplate) {
+            err("RigorousGenerator 尚未就緒");
+            return [];
+        }
 
         if (!subject || !grade) {
             err("缺少 subject 或 grade", params);
@@ -32,7 +28,7 @@
 
         log("generatePaper()", params);
 
-        // 1️⃣ 找出可用 templates
+        // 1️⃣ 找出可用 templates（鎖年級）
         const templates = Object.keys(G.templates).filter(name => {
             if (templatePrefix && !name.startsWith(templatePrefix)) return false;
             return name.includes(grade);
@@ -45,60 +41,58 @@
 
         log("可用 templates", templates);
 
-        // 2️⃣ 出題（🚫 題幹不重複，🛑 抽不到就停）
-const paper = [];
-const usedQuestions = new Set();
+        // 2️⃣ 出題（題幹唯一，抽不到就停）
+        const paper = [];
+        const usedQuestions = new Set();
 
-let safety = 0;
-let consecutiveFail = 0;
-const MAX_ATTEMPTS = count * 20;
-const MAX_CONSECUTIVE_FAIL = 10; // ⭐ 關鍵：抽不到新題就停
+        let consecutiveFail = 0;
+        const MAX_CONSECUTIVE_FAIL = 10;
 
-while (paper.length < count && safety < MAX_ATTEMPTS) {
-    safety++;
+        while (paper.length < count) {
+            let q = null;
+            let tries = 0;
 
-    let q = null;
-    let tries = 0;
+            while (!q && tries < 10) {
+                const tplName = templates[Math.floor(Math.random() * templates.length)];
+                try {
+                    q = G.generateFromTemplate(tplName);
+                } catch (e) {
+                    warn("template 失敗", tplName, e);
+                }
+                tries++;
+            }
 
-    while (!q && tries < 10) {
-        const tplName = templates[Math.floor(Math.random() * templates.length)];
-        try {
-            q = G.generateFromTemplate(tplName);
-        } catch (e) {
-            warn("template 失敗", tplName, e);
+            if (!q || !q.question) {
+                consecutiveFail++;
+                if (consecutiveFail >= MAX_CONSECUTIVE_FAIL) break;
+                continue;
+            }
+
+            if (usedQuestions.has(q.question)) {
+                consecutiveFail++;
+                if (consecutiveFail >= MAX_CONSECUTIVE_FAIL) break;
+                continue;
+            }
+
+            // ✅ 成功新題
+            consecutiveFail = 0;
+            usedQuestions.add(q.question);
+
+            paper.push({
+                id: paper.length + 1,
+                ...q
+            });
         }
-        tries++;
+
+        log(`完成出題 ${paper.length}/${count}`);
+        return paper;
     }
 
-    if (!q || !q.question) {
-        consecutiveFail++;
-        if (consecutiveFail >= MAX_CONSECUTIVE_FAIL) break;
-        continue;
-    }
-
-    // 🚫 題幹重複
-    if (usedQuestions.has(q.question)) {
-        consecutiveFail++;
-        if (consecutiveFail >= MAX_CONSECUTIVE_FAIL) break;
-        continue;
-    }
-
-    // ✅ 成功取得新題
-    consecutiveFail = 0;
-    usedQuestions.add(q.question);
-
-    paper.push({
-        id: paper.length + 1,
-        ...q
-    });
-}
-
-
-    // 3️⃣ 對外掛載（只提供一個 API）
+    // 對外掛載
     global.PaperGenerator = {
         generatePaper
     };
 
-    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO FALLBACK）已載入");
+    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP / STOP ON EXHAUST）已載入");
 
 })(window);
