@@ -8,65 +8,61 @@
         const { subject, total, tags } = config;
         let questions = [];
         
-        // 讀取 Polyfill 確保的儲存空間
         const templateMap = G._templates || {}; 
         const templateTagMap = G._templateTags || {};
         const allIds = Object.keys(templateMap);
 
-        if (allIds.length === 0) {
-            console.warn(`[PaperGen] 無可用模板，請稍後再試。`);
-            return [];
-        }
-
         // ==========================================
-        // 關鍵修復：建立科目關鍵字對照表
+        // 1. 定義科目關鍵字 (白名單)
         // ==========================================
-        // 這能確保搜尋 'math' 時，也能找到標記為 '數學' 的題目
-        const subjectKeywords = {
+        const subjectWhitelist = {
             'math': ['math', '數學'],
-            'physics': ['physics', '物理', '理化', '自然'],
-            'chemistry': ['chemistry', '化學', '理化', '自然'],
-            'biology': ['biology', '生物', '自然'],
-            'earth': ['earth', '地科', '地球科學', '自然'],
+            'physics': ['physics', '物理', '理化'],
+            'chemistry': ['chemistry', '化學', '理化'],
+            'biology': ['biology', '生物'],
+            'earth': ['earth', '地科', '地球科學'],
             'chinese': ['chinese', '國文', '語文'],
             'english': ['english', '英文', '英語'],
-            'history': ['history', '歷史', '社會'],
-            'geography': ['geography', '地理', '社會'],
-            'civics': ['civics', '公民', '社會']
+            'history': ['history', '歷史'],
+            'geography': ['geography', '地理'],
+            'civics': ['civics', '公民']
         };
 
-        // 取得當前科目的所有合法關鍵字 (預設包含自己)
-        const targetKeywords = subjectKeywords[subject.toLowerCase()] || [subject.toLowerCase()];
+        // 取得當前科目允許的關鍵字 (例如 math -> ['math', '數學'])
+        // 如果科目不在清單中 (如 social)，就寬鬆處理
+        const targetKeywords = subjectWhitelist[subject.toLowerCase()] || [subject.toLowerCase()];
+
+        console.log(`🔍 [PaperGen] 正在搜尋科目: ${subject} (關鍵字: ${targetKeywords})`);
 
         // ==========================================
-        // 嚴格篩選邏輯 (Strict Filtering)
+        // 2. 嚴格篩選 (Strict Filter)
         // ==========================================
         const candidates = allIds.filter(id => {
             const tTags = templateTagMap[id] || [];
             
-            // 1. 【絕對條件】檢查科目 (Must match Subject)
-            // 題目標籤中，必須包含至少一個該科目的關鍵字
+            // 【絕對條件】檢查科目標籤 (Must match Subject)
+            // 題目的標籤陣列中，必須包含 targetKeywords 裡的至少一個字
+            // 例如：題目標籤 ["math", "國七"] vs 關鍵字 ["math", "數學"] -> 符合
+            // 例如：題目標籤 ["history", "國七"] vs 關鍵字 ["math", "數學"] -> 不符合
             const isCorrectSubject = tTags.some(tag => 
                 targetKeywords.some(k => tag.toLowerCase().includes(k))
             );
 
-            // 如果科目不對，直接剔除 (這就是防止亂出的關鍵！)
+            // ❌ 如果科目不對，直接剔除 (這行是防止大雜燴的關鍵！)
             if (!isCorrectSubject) return false;
 
-            // 2. 【次要條件】檢查標籤 (Match Tags)
-            // 必須包含請求標籤中的至少一個 (例如 '國七' 或 '核心')
+            // 【次要條件】檢查年級/範圍
+            // 如果 user 有指定 tags (如 '國七'), 則題目必須包含該 tag
+            // 但為了避免篩太乾淨變成 0 題，我們允許只要科目對了，年級稍微寬鬆一點
             const hasMatchingTag = tags.some(reqTag => tTags.includes(reqTag));
             
             return hasMatchingTag;
         });
 
-        // Debug 訊息：讓你確認篩選結果
-        // console.log(`[PaperGen] 科目:${subject} (關鍵字:${targetKeywords}) -> 找到 ${candidates.length} 題`);
-
         if (candidates.length === 0) {
-            console.warn(`[PaperGen] 找不到 [${subject}] 的題目。啟動同科備援機制。`);
+            console.warn(`[PaperGen] 找不到符合年級的 [${subject}] 題目。啟動同科備援。`);
             
-            // Fallback: 如果真的找不到符合年級的，至少找「同科目」的題目
+            // Fallback: 只要科目對就好，不管年級了
             const fallbackCandidates = allIds.filter(id => {
                 const tTags = templateTagMap[id] || [];
                 return tTags.some(tag => targetKeywords.some(k => tag.toLowerCase().includes(k)));
@@ -95,6 +91,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator v2.4 (Strict Filter) 已就緒");
+    console.log("✅ Paper Generator v2.5 (Strict Filter) 已就緒");
 
 })(window);
