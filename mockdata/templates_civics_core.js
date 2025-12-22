@@ -1,15 +1,14 @@
-(function (global) {
-  'use strict';
-  function init() {
-    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-    const { pick, shuffle } = G.utils;
+(function(global){
+    'use strict';
 
-    const db = [
-      // ----------------------------------------------------
-        // [公民] (Social, Law, Economics)
-        // ----------------------------------------------------
-        { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        const { pick, shuffle } = G.utils;
+
+        // 公民資料庫
+        const civicsDB = [
+            { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
         { s:"公民", t:["國七","社會"], e:"家庭功能", y:"社會化", p:"教育", k:"生育", d:"家庭教導子女社會規範與價值觀的過程" },
         { s:"公民", t:["國八","政治"], e:"主權", y:"國家最高權力", p:"國家要素", k:"對內最高", d:"國家對內擁有最高統治權，對外獨立自主" },
         { s:"公民", t:["國八","政治"], e:"基本人權", y:"憲法保障", p:"自由權", k:"平等權", d:"人民與生俱來的權利，政府應予以保障" },
@@ -28,26 +27,19 @@
         { s:"公民", t:["高一","法律"], e:"比例原則", y:"憲法第23條", p:"大法官", k:"最小侵害", d:"國家限制人民權利手段必須必要且適當" }
     ];
 
-    
+        // 註冊模板 (公民基本題)
+        G.registerTemplate('civics_basic', (ctx, rnd) => {
+            const item = pick(civicsDB);
+            const opts = shuffle([item.y, ...shuffle(civicsDB.filter(x=>x!==item)).slice(0,3).map(x=>x.y)]);
+            
+            return {
+                question: `【公民】關於「${item.e}」，下列敘述何者正確？`,
+                options: opts, answer: opts.indexOf(item.y), concept: item.t[1],
+                explanation: [`正確答案：${item.y} (${item.d})`]
+            };
+        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
 
-    G.registerTemplate('civics_core', (ctx) => {
-      let pool = db;
-      if (ctx && ctx.tags) {
-        const targetGrade = ctx.tags.find(t => t.includes("國") || t.includes("高"));
-        if (targetGrade) pool = db.filter(item => item.t[0] === targetGrade);
-      }
-
-      const item = pick(pool);
-      const wrong = shuffle(db.filter(x => x.a !== item.a)).slice(0, 3).map(x => x.a);
-      const opts = shuffle([item.a, ...wrong]);
-
-      return {
-        question: `【公民｜${item.t[1]}】關於「${item.e}」的定義，何者正確？`,
-        options: opts,
-        answer: opts.indexOf(item.a),
-        concept: item.e
-      };
-    }, ["civics", "公民", "社會"]);
-  }
-  init();
-})(this);
+        console.log("✅ 公民題庫已載入完成。");
+    }
+    init();
+})(window);
