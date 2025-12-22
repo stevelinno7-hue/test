@@ -1,20 +1,12 @@
-(function (window) {
-  'use strict';
+(function(global){
+    'use strict';
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        const { pick, shuffle } = G.utils;
 
-  function init() {
-    const G = window.RigorousGenerator;
-    if (!G || !G.registerTemplate || !G.utils) {
-      setTimeout(init, 100);
-      return;
-    }
-
-    const { pick, shuffle } = G.utils;
-
-    /* ==========================================
-     * 英文文法題庫（原始資料，完全保留）
-     * ========================================== */
-    const grammarDB = [
-       // ----------------------------------------------------
+        const engDB = [
+            // ----------------------------------------------------
         // [Topic 1] 基本時態 (Tenses) - 國七/國八
         // ----------------------------------------------------
         { q: "Listen! The baby _____ in the bedroom.", a: "is crying", o: ["cries","cried","cry"], tag: ["國七","時態"] },
@@ -144,45 +136,16 @@
         { q: "He is famous _____ his novels.", a: "for", o: ["as","in","to"], tag: ["國九","片語"] }
     ];
 
-    /* ==========================================
-     * 工具
-     * ========================================== */
-    const byGrade = grade =>
-      grammarDB.filter(q => q.tag[0] === grade);
-
-    const buildQuestion = (item) => {
-      const options = shuffle([...new Set([item.a, ...item.o])]);
-      return {
-        question: item.q,
-        options,
-        answer: options.indexOf(item.a),
-        concept: item.tag[1],
-        explanation: [
-          `年級：${item.tag[0]}`,
-          `正確答案：${item.a}`
-        ],
-        source: "templates_english_grammar_core"
-      };
-    };
-
-    /* ==========================================
-     * 每年級一 template（最穩定）
-     * ========================================== */
-    const GRADES = ["國七","國八","國九","高一","高二","高三"];
-
-    GRADES.forEach(grade => {
-      const pool = byGrade(grade);
-      if (!pool.length) return;
-
-      G.registerTemplate(
-        `english_grammar_${grade}`,
-        () => buildQuestion(pick(pool)),
-        ["english", "英文", "文法", grade]
-      );
-    });
-
-    console.log("✅ 英文文法題庫已載入（Rigorous / PaperGen 穩定版）");
-  }
-
-  init();
-})(window);
+        G.registerTemplate('eng_gram', (ctx, rnd) => {
+            const item = pick(engDB);
+            const opts = shuffle([item.a, ...item.o]);
+            return {
+                question: `【English】${item.q}`,
+                options: opts, answer: opts.indexOf(item.a), concept: "Grammar",
+                explanation: [`Answer: ${item.a}`]
+            };
+        }, ["english", "英文", "文法", "國七", "國八", "國九"]);
+        console.log("✅ 英文文法題庫已載入");
+    }
+    init();
+})(window);、
