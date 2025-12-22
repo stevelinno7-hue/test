@@ -1,11 +1,24 @@
 (function(global){
     'use strict';
+
+    // 定義啟動函式
     function init() {
+        // 1. 檢查引擎是否就緒 (等待機制)
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        
+        // 如果引擎還沒好，等待 100ms 後重試
+        if (!G || !G.registerTemplate) {
+            setTimeout(init, 100);
+            return;
+        }
+
+        // 引擎已就緒，取出工具
         const { pick, shuffle } = G.utils;
 
-        const engDB = [
+        // ==========================================
+        // 英文文法全方位資料庫
+        // ==========================================
+        const grammarDB = [
             // ----------------------------------------------------
         // [Topic 1] 基本時態 (Tenses) - 國七/國八
         // ----------------------------------------------------
@@ -136,16 +149,42 @@
         { q: "He is famous _____ his novels.", a: "for", o: ["as","in","to"], tag: ["國九","片語"] }
     ];
 
-        G.registerTemplate('eng_gram', (ctx, rnd) => {
-            const item = pick(engDB);
+        // 1. 文法選擇
+        G.registerTemplate('eng_grammar_choice', (ctx, rnd) => {
+            const item = pick(grammarDB);
             const opts = shuffle([item.a, ...item.o]);
             return {
-                question: `【English】${item.q}`,
-                options: opts, answer: opts.indexOf(item.a), concept: "Grammar",
-                explanation: [`Answer: ${item.a}`]
+                question: item.q,
+                options: opts,
+                answer: opts.indexOf(item.a),
+                concept: item.tag[1],
+                explanation: [`Correct answer: ${item.a}`]
             };
-        }, ["english", "英文", "文法", "國七", "國八", "國九"]);
-        console.log("✅ 英文文法題庫已載入");
+        }, ["english", "英文", "文法", "國七", "國八", "國九", "高一", "高二", "高三"]);
+
+        // 2. 對話填空 (更自然的情境)
+        const dialogues = [
+            { a: "How have you been recently?", b: "I've been doing great, thanks.", o: ["I am doing homework.", "Yes, I am.", "See you later."], t: "問候" },
+            { a: "May I take your order?", b: "Yes, I'd like a steak, please.", o: ["No, I don't like it.", "Here is the menu.", "Check, please."], t: "餐廳" },
+            { a: "Excuse me, how do I get to the station?", b: "Go straight and turn left.", o: ["It is 5 o'clock.", "I am taking a bus.", "Yes, it is."], t: "問路" }
+        ];
+
+        G.registerTemplate('eng_dialogue', (ctx, rnd) => {
+            const item = pick(dialogues);
+            const opts = shuffle([item.b, ...item.o]);
+            return {
+                question: `A: ${item.a}\nB: __________`,
+                options: opts,
+                answer: opts.indexOf(item.b),
+                concept: `會話 (${item.t})`,
+                explanation: [`A: ${item.a}`, `B: ${item.b}`]
+            };
+        }, ["english", "英文", "會話"]);
+
+        console.log("✅ 英文文法題庫已載入完成。");
     }
+
+    // 啟動！
     init();
-})(window);、
+
+})(window);
