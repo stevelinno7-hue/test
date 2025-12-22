@@ -14,7 +14,8 @@
         const { subject, total, tags } = config;
         let questions = [];
         
-        // 防呆 2: 模板列表不存在 (這是你之前報錯的原因)
+        // 防呆 2: ★★★ 關鍵修正 ★★★
+        // 如果 G._templates 是 undefined，就用空物件 {} 代替，避免報錯
         const templateMap = G._templates || {}; 
         const templateTagMap = G._templateTags || {};
 
