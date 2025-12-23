@@ -2,15 +2,12 @@
     'use strict';
 
     function init() {
-        // 1. 檢查引擎是否就緒 (等待機制)
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
         
-        // 引擎已就緒，取出工具
         const { randInt, shuffle, generateNumericOptions } = G.utils;
 
-        // ==========================================
-        // 物理核心題庫 (含計算邏輯)
+        // 物理核心題庫
         const physDB = [
     // 原始 13 筆
     { t: "密度測量", q: (m,v)=>`某金屬塊質量 ${m*10} g，體積 ${v} cm³，其密度為何？`, a: (m,v)=>parseFloat((m*10/v).toFixed(1)), u: "g/cm³", tag:["國八","測量"] },
@@ -165,15 +162,13 @@
     { t: "量子躍遷（簡述）", q: ()->`電子躍遷時會發生什麼？`, a: ()=>`吸收或放出光子，能量差對應光子能量`, u: "描述", tag:["高三","量子"] }
 ];
 
-        // ==========================================
-        // 註冊邏輯：分年級註冊 (解決跨年級亂跳問題)
-        // ==========================================
+
+        // 分年級註冊
         const grades = ["國八", "國九", "高一", "高二", "高三"];
 
         grades.forEach(grade => {
             const pool = phyDB.filter(q => q.tag[0] === grade);
             
-            // 每個題目獨立註冊，但標籤包含年級
             pool.forEach((p, idx) => {
                 const templateId = `phy_${grade}_${idx}`;
                 
@@ -190,16 +185,13 @@
                         options: opts,
                         answer: opts.indexOf(ans),
                         concept: p.t,
-                        explanation: [
-                            `正確答案：${ans} ${p.u}`,
-                            `相關公式：請參閱 ${p.tag[1]} 單元`
-                        ]
+                        explanation: [`正確答案：${ans} ${p.u}`]
                     };
-                }, ["physics", "物理", "理化", "自然", grade, p.tag[1]]); // 關鍵：把年級加進 tags
+                }, ["physics", "物理", "理化", "自然", grade, p.tag[1]]);
             });
         });
 
-        console.log("✅ 物理題庫 (分年級鎖定版) 已載入完成。");
+        console.log("✅ 物理題庫 (完整修復版) 已載入完成。");
     }
 
     init();
