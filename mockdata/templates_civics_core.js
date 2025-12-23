@@ -6,10 +6,6 @@
         if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
         const { pick, shuffle } = G.utils;
 
-        // ==========================================
-        //  公民科核心資料庫 (Civics Core Database)
-        //  結構：s=科目, t=[年級,單元], e=名詞, y=特徵, p=相關概念, k=關鍵字, d=描述
-        // ==========================================
         const civicsDB = [
     { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
     { s:"公民", t:["國七","社會"], e:"家庭功能", y:"社會化", p:"教育", k:"生育", d:"家庭教導子女社會規範與價值觀的過程" },
@@ -194,59 +190,36 @@
     { s:"公民", t:["高三","政治"], e:"未來公民素養", y:"批判與創新", p:"終身學習", k:"全球視野", d:"培養批判思考、創新能力與全球視野以面對未來挑戰" }
 ];
 
-     
 
-        // ==========================================
-        // 註冊模板 (多樣化題型)
-        // ==========================================
-
-        // 1. 基本觀念題 (敘述找名詞)
-        G.registerTemplate('civics_concept', (ctx, rnd) => {
+        // 註冊模板：公民特徵題
+        G.registerTemplate('civics_feat', (ctx, rnd) => {
             const item = pick(civicsDB);
-            
-            // 誘答：優先找同領域(如都是經濟)的錯誤選項
-            const sameTag = civicsDB.filter(x => x.t[1] === item.t[1] && x.e !== item.e);
-            const others = civicsDB.filter(x => x.e !== item.e);
-            
-            let wrongOpts;
-            if (sameTag.length >= 3) {
-                wrongOpts = shuffle(sameTag).slice(0, 3).map(x => x.e);
-            } else {
-                wrongOpts = shuffle(others).slice(0, 3).map(x => x.e);
-            }
-
-            const opts = shuffle([item.e, ...wrongOpts]);
+            const opts = shuffle([item.y, ...shuffle(civicsDB.filter(x=>x!==item)).slice(0,3).map(x=>x.y)]);
             
             return {
-                question: `【公民 - ${item.t[1]}】「${item.d}」，這是在描述下列哪個概念？`,
-                options: opts,
-                answer: opts.indexOf(item.e),
-                concept: item.t[1],
-                explanation: [`正確答案：${item.e}`, `說明：${item.d}`]
-            };
-        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
-
-        // 2. 特徵判斷題 (名詞找特徵)
-        G.registerTemplate('civics_reverse', (ctx, rnd) => {
-            const item = pick(civicsDB);
-            
-            // 誘答：找其他項目的特徵
-            const wrongOpts = shuffle(civicsDB.filter(x => x.e !== item.e)).slice(0, 3).map(x => x.y);
-            const opts = shuffle([item.y, ...wrongOpts]);
-
-            return {
-                question: `【公民 - ${item.t[1]}】關於「${item.e}」的敘述，下列何者正確？`,
+                question: `【公民】關於「${item.e}」，下列敘述何者正確？`,
                 options: opts,
                 answer: opts.indexOf(item.y),
                 concept: item.t[1],
-                explanation: [`${item.e} 的關鍵特徵是：${item.y}`]
+                explanation: [`正確答案：${item.y}`, `說明：${item.d}`]
             };
         }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
 
-        console.log("✅ 公民題庫 (完整修復版) 已載入完成。");
+        // 註冊模板：公民關鍵字題
+        G.registerTemplate('civics_key', (ctx, rnd) => {
+            const item = pick(civicsDB);
+            const opts = shuffle([item.k, ...shuffle(civicsDB.filter(x=>x!==item)).slice(0,3).map(x=>x.k)]);
+            
+            return {
+                question: `【公民】提到「${item.e}」，最常聯想到哪個概念？`,
+                options: opts,
+                answer: opts.indexOf(item.k),
+                concept: item.t[1],
+                explanation: [`${item.e} 關鍵詞：${item.k}`, `相關概念：${item.p}`]
+            };
+        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
+
+        console.log("⚖️ 公民題庫 (完整修復版) 已載入！");
     }
-
-    // 啟動！
     init();
-
 })(window);
