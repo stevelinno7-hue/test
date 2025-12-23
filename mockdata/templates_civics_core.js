@@ -1,16 +1,23 @@
-(function(global){
+(function (global) {
     'use strict';
 
-    function init() {
+    // 等待引擎就緒
+    function waitForEngine(callback) {
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-        const { pick, shuffle } = G.utils;
+        if (!G || !G.registerTemplate) {
+            setTimeout(() => waitForEngine(callback), 100);
+            return;
+        }
+        callback(G);
+    }
 
-        const civicsDB = [
+    // 公民核心資料庫
+    function buildCivicsDB() {
+        return [
             // [國七] 社會
             { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
             { s:"公民", t:["國七","社會"], e:"家庭功能", y:"社會化", p:"教育", k:"生育", d:"家庭教導子女社會規範與價值觀的過程" },
-            
+
             // [國八] 政治與法律
             { s:"公民", t:["國八","政治"], e:"主權", y:"國家最高權力", p:"國家要素", k:"對內最高", d:"國家對內擁有最高統治權，對外獨立自主" },
             { s:"公民", t:["國八","政治"], e:"基本人權", y:"憲法保障", p:"自由權", k:"平等權", d:"人民與生俱來的權利，政府應予以保障" },
@@ -32,12 +39,18 @@
             { s:"公民", t:["高一","政治"], e:"總統制", y:"覆議權", p:"美國", k:"分立制衡", d:"總統由人民直選，行政與立法權完全分立" },
             { s:"公民", t:["高一","法律"], e:"比例原則", y:"憲法第23條", p:"大法官", k:"最小侵害", d:"國家限制人民權利手段必須必要且適當" }
         ];
+    }
 
-        // 註冊模板：公民特徵題
-        G.registerTemplate('civics_feat', (ctx, rnd) => {
+    // 註冊模板
+    function registerCivicsTemplates(G, civicsDB) {
+        const { pick, shuffle } = G.utils;
+
+        // 公民特徵題
+        G.registerTemplate('civics_feat', () => {
             const item = pick(civicsDB);
-            const opts = shuffle([item.y, ...shuffle(civicsDB.filter(x=>x!==item)).slice(0,3).map(x=>x.y)]);
-            
+            const wrong = shuffle(civicsDB.filter(x => x !== item)).slice(0, 3).map(x => x.y);
+            const opts = shuffle([item.y, ...wrong]);
+
             return {
                 question: `【公民】關於「${item.e}」，下列敘述何者正確？`,
                 options: opts,
@@ -47,11 +60,12 @@
             };
         }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
 
-        // 註冊模板：公民關鍵字題
-        G.registerTemplate('civics_key', (ctx, rnd) => {
+        // 公民關鍵字題
+        G.registerTemplate('civics_key', () => {
             const item = pick(civicsDB);
-            const opts = shuffle([item.k, ...shuffle(civicsDB.filter(x=>x!==item)).slice(0,3).map(x=>x.k)]);
-            
+            const wrong = shuffle(civicsDB.filter(x => x !== item)).slice(0, 3).map(x => x.k);
+            const opts = shuffle([item.k, ...wrong]);
+
             return {
                 question: `【公民】提到「${item.e}」，最常聯想到哪個概念？`,
                 options: opts,
@@ -60,8 +74,13 @@
                 explanation: [`${item.e} 關鍵詞：${item.k}`, `相關概念：${item.p}`]
             };
         }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
-
-        console.log("⚖️ 公民題庫（活潑版）已載入！");
     }
-    init();
+
+    // 初始化
+    waitForEngine(G => {
+        const civicsDB = buildCivicsDB();
+        registerCivicsTemplates(G, civicsDB);
+        console.log("⚖️ 公民題庫（模組化版）已載入！");
+    });
+
 })(window);
