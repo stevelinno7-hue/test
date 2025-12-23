@@ -155,10 +155,9 @@
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
     ];
        
-
-        // ------------------------------------------
-        // 題型分類（根據 tag[1]）
-        // ------------------------------------------
+        // -------------------------
+        // 題型對應
+        // -------------------------
         const TYPE = {
             成語: "idiom",
             修辭: "rhetoric",
@@ -175,145 +174,98 @@
             現代文: "modern"
         };
 
-        // ------------------------------------------
-        // ★ 每種題型都有不同的模板（活潑、自然）
-        // ------------------------------------------
-
+        // -------------------------
+        // 模板
+        // -------------------------
         const templates = {
-
-            // -------- 成語 --------
             idiom: [
                 q => `「${q}」這個成語最常用來形容什麼？`,
-                q => `請選出最符合「${q}」的意思。`,
-                q => `看到成語「${q}」，你會聯想到哪個含義？`,
-                q => `下列何者最能說明「${q}」？`,
-                q => `「${q}」比喻的情境是？`
+                q => `請選出最符合「${q}」的意思。`
             ],
-
-            // -------- 修辭 --------
             rhetoric: [
-                q => `下面哪一項修辭手法符合：「${q}」？`,
-                q => `讀到「${q}」，它運用了什麼修辭？`,
-                q => `請判斷「${q}」屬於哪一種修辭技巧？`,
-                q => `「${q}」是以下哪種修辭的例子？`,
-                q => `這句話「${q}」的寫法，屬於？`
+                q => `下面哪一項修辭手法符合：「${q}」？`
             ],
-
-            // -------- 國學（六書/題辭/年齡/經典/史書 等） --------
             culture: [
-                q => `「${q}」所代表的內容是？`,
-                q => `關於「${q}」，下列何者正確？`,
-                q => `請問「${q}」的意義為何？`,
-                q => `「${q}」在國學常識中指的是？`,
-                q => `有關「${q}」，哪一個是正確解釋？`
+                q => `「${q}」所代表的內容是？`
             ],
-
-            // -------- 古文 --------
             classic: [
-                q => `《${q}》的出處或含義為？`,
-                q => `關於「${q}」，下列哪項說法正確？`,
-                q => `請問「${q}」與哪位作者或典籍有關？`,
-                q => `「${q}」出自哪一部作品或代表什麼意思？`,
-                q => `以下哪一項最能說明「${q}」？`
+                q => `《${q}》的出處或含義為？`
             ],
-
-            // -------- 詩詞 / 曲 --------
             poetry: [
-                q => `「${q}」出自誰的作品或代表什麼意象？`,
-                q => `讀到「${q}」，最相關的詩人或含義是？`,
-                q => `下列何者是「${q}」的正確背景或意思？`,
-                q => `「${q}」最貼近哪個選項？`,
-                q => `請選出與「${q}」最相關的解釋。`
+                q => `「${q}」出自誰的作品或代表什麼意象？`
             ],
-
-            // -------- 現代文 --------
             modern: [
-                q => `「${q}」這篇作品主要在談什麼？`,
-                q => `關於文章中的「${q}」，下列何者正確？`,
-                q => `「${q}」最能對應到哪一個主題或內容？`,
-                q => `請選出最符合「${q}」的一項。`,
-                q => `讀到「${q}」，其核心內容為何？`
+                q => `「${q}」這篇作品主要在談什麼？`
             ]
         };
 
-
-        // 依照 tag[1] 找題型
         function getType(tag) {
             return TYPE[tag] || "idiom";
         }
 
-        // ------------------------------------------
-        // ⭐ 生成題目
-        // ------------------------------------------
-// ------------------------------------------
-// ⭐ 生成題目 (修正版)
-// ------------------------------------------
-G.registerTemplate('chi_basic', (ctx, rnd) => {
+        // -------------------------
+        // ⭐ 生成單題
+        // -------------------------
+        function generateQuestion(item) {
+            const correctAns = item.a.trim();
+            const mainType = getType(item.tag[1]);
+            const pool = templates[mainType];
+            const prefixes = ["嘿～", "小心！", "試想：", "注意：", ""];
+            const questionText = pick(prefixes) + pick(pool)(item.q);
 
-    // 1. 隨機挑一題正確答案
-    const item = pick(chiData);
-    const correctAns = item.a.trim(); // 確保去除空白
-
-    // 2. 決定題型與模板
-    const mainType = getType(item.tag[1]);
-    const pool = templates[mainType];
-    const prefixes = ["嘿～", "小心！", "試想：", "注意：", ""];
-    const questionText = pick(prefixes) + pick(pool)(item.q);
-
-    // 3. 生成錯誤選項 (更嚴謹的邏輯)
-    // 先建立一個 Set 來儲存已選的答案，確保不重複
-    const selectedAnswers = new Set();
-    selectedAnswers.add(correctAns);
-
-    const wrongOptions = [];
-
-    // 策略 A: 優先從「同類型」(同 tag) 找錯誤答案
-    // 過濾出：同類型 + 答案不等於正確答案
-    const sameTypeCandidates = chiData.filter(x => 
-        x.tag[1] === item.tag[1] && x.a.trim() !== correctAns
-    );
-
-    // 隨機打亂候選清單
-    const shuffledCandidates = shuffle(sameTypeCandidates);
-
-    // 填入錯誤選項
-    for (const cand of shuffledCandidates) {
-        const candAns = cand.a.trim();
-        if (!selectedAnswers.has(candAns)) {
-            wrongOptions.push(candAns);
-            selectedAnswers.add(candAns);
-        }
-        if (wrongOptions.length >= 3) break; // 湊滿3個錯誤選項就停
-    }
-
-    // 策略 B: 如果同類型的湊不滿3個，就從「全部題庫」裡隨機補足
-    if (wrongOptions.length < 3) {
-        const allCandidates = shuffle(chiData); // 打亂全部
-        for (const cand of allCandidates) {
-            const candAns = cand.a.trim();
-            if (!selectedAnswers.has(candAns)) {
-                wrongOptions.push(candAns);
-                selectedAnswers.add(candAns);
+            // 錯誤選項
+            const selectedAnswers = new Set([correctAns]);
+            const wrongOptions = [];
+            const sameTypeCandidates = shuffle(chiData.filter(x => x.tag[1] === item.tag[1] && x.a.trim() !== correctAns));
+            for (const cand of sameTypeCandidates) {
+                const candAns = cand.a.trim();
+                if (!selectedAnswers.has(candAns)) {
+                    wrongOptions.push(candAns);
+                    selectedAnswers.add(candAns);
+                }
+                if (wrongOptions.length >= 3) break;
             }
-            if (wrongOptions.length >= 3) break;
+            if (wrongOptions.length < 3) {
+                const allCandidates = shuffle(chiData);
+                for (const cand of allCandidates) {
+                    const candAns = cand.a.trim();
+                    if (!selectedAnswers.has(candAns)) {
+                        wrongOptions.push(candAns);
+                        selectedAnswers.add(candAns);
+                    }
+                    if (wrongOptions.length >= 3) break;
+                }
+            }
+
+            const finalOptions = shuffle([correctAns, ...wrongOptions]);
+
+            return {
+                question: `【國文】${questionText}`,
+                options: finalOptions,
+                answer: finalOptions.indexOf(correctAns),
+                concept: item.tag[1],
+                grade: item.tag[0],
+                explanation: [`答案：${item.a}`]
+            };
         }
-    }
 
-    // 4. 組合最終選項並打亂
-    // 這裡建立了全新的陣列，確保 index 絕對正確
-    const finalOptions = shuffle([correctAns, ...wrongOptions]);
+        // -------------------------
+        // ⭐ 生成年級題庫
+        // -------------------------
+        const grades = ["國七","國八","國九","高一","高二","高三"];
+        const gradePools = {};
 
-    return {
-        question: `【國文】${questionText}`,
-        options: finalOptions,
-        answer: finalOptions.indexOf(correctAns), // 這裡抓出的 index 絕對是對應到 correctAns
-        concept: item.tag[1],
-        explanation: [`答案：${item.a}`]
-    };
-}, ["chinese","國文","國七","國八","國九","高一","高二","高三"]);
+        grades.forEach(g => {
+            gradePools[g] = chiData
+                .filter(item => item.tag[0] === g)
+                .map(item => generateQuestion(item));
+        });
 
-console.log("🎉 國文題庫（活潑 + 類概念選項版）已載入！");
-
+        console.log("🎉 國文題庫已生成（依年級分開）！");
+        console.log(gradePools); // gradePools["國七"], gradePools["高一"] ...
     }
     init();
 })(window);
+
+
+
