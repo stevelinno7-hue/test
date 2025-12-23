@@ -55,38 +55,53 @@
         { t: "光子能量", q: (f,h)=>`若光子頻率為 ${f}×10¹⁴ Hz，普朗克常數 h 約 6.6×10⁻³⁴，其能量數量級約為 10 的幾次方？`, a: (f,h)=> -19, u: "", tag:["高三","近代物理"] }
     ];
 
-    // 啟動註冊
+
+    // ★ 年級篩選函式
+    function filterByGrade(db, userTags) {
+        const allGrades = ["國八","國九","高一","高二","高三"];
+        const targetGrade = userTags.find(tag => allGrades.includes(tag));
+        if (targetGrade) {
+            const filtered = db.filter(item => item.tag.includes(targetGrade));
+            return filtered.length > 0 ? filtered : db; // 防呆
+        }
+        return db; // 未指定年級回傳全部
+    }
+
     waitForEngine(G => {
         const { randInt, shuffle, generateNumericOptions } = G.utils;
 
         phyDB.forEach((p, i) => {
             G.registerTemplate(`phy_q${i}`, (ctx, rnd) => {
-                // 1. 生成隨機變數 (避免 0 或 1 造成過於簡單)
-                const v1 = randInt(2, 9); 
-                const v2 = randInt(2, 9);
-                
-                // 2. 計算答案
-                const ans = p.a(v1, v2);
-                
-                // 3. 生成選項 (判斷是否為整數以決定擾動方式)
+                // 先過濾題庫
+                const validDB = filterByGrade([p], ctx.tags || []);
+                if (!validDB.length) return null;
+                const pItem = validDB[0];
+
+                // 隨機變數
+                const v1 = randInt(2,9);
+                const v2 = randInt(2,9);
+
+                // 計算答案
+                const ans = pItem.a(v1,v2);
+
+                // 數值選項
                 const isInt = Number.isInteger(ans);
                 const opts = shuffle(generateNumericOptions(ans, isInt ? 'int' : 'float'));
 
                 return {
-                    question: `【物理】${p.q(v1, v2)}`,
+                    question: `【物理】${pItem.q(v1, v2)}`,
                     options: opts,
                     answer: opts.indexOf(ans),
-                    concept: p.t,
+                    concept: pItem.t,
                     explanation: [
-                        `正確答案：${ans} ${p.u}`,
-                        // 這裡可以加入通用的公式提示
-                        `解題關鍵：${p.t} 相關公式`
+                        `正確答案：${ans} ${pItem.u}`,
+                        `解題關鍵：${pItem.t} 相關公式`
                     ]
                 };
-            }, ["physics", "物理", "自然", "理化", ...p.tag]);
+            }, ["physics","物理","自然","理化", ...p.tag]);
         });
 
-        console.log("⚛️ 物理題庫 (Grade 8-12 + 計算型) 已載入完成。");
+        console.log("⚛️ 物理題庫 (含年級篩選) 已載入完成。");
     });
 
 })(window);
