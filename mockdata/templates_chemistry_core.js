@@ -94,77 +94,60 @@
             { s:"化學", t:["高二","平衡"], q: "勒沙特列原理", a: "平衡移動以抵銷外加因素" },
             { s:"化學", t:["高二","酸鹼"], q: "緩衝溶液", a: "能抵抗pH值劇烈變化的溶液" }
         ];
+        ];
 
-        // ------------------------------------------
-        // ⭐ 註冊模板：化學/地科 嚴格去重 + 圖解版
-        // ------------------------------------------
-        G.registerTemplate('science_dynamic', (ctx, rnd) => {
-            // 1. 選題
-            const item = pick(scienceDB);
-            const correctAns = item.a.trim(); // 確保無空白
+        // ----------------------
+        // 年級分池
+        // ----------------------
+        const grades = ["國八","國九","高一","高二","高三"];
+        const gradePools = {};
 
-            // 2. 建立選項 Set (防止重複)
-            const selectedAnswers = new Set();
-            selectedAnswers.add(correctAns);
-            const wrongOptions = [];
+        grades.forEach(g => {
+            gradePools[g] = scienceDB
+                .filter(item => item.t[0] === g)
+                .map(item => {
+                    const correctAns = item.a.trim();
+                    const selectedAnswers = new Set([correctAns]);
+                    const wrongOptions = [];
 
-            // 3. 策略 A: 優先找「同科目」(s) 且排除正確答案的錯誤選項
-            const sameSubjectCandidates = scienceDB.filter(x => 
-                x.s === item.s && x.a.trim() !== correctAns
-            );
-            
-            // 打亂並選取
-            const shuffledSame = shuffle(sameSubjectCandidates);
-            for (const cand of shuffledSame) {
-                const candAns = cand.a.trim();
-                if (!selectedAnswers.has(candAns)) {
-                    wrongOptions.push(candAns);
-                    selectedAnswers.add(candAns);
-                }
-                if (wrongOptions.length >= 3) break;
-            }
-
-            // 4. 策略 B: 萬一同科目不夠，從全體補足
-            if (wrongOptions.length < 3) {
-                const allCandidates = shuffle(scienceDB);
-                for (const cand of allCandidates) {
-                    const candAns = cand.a.trim();
-                    if (!selectedAnswers.has(candAns)) {
-                        wrongOptions.push(candAns);
-                        selectedAnswers.add(candAns);
+                    // 優先同科目
+                    const sameSubjectCandidates = shuffle(scienceDB.filter(x => x.s === item.s && x.a.trim() !== correctAns));
+                    for (const cand of sameSubjectCandidates) {
+                        const candAns = cand.a.trim();
+                        if (!selectedAnswers.has(candAns)) {
+                            wrongOptions.push(candAns);
+                            selectedAnswers.add(candAns);
+                        }
+                        if (wrongOptions.length >= 3) break;
                     }
-                    if (wrongOptions.length >= 3) break;
-                }
-            }
 
-            // 5. 組合最終選項 (確保 index 正確)
-            const finalOptions = shuffle([correctAns, ...wrongOptions]);
-            
-            // 6. 決定視覺化標籤 (Image Tag)
-            let imageTag = "";
-            if (item.s === "地科") {
-                if (item.t.includes("天文")) imageTag = ``;
-                else if (item.t.includes("地質")) imageTag = ``;
-                else if (item.t.includes("大氣")) imageTag = ``;
-            } else if (item.s === "化學") {
-                 if (item.t.includes("原子") || item.t.includes("鍵結")) imageTag = ``;
-                 else if (item.t.includes("有機")) imageTag = ``;
-                 else if (item.t.includes("週期表")) imageTag = ``;
-            }
+                    // 補足全庫
+                    if (wrongOptions.length < 3) {
+                        const allCandidates = shuffle(scienceDB);
+                        for (const cand of allCandidates) {
+                            const candAns = cand.a.trim();
+                            if (!selectedAnswers.has(candAns)) {
+                                wrongOptions.push(candAns);
+                                selectedAnswers.add(candAns);
+                            }
+                            if (wrongOptions.length >= 3) break;
+                        }
+                    }
 
-            return {
-                question: `【${item.s}】${item.q}`,
-                options: finalOptions,
-                answer: finalOptions.indexOf(correctAns),
-                concept: item.t[1],
-                explanation: [
-                    `正確答案：${item.a}`,
-                    imageTag
-                ]
-            };
-        }, ["chemistry", "化學", "earth", "地科", "自然", "國八", "國九"]);
+                    const finalOptions = shuffle([correctAns, ...wrongOptions]);
+                    return {
+                        question: `【${item.s}】${item.q}`,
+                        options: finalOptions,
+                        answer: finalOptions.indexOf(correctAns),
+                        concept: item.t[1],
+                        grade: item.t[0],
+                        explanation: [`正確答案：${item.a}`]
+                    };
+                });
+        });
 
-        console.log("✅ 化學/地科題庫 (嚴格去重 + 圖解版) 已載入。");
-    }
+        console.log("✅ 年級分池題庫已生成", gradePools);
+
     init();
 })(window);
+
