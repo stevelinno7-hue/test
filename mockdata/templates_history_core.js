@@ -7,7 +7,7 @@
         const { pick, shuffle } = G.utils;
 
         // ==========================================
-        // 歷史科核心資料庫 (History Core Database)
+        //  歷史科核心資料庫 (History Core Database)
         // ==========================================
         const historyDB = [
             // [歷史 - 台灣史]
@@ -82,37 +82,35 @@
             { s:"歷史", t:["國九","世界史"], e:"冷戰", y:"1947-1991", p:"美蘇", k:"鐵幕", d:"資本主義與共產主義兩大陣營的對抗" },
         ];
 
-        // ----------------------------------------------
-        // 🎨 歷史問句模板（活潑自然）
-        // ----------------------------------------------
+        // 活潑問句模板
         const askTemplates = [
             item => `嘿～來看看「${item.e}」吧！它最相關的是哪一個年代或特色呢？`,
             item => `如果提到「${item.e}」，你會想到哪個事件背景？以下哪個最正確？`,
             item => `在歷史課出現的「${item.e}」，其重點特色是什麼？選一個最貼近的！`,
             item => `想像你在考古現場挖到「${item.e}」的線索～你覺得它符合哪段時期？`,
-            item => `老師突然問：「${item.e}」最關鍵的年代/特色？你會選？`,
             item => `下列哪一個，是「${item.e}」最具代表性的關鍵？`,
             item => `如果把「${item.e}」拍成電影，你覺得背景會是哪段時期？`,
             item => `以下哪一項，最能說明「${item.e}」的重要意義？`,
-            item => `「${item.e}」在歷史上很重要～它到底是哪段時間的事呢？`,
             item => `選一個最符合「${item.e}」描述的年代/特色吧！`
         ];
 
-        // ----------------------------------------------
-        // ⭐ 歷史專用嚴格生成器 (防呆 + 變數隔離 + 領域保護)
-        // ----------------------------------------------
+        // 歷史專用嚴格生成器
         function generateHistoryOptions_Safe(G, db, item, field) {
             const { shuffle } = G.utils;
             const correctAns = item[field].trim();
             const selected = new Set();
             selected.add(correctAns);
             const wrongOpts = [];
+            
+            // 策略：找同單元 (tag[1]) 的錯誤答案
             const sameTag = shuffle(db.filter(x => x.t[1] === item.t[1]));
             for (const cand of sameTag) {
                 const txt = cand[field].trim();
                 if (!selected.has(txt)) { wrongOpts.push(txt); selected.add(txt); }
                 if (wrongOpts.length >= 3) break;
             }
+            
+            // 如果不夠，從全體找
             if (wrongOpts.length < 3) {
                 const all = shuffle(db);
                 for (const cand of all) {
@@ -121,25 +119,30 @@
                     if (wrongOpts.length >= 3) break;
                 }
             }
+            
             const finalOpts = shuffle([correctAns, ...wrongOpts]);
             return { options: finalOpts, answer: finalOpts.indexOf(correctAns) };
         }
 
-        // ----------------------------------------------
-        // 🎯 註冊：歷史活潑版題目（可指定年級）
-        // ----------------------------------------------
-        G.registerTemplate('his_feat', (ctx, rnd, grade="國七") => {
-            // 篩選指定年級的題庫
-            const targetDB = historyDB.filter(item => item.t.includes(grade));
-            if (targetDB.length === 0) {
-                return { question: `⚠️ 沒有 ${grade} 的歷史題目資料！`, options: [], answer: -1, concept: "", explanation: [] };
+        // ★ 關鍵修復：從 ctx.tags 自動抓取年級 ★
+        function filterByGrade(db, userTags) {
+            const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三"];
+            const targetGrade = userTags.find(tag => allGrades.includes(tag));
+            if (targetGrade) {
+                const filtered = db.filter(item => item.t.includes(targetGrade));
+                return filtered.length > 0 ? filtered : db; 
             }
+            return db; // 沒指定年級就全回傳
+        }
 
+        // 註冊模板
+        G.registerTemplate('his_feat', (ctx, rnd) => {
+            // 1. 根據使用者的 tags 自動篩選資料庫
+            const targetDB = filterByGrade(historyDB, ctx.tags || []);
             const item = pick(targetDB);
+            
+            // 2. 生成選項
             const { options, answer } = generateHistoryOptions_Safe(G, targetDB, item, 'y');
-
-            // 可加圖片查詢（可留空）
-            let imageTag = "";
 
             return {
                 question: pick(askTemplates)(item),
@@ -150,14 +153,14 @@
                     `【${item.e}】`,
                     `📌 時代：${item.y}`,
                     `📌 關鍵詞：${item.k}`,
-                    `📌 解說：${item.d}`,
-                    imageTag
+                    `📌 解說：${item.d}`
                 ]
             };
-        }, ["history", "歷史", "社會", "國七", "國八", "國九"]);
+        }, ["history", "歷史", "社會", "國七", "國八", "國九"]); // 註冊標籤
 
-        console.log("🌟 歷史題庫（活潑 + 嚴格去重 + 可指定年級）已載入！");
+        console.log("🌟 歷史題庫（活潑 + 年級鎖定）已載入！");
     }
 
     init();
+
 })(window);
