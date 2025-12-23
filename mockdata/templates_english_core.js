@@ -54,64 +54,40 @@
             { q: "The more you learn, the _____ you become. Knowledge is power!", a: "wiser", o: ["wise","wisest","more wise"], tag: ["高一","比較"] }
         ];
 
-        // =============================
-        // 題型：文法選擇題（安全強化版）
-        // =============================
-        G.registerTemplate('eng_grammar_choice', (ctx, rnd) => {
-            const item = pick(grammarDB);
-            
-            // 1. 處理正確答案 (Trim 去空白)
-            const correctAns = item.a.trim();
+        // ★ 年級篩選函式
+        function filterByGrade(db, userTags) {
+            const allGrades = ["國七","國八","國九","高一","高二","高三"];
+            const targetGrade = userTags.find(tag => allGrades.includes(tag));
+            if (targetGrade) {
+                const filtered = db.filter(item => item.tag && item.tag.includes(targetGrade));
+                return filtered.length > 0 ? filtered : db; // 防呆
+            }
+            return db; // 未指定年級回傳全部
+        }
 
-            // 2. 處理錯誤選項 (Trim + 過濾掉不小心寫進去的正確答案)
+        G.registerTemplate('eng_grammar_choice', (ctx, rnd) => {
+            const validDB = filterByGrade(grammarDB, ctx.tags || []);
+            const item = pick(validDB);
+            
+            const correctAns = item.a.trim();
             const validDistractors = item.o
                 .map(opt => opt.trim())
-                .filter(opt => opt !== correctAns); // 雙重保險
-
-            // 3. 組合選項
+                .filter(opt => opt !== correctAns);
             const opts = shuffle([correctAns, ...validDistractors]);
 
             return {
                 question: item.q,
                 options: opts,
-                answer: opts.indexOf(correctAns), // 確保 index 抓對
+                answer: opts.indexOf(correctAns),
                 concept: item.tag[1],
                 explanation: [`Correct answer: ${item.a}`]
             };
-        }, ["english","英文","文法","國七","國八","國九","高一","高二","高三"]);
+        }, ["english","英文","文法"]);
 
-        // ==========================================
-        // ⭐ 對話填空（安全強化版）
-        // ==========================================
-        const dialogues = [
-            { a: "How have you been recently?", b: "I've been doing great, thanks!", o: ["I am doing homework.","Yes, I am.","See you later."], t: "問候" },
-            { a: "May I take your order?", b: "Yes, I'd like a steak, please.", o: ["No, I don't like it.","Here is the menu.","Check, please."], t: "餐廳" },
-            { a: "Excuse me, how do I get to the station?", b: "Go straight and turn left at the second light.", o: ["It is 5 o'clock.","I am taking a bus.","Yes, it is."], t: "問路" }
-        ];
-
-        G.registerTemplate('eng_dialogue', (ctx, rnd) => {
-            const item = pick(dialogues);
-            
-            // 同樣進行字串修整與防呆
-            const correctAns = item.b.trim();
-            const validDistractors = item.o
-                .map(opt => opt.trim())
-                .filter(opt => opt !== correctAns);
-
-            const opts = shuffle([correctAns, ...validDistractors]);
-
-            return {
-                question: `A: ${item.a}\nB: __________`,
-                options: opts,
-                answer: opts.indexOf(correctAns),
-                concept: `會話 (${item.t})`,
-                explanation: [`A: ${item.a}`, `B: ${item.b}`]
-            };
-        }, ["english","英文","會話"]);
-
-        console.log("✨ 英文文法題庫 (安全版) 載入完畢！");
+        console.log("✨ 英文文法題庫 (含年級篩選) 載入完畢！");
     }
 
     init();
 
 })(window);
+
