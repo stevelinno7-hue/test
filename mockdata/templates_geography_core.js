@@ -129,110 +129,83 @@
         { s:"地理", t:["高三","地緣政治"], e:"海權與陸權", y:"地理戰略", p:"地理位置", k:"通道控制", d:"地理位置影響國家戰略與海陸權力分配" }
     ];
 
-    // ⭐ 專屬地理的生成器 (函式名稱加上 _Safe 避免衝突)
+   
+    // ⭐ 專屬地理的生成器
     function generateGeoOptions_Safe(G, db, item, field) {
         const { shuffle } = G.utils;
         const correctAns = item[field].trim();
-        
-        // 建立 Set 避免重複
         const selected = new Set();
         selected.add(correctAns);
         const wrongOpts = [];
 
-        // 策略 A: 優先找「地理資料庫內」且「同單元」的錯誤選項 (例如都是氣候)
-        // 即使題目被鎖定在"國七"，錯誤選項也可以來自其他年級的同類概念，增加誘答性
+        // 策略 A: 同單元錯誤選項
         const sameUnit = shuffle(db.filter(x => x.t[1] === item.t[1]));
-        
-        for(const cand of sameUnit) {
+        for (const cand of sameUnit) {
             const txt = cand[field].trim();
-            if(!selected.has(txt)) {
+            if (!selected.has(txt)) {
                 wrongOpts.push(txt);
                 selected.add(txt);
             }
-            if(wrongOpts.length >= 3) break;
+            if (wrongOpts.length >= 3) break;
         }
 
-        // 策略 B: 如果不夠，從「整個地理資料庫」找
-        if(wrongOpts.length < 3) {
+        // 策略 B: 從整個資料庫找
+        if (wrongOpts.length < 3) {
             const allGeo = shuffle(db);
-            for(const cand of allGeo) {
+            for (const cand of allGeo) {
                 const txt = cand[field].trim();
-                if(!selected.has(txt)) {
+                if (!selected.has(txt)) {
                     wrongOpts.push(txt);
                     selected.add(txt);
                 }
-                if(wrongOpts.length >= 3) break;
+                if (wrongOpts.length >= 3) break;
             }
         }
 
         const finalOpts = shuffle([correctAns, ...wrongOpts]);
-        return {
-            options: finalOpts,
-            answer: finalOpts.indexOf(correctAns)
-        };
+        return { options: finalOpts, answer: finalOpts.indexOf(correctAns) };
+    }
+
+    // ★ 年級篩選函式
+    function filterByGrade(db, userTags) {
+        const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三"];
+        const targetGrade = userTags.find(tag => allGrades.includes(tag));
+
+        if (targetGrade) {
+            const filtered = db.filter(item => item.t.includes(targetGrade));
+            return filtered.length > 0 ? filtered : db; // 防呆
+        }
+        return db; // 沒選年級就回傳全部
     }
 
     // 註冊模板
     function registerGeoTemplates(G, geoDB) {
         const { pick } = G.utils;
 
-        // 定義所有可能的年級標籤
-        const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三"];
-
-        // ★ 核心函式：根據使用者標籤過濾題目
-        function filterByGrade(db, userTags) {
-            // 找出使用者選了哪個年級 (例如 ["地理", "國七"] -> "國七")
-            const targetGrade = userTags.find(tag => allGrades.includes(tag));
-            
-            if (targetGrade) {
-                // 如果有指定年級，只回傳該年級的題目
-                const filtered = db.filter(item => item.t[0] === targetGrade);
-                // 防呆：萬一該年級沒題目，回傳全部以免當機
-                return filtered.length > 0 ? filtered : db;
-            }
-            // 沒指定年級 (例如只選 "地理")，回傳全部
-            return db;
-        }
-
         // 1. 地理敘述題
         G.registerTemplate('geo_feat', (ctx) => {
-            // ★ 第一步：先過濾題目
             const validDB = filterByGrade(geoDB, ctx.tags || []);
             const item = pick(validDB);
-            
-            // 呼叫專屬生成器
             const { options, answer } = generateGeoOptions_Safe(G, geoDB, item, 'y');
-            
-            // 決定視覺化標籤 (Image Tag)
+
             let imageTag = "";
-            if (item.t[1] === "地形") {
-                 imageTag = ``;
-            } else if (item.t[1] === "氣候") {
-                 imageTag = ``;
-            } else if (item.t[1] === "地圖" || item.t[1] === "GIS") {
-                 imageTag = ``;
-            }
+            if (item.t[1] === "地形") imageTag = ``;
+            else if (item.t[1] === "氣候") imageTag = ``;
+            else if (item.t[1] === "地圖" || item.t[1] === "GIS") imageTag = ``;
 
             return {
                 question: `【地理】關於「${item.e}」，下列敘述何者正確？`,
                 options: options,
                 answer: answer,
                 concept: item.t[1],
-                explanation: [
-                    `正確答案：${item.y}`, 
-                    `說明：${item.d}`,
-                    imageTag
-                ]
+                explanation: [`正確答案：${item.y}`, `說明：${item.d}`, imageTag]
             };
         }, ["geography", "地理", "社會", "國七", "國八", "國九", "高一", "高二", "高三"]);
 
         // 2. 地理關鍵字題
         G.registerTemplate('geo_key', (ctx) => {
-            // ★ 第一步：先過濾題目
             const validDB = filterByGrade(geoDB, ctx.tags || []);
             const item = pick(validDB);
-            
-            // 呼叫專屬生成器
             const { options, answer } = generateGeoOptions_Safe(G, geoDB, item, 'k');
 
             return {
@@ -248,7 +221,7 @@
     // 啟動
     waitForEngine(G => {
         registerGeoTemplates(G, geoDB);
-        console.log("🌏 地理題庫 (年級鎖定 + 嚴格去重 + 圖解版) 已載入！");
+        console.log("🌏 地理題庫 (年級篩選 + 嚴格去重 + 圖解版) 已載入！");
     });
 
 })(window);
