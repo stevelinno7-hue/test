@@ -1,14 +1,14 @@
 (function(global){
     'use strict';
+
     function init() {
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-
         const { pick, shuffle } = G.utils;
 
-        // ------------------------------------------
-        // 你的題庫原樣保留（完整）
-        // ------------------------------------------
+        // ==========================================
+        // 國文科核心資料庫 (Chinese Core Database)
+        // ==========================================
         const chiData = [
             // ------------------------------------------
         // 1. 成語判讀 (Idioms)
@@ -154,118 +154,77 @@
         { q: "一桿稱仔", a: "賴和 (台灣新文學之父)", tag: ["高三","現代文"] },
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
     ];
-       
-        // -------------------------
-        // 題型對應
-        // -------------------------
-        const TYPE = {
-            成語: "idiom",
-            修辭: "rhetoric",
-            六書: "culture",
-            年齡: "culture",
-            禮俗: "culture",
-            題辭: "culture",
-            經典: "culture",
-            史書: "culture",
-            古文: "classic",
-            唐詩: "poetry",
-            宋詞: "poetry",
-            元曲: "poetry",
-            現代文: "modern"
-        };
+        
 
-        // -------------------------
-        // 模板
-        // -------------------------
-        const templates = {
-            idiom: [
-                q => `「${q}」這個成語最常用來形容什麼？`,
-                q => `請選出最符合「${q}」的意思。`
-            ],
-            rhetoric: [
-                q => `下面哪一項修辭手法符合：「${q}」？`
-            ],
-            culture: [
-                q => `「${q}」所代表的內容是？`
-            ],
-            classic: [
-                q => `《${q}》的出處或含義為？`
-            ],
-            poetry: [
-                q => `「${q}」出自誰的作品或代表什麼意象？`
-            ],
-            modern: [
-                q => `「${q}」這篇作品主要在談什麼？`
-            ]
-        };
+        // ==========================================
+        // 註冊模板 (Templates)
+        // ==========================================
 
-        function getType(tag) {
-            return TYPE[tag] || "idiom";
-        }
-
-        // -------------------------
-        // ⭐ 生成單題
-        // -------------------------
-        function generateQuestion(item) {
-            const correctAns = item.a.trim();
-            const mainType = getType(item.tag[1]);
-            const pool = templates[mainType];
-            const prefixes = ["嘿～", "小心！", "試想：", "注意：", ""];
-            const questionText = pick(prefixes) + pick(pool)(item.q);
-
-            // 錯誤選項
-            const selectedAnswers = new Set([correctAns]);
-            const wrongOptions = [];
-            const sameTypeCandidates = shuffle(chiData.filter(x => x.tag[1] === item.tag[1] && x.a.trim() !== correctAns));
-            for (const cand of sameTypeCandidates) {
-                const candAns = cand.a.trim();
-                if (!selectedAnswers.has(candAns)) {
-                    wrongOptions.push(candAns);
-                    selectedAnswers.add(candAns);
-                }
-                if (wrongOptions.length >= 3) break;
+        // 模板 1: 基礎定義題 (問A答B)
+        G.registerTemplate('chi_def', (ctx, rnd) => {
+            const item = pick(chiData);
+            
+            // 誘答：找同類別的錯誤選項
+            const sameTag = chiData.filter(x => x.tag[1] === item.tag[1] && x.q !== item.q);
+            const others = chiData.filter(x => x.q !== item.q);
+            
+            let wrongOpts = [];
+            if (sameTag.length >= 3) {
+                wrongOpts = shuffle(sameTag).slice(0, 3).map(x => x.a);
+            } else {
+                wrongOpts = shuffle(others).slice(0, 3).map(x => x.a);
             }
-            if (wrongOptions.length < 3) {
-                const allCandidates = shuffle(chiData);
-                for (const cand of allCandidates) {
-                    const candAns = cand.a.trim();
-                    if (!selectedAnswers.has(candAns)) {
-                        wrongOptions.push(candAns);
-                        selectedAnswers.add(candAns);
-                    }
-                    if (wrongOptions.length >= 3) break;
-                }
-            }
+            
+            const opts = shuffle([item.a, ...wrongOpts]);
 
-            const finalOptions = shuffle([correctAns, ...wrongOptions]);
+            let qText = "";
+            if (item.tag[1] === "成語") qText = `「${item.q}」的意思為何？`;
+            else if (item.tag[1] === "修辭") qText = `「${item.q}」使用了哪種修辭？`;
+            else if (item.tag[1] === "古文" || item.tag[1] === "唐詩") qText = `「${item.q}」出自何處或何人？`;
+            else qText = `關於「${item.q}」，下列敘述何者正確？`;
 
             return {
-                question: `【國文】${questionText}`,
-                options: finalOptions,
-                answer: finalOptions.indexOf(correctAns),
+                question: `【國文 - ${item.tag[1]}】${qText}`,
+                options: opts,
+                answer: opts.indexOf(item.a),
                 concept: item.tag[1],
-                grade: item.tag[0],
-                explanation: [`答案：${item.a}`]
+                explanation: [`正確答案：${item.a}`]
             };
-        }
+        }, ["chinese", "國文", "語文", "國七", "國八", "國九", "高一", "高二", "高三"]);
 
-        // -------------------------
-        // ⭐ 生成年級題庫
-        // -------------------------
-        const grades = ["國七","國八","國九","高一","高二","高三"];
-        const gradePools = {};
+        // 模板 2: 反向判斷題 (問B答A)
+        G.registerTemplate('chi_rev', (ctx, rnd) => {
+            const item = pick(chiData);
+            
+            // 誘答：找同類別的錯誤選項 (這次是題目本身)
+            const sameTag = chiData.filter(x => x.tag[1] === item.tag[1] && x.q !== item.q);
+            const others = chiData.filter(x => x.q !== item.q);
+            
+            let wrongOpts = [];
+            if (sameTag.length >= 3) {
+                wrongOpts = shuffle(sameTag).slice(0, 3).map(x => x.q);
+            } else {
+                wrongOpts = shuffle(others).slice(0, 3).map(x => x.q);
+            }
+            
+            const opts = shuffle([item.q, ...wrongOpts]);
 
-        grades.forEach(g => {
-            gradePools[g] = chiData
-                .filter(item => item.tag[0] === g)
-                .map(item => generateQuestion(item));
-        });
+            let qText = "";
+            if (item.tag[1] === "成語") qText = `下列哪個成語的意思是「${item.a}」？`;
+            else if (item.tag[1] === "修辭") qText = `下列哪個句子使用了「${item.a}」？`;
+            else qText = `下列何者符合「${item.a}」的描述？`;
 
-        console.log("🎉 國文題庫已生成（依年級分開）！");
-        console.log(gradePools); // gradePools["國七"], gradePools["高一"] ...
+            return {
+                question: `【國文 - ${item.tag[1]}】${qText}`,
+                options: opts,
+                answer: opts.indexOf(item.q),
+                concept: item.tag[1],
+                explanation: [`「${item.q}」：${item.a}`]
+            };
+        }, ["chinese", "國文", "語文", "國七", "國八", "國九", "高一", "高二", "高三"]);
+
+        console.log("🎉 國文題庫（活潑題型版）已載入！");
     }
+
     init();
 })(window);
-
-
-
