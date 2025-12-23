@@ -6,11 +6,8 @@
         if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
         const { pick, shuffle } = G.utils;
 
-        // ==========================================
-        // 英文文法資料庫 (Enhanced Grammar DB)
-        // ==========================================
         const grammarDB = [
-             // ----------------------------------------------------
+        // ----------------------------------------------------
         // [Topic 1] 基本時態 (Tenses) - 國七/國八
         // ----------------------------------------------------
         { q: "Listen! The baby _____ in the bedroom.", a: "is crying", o: ["cries","cried","cry"], tag: ["國七","時態"] },
@@ -140,18 +137,13 @@
         { q: "He is famous _____ his novels.", a: "for", o: ["as","in","to"], tag: ["國九","片語"] }
     ];
 
-        // ==========================================
-        // 註冊邏輯：分年級註冊 (解決跨年級亂跳問題)
-        // ==========================================
+
         const grades = ["國七", "國八", "國九", "高一", "高二", "高三"];
 
         grades.forEach(grade => {
-            // 篩選出該年級的題目
             const pool = grammarDB.filter(q => q.t[0] === grade);
             
             if (pool.length > 0) {
-                // 註冊專屬該年級的模板 ID (如 eng_gram_國七)
-                // 這樣 PaperGen 只要鎖定 tags 就能精準抓到
                 G.registerTemplate(`eng_gram_${grade}`, (ctx, rnd) => {
                     const item = pick(pool);
                     const opts = shuffle([item.a, ...item.o]);
@@ -164,69 +156,13 @@
                         grade: item.t[0],
                         explanation: [`Correct answer: ${item.a}`]
                     };
-                }, ["english", "英文", "文法", grade]); // 關鍵：把年級加進 tags
+                }, ["english", "英文", "文法", grade]); 
             }
         });
 
-        console.log("✨ 自然語境英文文法題庫 (分年級版) 載入完畢！");
-    }
-
-    init();
-
-})(window);            { q: "He quit _____ last year because it was bad for his health.", a: "smoking", o: ["to smoke","smoke","smoked"], tag: ["國九","動名詞"] },
-            { q: "Remember _____ the door when you leave. It's getting cold outside.", a: "to lock", o: ["locking","lock","locked"], tag: ["國九","不定詞"] },
-
-            // —— Relative Clauses 關代 ——
-            { q: "The girl _____ is crying is my little sister. She lost her toy.", a: "who", o: ["which","whose","whom"], tag: ["國九","關代"] },
-            { q: "This is the book _____ I bought yesterday at the bookstore.", a: "which", o: ["who","whose","where"], tag: ["國九","關代"] },
-            { q: "The man _____ car was stolen reported it to the police immediately.", a: "whose", o: ["who","which","that"], tag: ["國九","關代"] },
-            { q: "He is the only person _____ knows the secret code.", a: "that", o: ["who","which","whose"], tag: ["高一","關代"] },
-
-            // —— Conjunction / Hypothetical ——
-            { q: "_____ it rained heavily, we still went hiking. We didn't want to miss the fun.", a: "Although", o: ["Because","If","But"], tag: ["國八","連接詞"] },
-            { q: "If I _____ you, I would accept the offer. It's a great opportunity.", a: "were", o: ["am","was","be"], tag: ["高二","假設"] },
-            { q: "If it _____ tomorrow, we will cancel the picnic and stay home instead.", a: "rains", o: ["rained","will rain","rain"], tag: ["高一","假設"] },
-
-            // —— Inversion / Comparatives ——
-            { q: "Never _____ such a beautiful sight. The sunset was breathtaking.", a: "have I seen", o: ["I have seen","I saw","did I saw"], tag: ["高三","倒裝"] },
-            { q: "He is _____ than his brother. He can reach the top shelf easily.", a: "taller", o: ["tall","tallest","the tallest"], tag: ["國八","比較"] },
-            { q: "The more you learn, the _____ you become. Knowledge is power!", a: "wiser", o: ["wise","wisest","more wise"], tag: ["高一","比較"] }
-        ];
-
-        // ★ 年級篩選函式
-        function filterByGrade(db, userTags) {
-            const allGrades = ["國七","國八","國九","高一","高二","高三"];
-            const targetGrade = userTags.find(tag => allGrades.includes(tag));
-            if (targetGrade) {
-                const filtered = db.filter(item => item.tag && item.tag.includes(targetGrade));
-                return filtered.length > 0 ? filtered : db; // 防呆
-            }
-            return db; // 未指定年級回傳全部
-        }
-
-        G.registerTemplate('eng_grammar_choice', (ctx, rnd) => {
-            const validDB = filterByGrade(grammarDB, ctx.tags || []);
-            const item = pick(validDB);
-            
-            const correctAns = item.a.trim();
-            const validDistractors = item.o
-                .map(opt => opt.trim())
-                .filter(opt => opt !== correctAns);
-            const opts = shuffle([correctAns, ...validDistractors]);
-
-            return {
-                question: item.q,
-                options: opts,
-                answer: opts.indexOf(correctAns),
-                concept: item.tag[1],
-                explanation: [`Correct answer: ${item.a}`]
-            };
-        }, ["english","英文","文法"]);
-
-        console.log("✨ 英文文法題庫 (含年級篩選) 載入完畢！");
+        console.log("✨ 英文文法題庫 (完整修復版) 載入完畢！");
     }
 
     init();
 
 })(window);
-
