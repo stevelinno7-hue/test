@@ -13,19 +13,32 @@
         const allIds = Object.keys(templateMap);
 
         // ==========================================
-        // 1. 科目白名單
+        // 1. 科目白名單 (修正版：去除寬鬆標籤)
         // ==========================================
         const subjectWhitelist = {
+            // --- 數學 ---
             'math': ['math', '數學'],
-            'physics': ['physics', '物理', '理化', '自然'],
-            'chemistry': ['chemistry', '化學', '理化', '自然'],
-            'biology': ['biology', '生物', '自然'],
-            'earth': ['earth', '地科', '地球科學', '自然'],
+
+            // --- 自然科 (移除 '自然' 這個大標籤，避免混題) ---
+            'physics': ['physics', '物理', '理化'],       // 國中理化包含物理
+            'chemistry': ['chemistry', '化學', '理化'],    // 國中理化包含化學
+            'biology': ['biology', '生物'],               // 移除 '自然'
+            'earth': ['earth', '地科', '地球科學'],        // 移除 '自然'
+            
+            // 如果你想出「自然大卷」(全科)，可以多加這個選項：
+            'science': ['自然', '理化', '生物', '地科'],
+
+            // --- 語文 ---
             'chinese': ['chinese', '國文', '語文'],
             'english': ['english', '英文', '英語'],
-            'history': ['history', '歷史', '社會'],
-            'geography': ['geography', '地理', '社會'],
-            'civics': ['civics', '公民', '社會']
+
+            // --- 社會科 (移除 '社會' 這個大標籤，避免混題) ---
+            'history': ['history', '歷史'],               // 移除 '社會'
+            'geography': ['geography', '地理'],           // 移除 '社會'
+            'civics': ['civics', '公民'],                 // 移除 '社會'
+
+            // 如果你想出「社會大卷」(全科)，可以多加這個選項：
+            'social': ['社會', '歷史', '地理', '公民']
         };
 
         // 年級白名單對照
@@ -43,10 +56,13 @@
         // ==========================================
         // 2. 解析需求
         // ==========================================
-        const targetKeywords = subjectWhitelist[subject.toLowerCase()] || [subject.toLowerCase()];
+        // 轉小寫並查找，找不到就用傳入的 subject 當作關鍵字
+        const subKey = subject.toLowerCase();
+        const targetKeywords = subjectWhitelist[subKey] || [subKey];
+        
         const targetGrade = tags.find(t => allGrades.includes(t));
 
-        console.log(`🔒 [PaperGen] 鎖定條件 -> 科目:${targetKeywords}, 年級:${targetGrade || "無限制"}`);
+        console.log(`🔒 [PaperGen] 鎖定條件 -> 科目關鍵字:[${targetKeywords}], 年級:${targetGrade || "無限制"}`);
 
         // ==========================================
         // 3. 嚴格篩選
@@ -54,7 +70,8 @@
         const candidates = allIds.filter(id => {
             const tTags = templateTagMap[id] || [];
 
-            // 條件一：科目必須匹配
+            // 條件一：科目必須匹配 (只要對中一個關鍵字即可)
+            // 因為現在關鍵字很精準(例如只有'地理')，所以不會對到有'社會'標籤的歷史題
             const isCorrectSubject = tTags.some(tag => 
                 targetKeywords.some(k => tag.toLowerCase().includes(k))
             );
@@ -78,11 +95,20 @@
             return [];
         }
 
-        for (let i = 0; i < total; i++) {
+        // 避免無窮迴圈或報錯，如果題目庫不夠，就只跑題目庫的數量
+        const loopCount = Math.min(total, candidates.length * 5); // 允許重複抽嘗試
+        let generatedCount = 0;
+
+        for (let i = 0; i < loopCount; i++) {
+            if (generatedCount >= total) break;
+
             const tid = candidates[Math.floor(Math.random() * candidates.length)];
             try { 
                 const q = G.generateQuestion(tid);
-                if (q) questions.push(q);
+                if (q) {
+                    questions.push(q);
+                    generatedCount++;
+                }
             } catch (e) { 
                 console.error(e); 
             }
@@ -92,6 +118,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator v2.7 (Grade Locked) 已就緒");
+    console.log("✅ Paper Generator v2.8 (Strict Subject Mode) 已就緒");
 
 })(window);
