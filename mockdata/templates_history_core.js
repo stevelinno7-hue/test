@@ -9,10 +9,10 @@
         // ==========================================
         // 歷史科核心資料庫 (History Core Database)
         // ==========================================
-        // 原本變數名是 socialDB，但內容是歷史，且下方邏輯用 historyDB，這裡統一為 historyDB
         const historyDB = [
+            // ... (keeping your database intact) ...
             // [歷史 - 台灣史]
-             { s:"歷史", t:["國七","台灣史"], e:"長濱文化", y:"舊石器時代", p:"早期人類", k:"八仙洞", d:"台灣已知最早的史前文化，以敲打石器為主，已知用火" },
+              { s:"歷史", t:["國七","台灣史"], e:"長濱文化", y:"舊石器時代", p:"早期人類", k:"八仙洞", d:"台灣已知最早的史前文化，以敲打石器為主，已知用火" },
         { s:"歷史", t:["國七","台灣史"], e:"大坌坑文化", y:"新石器早期", p:"南島語族祖先", k:"繩紋陶", d:"台灣最早的新石器文化，開始有農業與定居生活" },
         { s:"歷史", t:["國七","台灣史"], e:"卑南文化", y:"新石器晚期", p:"史前人類", k:"石板棺", d:"具有精美的玉器陪葬品，顯示已有社會階級" },
         { s:"歷史", t:["國七","台灣史"], e:"十三行文化", y:"金屬器時代", p:"凱達格蘭族祖先", k:"煉鐵", d:"台灣進入金屬器時代的代表，發現來自中國的銅錢" },
@@ -85,9 +85,7 @@
             { s:"歷史", t:["國九","世界史"], e:"冷戰", y:"1947-1991", p:"美蘇", k:"鐵幕", d:"資本主義與共產主義兩大陣營的對抗" },
         ];
 
-        // ----------------------------------------------
-        // 🎨 歷史問句模板（活潑自然）
-        // ----------------------------------------------
+        // ... (askTemplates and generateHistoryOptions_Safe remain same) ...
         const askTemplates = [
             item => `嘿～來看看「${item.e}」吧！它最相關的是哪一個年代或特色呢？`,
             item => `如果提到「${item.e}」，你會想到哪個事件背景？以下哪個最正確？`,
@@ -101,61 +99,49 @@
             item => `選一個最符合「${item.e}」描述的年代/特色吧！`
         ];
 
-        // ----------------------------------------------
-        // ⭐ 歷史專用嚴格生成器 (防呆 + 變數隔離 + 領域保護)
-        // ----------------------------------------------
         function generateHistoryOptions_Safe(G, db, item, field) {
             const { shuffle } = G.utils;
             const correctAns = item[field].trim();
-            
-            // 1. 使用 Set 去重
             const selected = new Set();
             selected.add(correctAns);
             const wrongOpts = [];
-
-            // 2. 領域保護：優先找「同領域」(如台灣史、世界史) 的錯誤答案
-            // 這樣不會出現問「鄭成功」卻給「拿破崙」的選項
             const sameTag = shuffle(db.filter(x => x.t[1] === item.t[1]));
             for (const cand of sameTag) {
                 const txt = cand[field].trim();
-                if (!selected.has(txt)) {
-                    wrongOpts.push(txt);
-                    selected.add(txt);
-                }
+                if (!selected.has(txt)) { wrongOpts.push(txt); selected.add(txt); }
                 if (wrongOpts.length >= 3) break;
             }
-
-            // 3. 補足：如果同領域不夠，從全歷史補
             if (wrongOpts.length < 3) {
                 const all = shuffle(db);
                 for (const cand of all) {
                     const txt = cand[field].trim();
-                    if (!selected.has(txt)) {
-                        wrongOpts.push(txt);
-                        selected.add(txt);
-                    }
+                    if (!selected.has(txt)) { wrongOpts.push(txt); selected.add(txt); }
                     if (wrongOpts.length >= 3) break;
                 }
             }
-
             const finalOpts = shuffle([correctAns, ...wrongOpts]);
-            return {
-                options: finalOpts,
-                answer: finalOpts.indexOf(correctAns)
-            };
+            return { options: finalOpts, answer: finalOpts.indexOf(correctAns) };
         }
 
         // ----------------------------------------------
-        // 🎯 註冊：歷史活潑版題目
+        // 🎯 註冊：歷史活潑版題目 (with Image Triggers)
         // ----------------------------------------------
         G.registerTemplate('his_feat', (ctx, rnd) => {
             const item = pick(historyDB);
-
-            // 呼叫安全生成器
             const { options, answer } = generateHistoryOptions_Safe(G, historyDB, item, 'y');
+            
+            // Logic to determine a relevant image query
+            let imageTag = "";
+            if (item.t[1] === "台灣史") {
+                 imageTag = ``;
+            } else if (item.t[1] === "中國史") {
+                 imageTag = ``;
+            } else {
+                 imageTag = ``;
+            }
 
             return {
-                question: pick(askTemplates)(item), // 使用活潑問句
+                question: pick(askTemplates)(item),
                 options: options,
                 answer: answer,
                 concept: item.t[1],
@@ -163,12 +149,13 @@
                     `【${item.e}】`,
                     `📌 時代：${item.y}`,
                     `📌 關鍵詞：${item.k}`,
-                    `📌 解說：${item.d}`
+                    `📌 解說：${item.d}`,
+                    imageTag // Injecting the image tag here for educational reinforcement
                 ]
             };
         }, ["history", "歷史", "社會", "國七", "國八", "國九"]);
 
-        console.log("🌟 歷史題庫（活潑 + 嚴格去重版）已載入！");
+        console.log("🌟 歷史題庫（活潑 + 嚴格去重 + 圖解版）已載入！");
     }
     init();
 })(window);
