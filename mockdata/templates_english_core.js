@@ -137,7 +137,6 @@
         { q: "He is famous _____ his novels.", a: "for", o: ["as","in","to"], tag: ["國九","片語"] }
     ];
 
-
         const grades = ["國七", "國八", "國九", "高一", "高二", "高三"];
 
         grades.forEach(grade => {
