@@ -2,16 +2,12 @@
     'use strict';
 
     function init() {
-        // 1. 檢查引擎是否就緒
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
         const { pick, shuffle } = G.utils;
 
-        // ==========================================
-        // 生物科資料庫 (Rich DB, 無需 'o' 欄位)
-        // ==========================================
         const bioDB = [
-            // ==========================================
+        // ==========================================
         // 1. 生物 (Biology)
         // ==========================================
         // [國七] 細胞與生物體
@@ -89,39 +85,65 @@
         { s:"生物", t:["高二","生理"], q: "神經元傳導方向", a: "樹突 -> 本體 -> 軸突" },
         { s:"生物", t:["高二","生理"], q: "特異性免疫的主角", a: "淋巴球 (B細胞/T細胞)" },
         { s:"生物", t:["高二","生態"], q: "族群成長曲線(S型)的上限", a: "負荷量 (K值)" },
-];
 
-        // 註冊模板：動態誘答邏輯
-        G.registerTemplate('bio_concept', (ctx, rnd) => {
-            const item = pick(bioDB);
-            
-            // ★★★ 修復關鍵：自動找錯的選項 ★★★
-            // 優先找同單元(tag)的其他答案，若不夠則找全體
-            const sameTagItems = bioDB.filter(x => x.t[1] === item.t[1] && x.a !== item.a);
-            const otherItems = bioDB.filter(x => x.a !== item.a);
-            
-            let wrongOpts = [];
-            if (sameTagItems.length >= 3) {
-                wrongOpts = shuffle(sameTagItems).slice(0, 3).map(x => x.a);
-            } else {
-                wrongOpts = shuffle(otherItems).slice(0, 3).map(x => x.a);
+        ];
+
+        // ----------------------
+        // 年級分池
+        // ----------------------
+        const grades = ["國七","國八","高一","高二","高三"];
+        const gradePools = {};
+
+        grades.forEach(g => {
+            gradePools[g] = bioDB
+                .filter(item => item.t[0] === g)
+                .map(item => {
+                    const correctAns = item.a;
+                    const selectedAnswers = new Set([correctAns]);
+
+                    // 找錯誤選項
+                    const sameTag = shuffle(bioDB.filter(x => x.t[1] === item.t[1] && x.a !== correctAns));
+                    const other = shuffle(bioDB.filter(x => x.a !== correctAns));
+
+                    let wrongOpts = sameTag.slice(0, 3).map(x => x.a);
+                    if (wrongOpts.length < 3) wrongOpts = wrongOpts.concat(other.slice(0, 3 - wrongOpts.length).map(x => x.a));
+
+                    while (wrongOpts.length < 3) wrongOpts.push("其他");
+
+                    const opts = shuffle([correctAns, ...wrongOpts]);
+
+                    return {
+                        question: `【生物】${item.q}，是指下列何者？`,
+                        options: opts,
+                        answer: opts.indexOf(correctAns),
+                        concept: item.t[1],
+                        grade: item.t[0],
+                        explanation: [`正確答案：${correctAns}`]
+                    };
+                });
+        });
+
+        console.log("✅ 年級分池生物題庫已生成", gradePools);
+
+        // ----------------------
+        // 下載 JSON
+        // ----------------------
+        function downloadJSON(obj, filename) {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", filename);
+            a.click();
+        }
+
+        Object.keys(gradePools).forEach(g => {
+            if (gradePools[g].length > 0) {
+                downloadJSON(gradePools[g], `bio_${g}.json`);
             }
+        });
 
-            // 防呆：萬一資料庫太小，補上預設值
-            while (wrongOpts.length < 3) wrongOpts.push("其他");
-
-            const opts = shuffle([item.a, ...wrongOpts]);
-
-            return {
-                question: `【生物】${item.q}，是指下列何者？`,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                concept: item.t[1],
-                explanation: [`正確答案：${item.a}`]
-            };
-        }, ["biology", "生物", "自然", "國七", "國八"]);
-
-        console.log("✅ 生物題庫 (動態修復版) 已載入。");
+        console.log("✅ 各年級生物題庫已下載完成！");
     }
+
     init();
 })(window);
