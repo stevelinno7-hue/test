@@ -11,7 +11,7 @@
         const { pick, shuffle } = G.utils;
 
         // =====================================================
-        // English Grammar Database (STRICT STANDARD)
+        // 📚 English Grammar Database
         // q : question
         // a : answer
         // o : options
@@ -264,33 +264,40 @@
 
 
         // =====================================================
-        // 🔍 Self-Diagnostic Scanner (Never Crash)
+        // 🧪 Self Diagnostic (Safe Guard)
         // =====================================================
-        grammarDB.forEach((q, i) => {
-            if (!q || !q.t || !Array.isArray(q.t) || typeof q.t[0] !== "string") {
-                console.warn(`⚠️ [EnglishDB] Bad question at index ${i}`, q);
+        grammarDB.forEach((item, i) => {
+            if (!item || !item.q || !item.a || !item.o || !item.t) {
+                console.warn(`⚠️ Bad grammar item at index ${i}`, item);
             }
         });
 
         // =====================================================
-        // Grade-Isolated Template Registration
+        // 🎒 Non-Repeating Pools (Per Grade)
         // =====================================================
         const grades = ["國七", "國八", "國九", "高一", "高二", "高三"];
+        const gradePools = {};
 
         grades.forEach(grade => {
-            const pool = grammarDB.filter(q =>
-                q &&
-                q.t &&
-                Array.isArray(q.t) &&
-                q.t[0] === grade
-            );
+            const pool = grammarDB.filter(q => q.t[0] === grade);
+            gradePools[grade] = shuffle([...pool]);
+        });
 
-            if (!pool.length) return;
-
+        // =====================================================
+        // 🧠 Template Registration (Zero Repeat)
+        // =====================================================
+        grades.forEach(grade => {
             G.registerTemplate(
                 `eng_grammar_${grade}`,
                 () => {
-                    const item = pick(pool);
+                    // 題目用完就重新洗
+                    if (!gradePools[grade].length) {
+                        gradePools[grade] = shuffle(
+                            grammarDB.filter(q => q.t[0] === grade)
+                        );
+                    }
+
+                    const item = gradePools[grade].pop();
                     const options = shuffle([item.a, ...item.o]);
 
                     return {
@@ -309,7 +316,7 @@
         });
 
         // =====================================================
-        // Dialogue (Safe & Simple)
+        // 💬 Basic Dialogue (Still Random, No Need Non-repeat)
         // =====================================================
         const dialogues = [
             { a: "How are you today?", b: "I'm fine, thank you.", o: ["Yes, I am.", "Goodbye."], t: "問候" },
@@ -330,10 +337,10 @@
                     explanation: [`A: ${item.a}`, `B: ${item.b}`]
                 };
             },
-            ["english", "英文", "英語", "會話", "國七", "國八"]
+            ["english", "英文", "英語", "會話"]
         );
 
-        console.log("🏆 English Core V4.0 Ultimate 已載入（零爆炸保證）");
+        console.log("🎉 English Grammar Core Loaded (Non-Repeating Edition)");
     }
 
     init();
