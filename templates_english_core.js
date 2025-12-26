@@ -7,7 +7,7 @@
         const { pick, shuffle } = G.utils;
 
         // ==========================================
-        // 英文文法資料庫 (Enhanced Grammar DB)
+        // 英文文法資料庫 (屬性統一為 t)
         // ==========================================
         const grammarDB = [
             // [國七] Tenses & Basics
@@ -19,7 +19,7 @@
             { q: "He was born _____ 1990.", a: "in", o: ["on","at","of"], t: ["國七","介系詞"] },
             { q: "The book is _____ the table.", a: "on", o: ["in","at","to"], t: ["國七","介系詞"] },
 
-            // [國八] Perfect Tense / Passive / Special Verbs
+            // [國八] Perfect Tense / Passive
             { q: "They _____ to Japan three times.", a: "have been", o: ["have gone","went","go"], t: ["國八","時態"] },
             { q: "I _____ my homework yet.", a: "haven't finished", o: ["didn't finish","don't finish","won't finish"], t: ["國八","時態"] },
             { q: "The window _____ by the boy.", a: "was broken", o: ["broke","broken","is broken"], t: ["國八","被動"] },
@@ -29,7 +29,7 @@
             { q: "He is interested _____ music.", a: "in", o: ["on","at","of"], t: ["國八","片語"] },
             { q: "You are a student, _____?", a: "aren't you", o: ["are you","don't you","do you"], t: ["國八","問句"] },
 
-            // [國九] Participles / Clauses / Advanced Grammar
+            // [國九] Participles / Clauses
             { q: "The work must _____ by Friday.", a: "be done", o: ["do","done","doing"], t: ["國九","被動"] },
             { q: "I enjoy _____ music.", a: "listening to", o: ["to listen to","listen to","listened to"], t: ["國九","動名詞"] },
             { q: "She wants _____ a doctor.", a: "to be", o: ["being","be","is"], t: ["國九","不定詞"] },
@@ -54,18 +54,19 @@
         ];
 
         // ==========================================
-        // ★★★ 關鍵修正：分年級註冊模板 (Grade Isolation) ★★★
+        // 分年級註冊 (Grade Isolation)
         // ==========================================
         const grades = ["國七", "國八", "國九", "高一", "高二", "高三"];
 
         grades.forEach(grade => {
-            // 1. 物理隔離：只篩選出該年級的題目
-            const gradePool = grammarDB.filter(q => q.t && q.t[0] === grade);
+            // ★★★ 核心修復：加入嚴格防呆 (q.t && q.t[0]) ★★★
+            // 這樣就算資料庫裡有壞掉的資料，也不會讓整個程式當機
+            const pool = grammarDB.filter(q => q.t && Array.isArray(q.t) && q.t[0] === grade);
             
-            if (gradePool.length > 0) {
-                // 2. 註冊專屬該年級的模板 (如 eng_gram_國七)
+            if (pool.length > 0) {
+                // 註冊專屬該年級的模板 (如 eng_gram_國七)
                 G.registerTemplate(`eng_gram_${grade}`, (ctx, rnd) => {
-                    const item = pick(gradePool); // 只從該年級池抓題
+                    const item = pick(pool);
                     const opts = shuffle([item.a, ...item.o]);
                     
                     return {
@@ -75,16 +76,17 @@
                         concept: item.t[1],
                         explanation: [`Correct answer: ${item.a}`]
                     };
-                }, ["english", "英文", "文法", grade]); // 只給「英文」和「該年級」標籤
+                }, ["english", "英文", "文法", grade]); // 標籤：科目 + 年級
             }
         });
 
-        // 3. 對話填空 (通用模板，不分年級，但標記為會話)
+        // 3. 對話填空 (標記為 國七/國八 通用)
         const dialogues = [
             { a: "How have you been?", b: "Great, thanks.", o: ["I am doing homework.", "Yes, I am."], t: "問候" },
             { a: "May I take your order?", b: "I'd like a steak.", o: ["No, I don't like it.", "Check, please."], t: "餐廳" }
         ];
-        G.registerTemplate('eng_dialogue', (ctx, rnd) => {
+        
+        G.registerTemplate('eng_dialogue_basic', (ctx, rnd) => {
             const item = pick(dialogues);
             const opts = shuffle([item.b, ...item.o]);
             return {
@@ -94,9 +96,9 @@
                 concept: `會話 (${item.t})`,
                 explanation: [`A: ${item.a}`, `B: ${item.b}`]
             };
-        }, ["english", "英文", "會話", "國七", "國八"]); // 預設給國七八練習
+        }, ["english", "英文", "會話", "國七", "國八"]); 
 
-        console.log("✨ 英文文法題庫 (物理隔離版) 已載入！");
+        console.log("✨ 英文文法題庫 (防呆修復版) 載入完畢！");
     }
 
     init();
