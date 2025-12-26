@@ -267,6 +267,16 @@
                 else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
             });
 
+            // 判斷作弊等級
+            let cheatLevel = 'NORMAL';
+            if (fastCount > 3) cheatLevel = 'HIGH';
+            else if (fastCount > 0) cheatLevel = 'MEDIUM';
+
+            // 判斷分頁切換等級
+            let tabLevel = 'NORMAL';
+            if (tabLog.length > 5) tabLevel = 'HIGH';
+            else if (tabLog.length > 0) tabLevel = 'MEDIUM';
+
             const newRecord = {
                 id: Date.now(), 
                 date: new Date().toLocaleString(), 
@@ -276,12 +286,16 @@
                 correctCount, 
                 totalCount: mockQuestions.length, 
                 wrongList,
-                // ★★★ 新增：分析數據 ★★★
-                analysis: {
-                    fastCount: fastCount,        // 過快題數
-                    switchCount: tabLog.length,  // 切換分頁次數
-                    timeLog: timeLog             // 每題時間詳情
-                }
+                // ★★★ 傳遞給 Analysis 的完整數據 ★★★
+                cheat: { 
+                    cheatLevel: cheatLevel, 
+                    fastCount: fastCount 
+                },
+                tabCheat: {
+                    level: tabLevel,
+                    totalSwitch: tabLog.length
+                },
+                timeLog: timeLog
             };
 
             const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
