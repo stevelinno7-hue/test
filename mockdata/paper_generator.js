@@ -13,19 +13,26 @@
         const allIds = Object.keys(templateMap);
 
         // ==========================================
-        // 1. 定義對照表 (白名單)
+        // 1. 定義對照表 (移除廣義詞，確保科目隔離)
         // ==========================================
         const subjectWhitelist = {
+            // 數學
             'math': ['math', '數學'],
-            'physics': ['physics', '物理', '理化', '自然'],
-            'chemistry': ['chemistry', '化學', '理化', '自然'],
-            'biology': ['biology', '生物', '自然'],
-            'earth': ['earth', '地科', '地球科學', '自然'],
+            
+            // 自然科：移除 '自然'、'理化'，避免物理化學混在一起
+            'physics': ['physics', '物理'], 
+            'chemistry': ['chemistry', '化學'],
+            'biology': ['biology', '生物'],
+            'earth': ['earth', '地科', '地球科學'],
+            
+            // 語文
             'chinese': ['chinese', '國文', '語文'],
             'english': ['english', '英文', '英語'],
-            'history': ['history', '歷史', '社會'],
-            'geography': ['geography', '地理', '社會'],
-            'civics': ['civics', '公民', '社會']
+            
+            // 社會科：移除 '社會'，避免歷史地理公民混在一起
+            'history': ['history', '歷史'],
+            'geography': ['geography', '地理'],
+            'civics': ['civics', '公民']
         };
 
         const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三", "七年級", "八年級", "九年級"];
@@ -34,8 +41,6 @@
         // 2. 解析需求
         // ==========================================
         const targetKeywords = subjectWhitelist[subject.toLowerCase()] || [subject.toLowerCase()];
-        
-        // ★ 升級：找出所有符合的年級標籤，而不只是第一個
         const targetGrades = tags.filter(t => allGrades.includes(t));
 
         console.log(`🔒 [PaperGen] 鎖定條件 -> 科目:[${targetKeywords}], 年級:[${targetGrades.length > 0 ? targetGrades : "無限制"}]`);
@@ -46,15 +51,16 @@
         const candidates = allIds.filter(id => {
             const tTags = templateTagMap[id] || [];
             
-            // 條件一：檢查科目 (必須符合)
-            const isCorrectSubject = tTags.some(tag => 
-                targetKeywords.some(k => tag.toLowerCase().includes(k))
-            );
+            // 條件一：檢查科目 (改用嚴格比對)
+            // 題目的標籤必須 "完全等於" 白名單中的關鍵字之一
+            // 例如：題目有 "歷史" tag，白名單有 "歷史"，Pass。
+            // 例如：題目有 "社會" tag，白名單只有 "歷史"，Fail (成功擋下公民題)。
+            const isCorrectSubject = tTags.some(tag => targetKeywords.includes(tag));
             if (!isCorrectSubject) return false;
 
             // 條件二：檢查年級 (強制鎖定)
-            // 如果有指定年級，題目必須包含 *其中一個* 指定的年級
             if (targetGrades.length > 0) {
+                // 題目必須包含至少一個目標年級標籤
                 const hasMatchingGrade = tTags.some(t => targetGrades.includes(t));
                 if (!hasMatchingGrade) return false;
             }
@@ -66,11 +72,10 @@
         // 4. 生成題目
         // ==========================================
         if (candidates.length === 0) {
-            console.warn(`[PaperGen] 找不到符合 [${subject}] + [${targetGrades}] 的題目。停止生成。`);
+            console.warn(`[PaperGen] 找不到符合 [${subject}] + [${targetGrades}] 的題目。停止生成，避免跨科/跨年級錯誤。`);
             return [];
         }
 
-        // 隨機選題
         for (let i = 0; i < total; i++) {
             const tid = candidates[Math.floor(Math.random() * candidates.length)];
             
@@ -87,6 +92,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator v3.3 (Multi-Grade Support) 已就緒");
+    console.log("✅ Paper Generator v3.4 (Strict Isolation Mode) 已就緒");
 
 })(window);
