@@ -108,6 +108,7 @@
     <script>
         let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval;
         let examInfo = {}, timeLog = [], tabLog = [], tabLeave = null;
+        let questionStartTime = 0; // 用於計算單題作答時間
 
         window.onload = function() {
             if (!Auth.requireLogin()) return;
@@ -119,18 +120,25 @@
                 window.Curriculum108 = all;
             };
             if(window.initCurriculumData) window.initCurriculumData();
-            setTimeout(prepareExam, 450); 
+            setTimeout(prepareExam, 500); 
         };
 
+        // ★★★ 專注度分析：分頁切換偵測 ★★★
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) tabLeave = Date.now();
-            else if (tabLeave) {
+            if (document.hidden) {
+                tabLeave = Date.now();
+            } else if (tabLeave) {
                 const duration = (Date.now() - tabLeave) / 1000;
-                if (duration > 1) tabLog.push(Math.round(duration));
+                if (duration > 1) { // 超過1秒才記錄，避免誤觸
+                    tabLog.push(Math.round(duration));
+                    console.log(`⚠️ 切換分頁偵測：離開了 ${Math.round(duration)} 秒`);
+                }
                 tabLeave = null;
             }
         });
 
+        // 智慧重試機制：如果題庫還沒好，會嘗試重抓 3 次
+        let retryCount = 0;
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
             const courseId = urlParams.get('id');
@@ -160,24 +168,23 @@
                 mockQuestions = window.generatePaper({ subject: subject, total: count, tags: courseTags });
             }
 
-            // 強制過濾 (Double Safety)
-            const safeKeywords = {
-                'math': ['數學'], 'physics': ['物理'], 'chemistry': ['化學'], 'biology': ['生物'],
-                'earth': ['地科'], 'chinese': ['國文'], 'english': ['English', '單字'], 
-                'history': ['歷史'], 'geography': ['地理'], 'civics': ['公民']
-            };
-            const keywords = safeKeywords[subject.toLowerCase()] || [];
-            
-            if (keywords.length > 0) {
-                mockQuestions = mockQuestions.filter(q => q && q.question);
-            }
-
+            // ★★★ 智慧重試 (Smart Retry) ★★★
             if (mockQuestions.length === 0) {
-                alert("⚠️ 題庫載入中或無符合題目，請稍後重試");
-                return;
+                if (retryCount < 3) {
+                    retryCount++;
+                    console.warn(`⚠️ 題目生成為空，正在重試 (${retryCount}/3)...`);
+                    setTimeout(prepareExam, 1000); // 等 1 秒後重試
+                    return;
+                } else {
+                    alert("⚠️ 題庫載入超時或無符合題目，請重新整理頁面再試一次。");
+                    return;
+                }
             }
 
+            // 初始化狀態
             userAnswers = new Array(mockQuestions.length).fill(null);
+            timeLog = new Array(mockQuestions.length).fill(0); // 初始化時間紀錄
+            
             document.getElementById('examTitle').textContent = examInfo.title;
             renderQuestion();
             updateNav();
@@ -185,6 +192,8 @@
         }
 
         function renderQuestion() {
+            questionStartTime = Date.now(); // 開始計時
+
             const q = mockQuestions[currentQIndex];
             document.getElementById('currentQNum').textContent = currentQIndex + 1;
             document.getElementById('totalQNum').textContent = mockQuestions.length;
@@ -198,7 +207,11 @@
                 const isSelected = userAnswers[currentQIndex] === idx;
                 btn.className = `option-card w-full text-left p-4 rounded-xl ${isSelected ? 'selected' : 'bg-white text-gray-700'}`;
                 btn.innerHTML = `<span class="font-bold mr-4">${String.fromCharCode(65+idx)}</span><span>${opt}</span>`;
-                btn.onclick = () => { userAnswers[currentQIndex] = idx; renderQuestion(); };
+                btn.onclick = () => { 
+                    userAnswers[currentQIndex] = idx; 
+                    recordTime(); // 記錄作答時間
+                    renderQuestion(); // 重新渲染以顯示選中狀態
+                };
                 optsDiv.appendChild(btn);
             });
             document.getElementById('progressBar').style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
@@ -206,9 +219,21 @@
             if (window.MathJax) MathJax.typesetPromise();
         }
 
+        // ★★★ 作答節奏分析：記錄單題時間 ★★★
+        function recordTime() {
+            const now = Date.now();
+            const duration = (now - questionStartTime) / 1000;
+            timeLog[currentQIndex] += duration; // 累加時間 (如果反覆修改答案)
+            questionStartTime = now; // 重置起點
+        }
+
         function updateNav() {
-            document.getElementById('prevBtn').onclick = () => { if(currentQIndex > 0) { currentQIndex--; renderQuestion(); updateNav(); } };
+            document.getElementById('prevBtn').onclick = () => { 
+                recordTime(); // 切換前先記錄時間
+                if(currentQIndex > 0) { currentQIndex--; renderQuestion(); updateNav(); } 
+            };
             document.getElementById('nextBtn').onclick = () => { 
+                recordTime(); // 切換前先記錄時間
                 if(currentQIndex < mockQuestions.length - 1) { currentQIndex++; renderQuestion(); updateNav(); }
                 else finishExam();
             };
@@ -227,21 +252,36 @@
         }
 
         function finishExam() {
+            recordTime(); // 記錄最後一題的時間
             if (!confirm("確定交卷？")) return;
             clearInterval(timerInterval);
             
             let correctCount = 0;
             let wrongList = [];
+            
+            // 計算過快作答題數 (例如 < 3秒)
+            let fastCount = timeLog.filter(t => t < 3).length;
+
             mockQuestions.forEach((q, idx) => {
                 if (userAnswers[idx] === q.answer) correctCount++;
                 else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
             });
 
             const newRecord = {
-                id: Date.now(), date: new Date().toLocaleString(), 
-                subject: examInfo.subject, title: examInfo.title,
+                id: Date.now(), 
+                date: new Date().toLocaleString(), 
+                subject: examInfo.subject, 
+                title: examInfo.title,
                 score: Math.round((correctCount / mockQuestions.length) * 100), 
-                correctCount, totalCount: mockQuestions.length, wrongList
+                correctCount, 
+                totalCount: mockQuestions.length, 
+                wrongList,
+                // ★★★ 新增：分析數據 ★★★
+                analysis: {
+                    fastCount: fastCount,        // 過快題數
+                    switchCount: tabLog.length,  // 切換分頁次數
+                    timeLog: timeLog             // 每題時間詳情
+                }
             };
 
             const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
