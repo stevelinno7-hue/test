@@ -3,7 +3,7 @@
  * ===================================================== */
 
 // ★★★ PLEASE REPLACE THIS WITH YOUR ACTUAL GOOGLE GEMINI API KEY ★★★
-const API_KEY = ""; 
+const API_KEY = "AIzaSyCfEILOin4gSmH_stCv-zuE9dORTHJ4RjA"; 
 
 const RealAITutor = {
 
