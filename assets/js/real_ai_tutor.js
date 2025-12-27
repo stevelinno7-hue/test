@@ -3,7 +3,7 @@
  * ===================================================== */
 
 // ★★★ 請務必在此填入您的 API Key ★★★
-const API_KEY = ""; 
+const API_KEY = "AIzaSyCfEILOin4gSmH_stCv-zuE9dORTHJ4RjA"; 
 
 const RealAITutor = {
 
