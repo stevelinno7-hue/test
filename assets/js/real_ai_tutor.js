@@ -24,7 +24,7 @@ const RealAITutor = {
      * Core LLM Communication
      * =============================== */
     async callGeminiAPI(prompt) {
-        if (!API_KEY || API_KEY === "YOUR_GEMINI_API_KEY") {
+        if (!API_KEY || API_KEY === "AIzaSyCfEILOin4gSmH_stCv-zuE9dORTHJ4RjA") {
             console.error("API Key Missing");
             return "⚠️ System Alert: Please configure your Google Gemini API Key in 'assets/js/real_ai_tutor.js' to enable AI responses.";
         }
