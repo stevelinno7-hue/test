@@ -66,14 +66,15 @@
     // B. 角色扮演版 (生成 200 種組合 IDs)
     // 雖然程式邏輯是動態拼湊，但我們註冊 200 個 ID 給 Bootstrap 抽
     // 這樣機率分佈會更廣
-    for (let i = 0; i < 200; i++) {
-        CONTEXT_WRAPPERS[`roleplay_${i}`] = (q) => {
-            // 每次被呼叫時，即時隨機抽取，確保就算是同一個 ID，題目也會變
-            const r = pick(DB.roles);
-            const p = pick(DB.places);
-            return `【情境：${r}】\n你現在${p}，眼前出現了一個難題：\n「${q}」\n身為專業的${r}，你該如何解決？`;
-        };
-    }
+    // B. 角色扮演版 (生成 200 種組合 IDs)
+Array.from({ length: 200 }, (_, i) => {
+    CONTEXT_WRAPPERS[`roleplay_${i}`] = (q) => {
+        const r = pick(DB.roles);
+        const p = pick(DB.places);
+        return `【情境：${r}】\n你現在${p}，眼前出現了一個難題：\n「${q}」\n身為專業的${r}，你該如何解決？`;
+    };
+});
+
 
     // C. 格式變化版
     DB.formats.forEach((fmt) => {
