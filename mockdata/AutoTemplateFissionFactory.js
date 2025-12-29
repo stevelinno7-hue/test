@@ -51,13 +51,15 @@
         };
 
         // 🚀 **新增 100 種角色扮演情境**
-        for (let i = 0; i < 100; i++) {
-            WRAPPERS[`roleplay_${i}`] = (q) => {
-                const r = pick(DB.roles);
-                const p = pick(DB.places);
-                return `【情境：${r}】\n你現在${p}，突然遇到一道題目：\n「${q}」\n身為${r}，你該怎麼應對？`;
-            };
-        }
+       // B. 角色扮演版 (生成 200 種組合 IDs)
+Array.from({ length: 200 }, (_, i) => {
+    CONTEXT_WRAPPERS[`roleplay_${i}`] = (q) => {
+        const r = pick(DB.roles);
+        const p = pick(DB.places);
+        return `【情境：${r}】\n你現在${p}，眼前出現了一個難題：\n「${q}」\n身為專業的${r}，你該如何解決？`;
+    };
+});
+
 
         // 加入格式型情境
         DB.formats.forEach(fmt => WRAPPERS[fmt.type] = fmt.tpl);
