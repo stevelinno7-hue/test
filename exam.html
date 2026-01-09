@@ -141,8 +141,7 @@
             </div>
         </div>
     </div>
-
-    <script>
+<script>
         let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval;
         let examInfo = {}, timeLog = [], tabLog = [], tabLeave = null;
         let questionStartTime = 0; 
@@ -160,7 +159,7 @@
             setTimeout(prepareExam, 500); 
         };
 
-        // 專注度偵測
+        // ★★★ 專注度偵測：記錄分頁切換 ★★★
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 tabLeave = Date.now();
@@ -168,12 +167,13 @@
                 const duration = (Date.now() - tabLeave) / 1000;
                 if (duration > 1) { 
                     tabLog.push(Math.round(duration));
+                    console.log(`⚠️ 切換分頁偵測：離開了 ${Math.round(duration)} 秒`);
                 }
                 tabLeave = null;
             }
         });
 
-        // 準備考試
+        // 準備考試 (含智慧重試)
         let retryCount = 0;
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -207,16 +207,17 @@
             if (mockQuestions.length === 0) {
                 if (retryCount < 3) {
                     retryCount++;
+                    console.warn(`⚠️ 題目生成為空，正在重試 (${retryCount}/3)...`);
                     setTimeout(prepareExam, 1000); 
                     return;
                 } else {
-                    alert("⚠️ 題庫載入超時，請重新整理。");
+                    alert("⚠️ 題庫載入超時或無符合題目，請重新整理頁面再試一次。");
                     return;
                 }
             }
 
             userAnswers = new Array(mockQuestions.length).fill(null);
-            timeLog = new Array(mockQuestions.length).fill(0); 
+            timeLog = new Array(mockQuestions.length).fill(0); // 初始化作答時間紀錄
             
             document.getElementById('examTitle').textContent = examInfo.title;
             renderQuestion();
@@ -225,7 +226,7 @@
         }
 
         function renderQuestion() {
-            questionStartTime = Date.now(); 
+            questionStartTime = Date.now(); // ★★★ 開始計時單題時間 ★★★
 
             const q = mockQuestions[currentQIndex];
             document.getElementById('currentQNum').textContent = currentQIndex + 1;
@@ -252,6 +253,7 @@
             if (window.MathJax) MathJax.typesetPromise();
         }
 
+        // ★★★ 作答節奏：記錄時間 ★★★
         function recordTime() {
             const now = Date.now();
             const duration = (now - questionStartTime) / 1000;
@@ -259,7 +261,6 @@
             questionStartTime = now; 
         }
 
-        // 修改導覽按鈕邏輯
         function updateNav() {
             document.getElementById('prevBtn').onclick = () => { 
                 recordTime(); 
@@ -270,7 +271,6 @@
                 if(currentQIndex < mockQuestions.length - 1) { 
                     currentQIndex++; renderQuestion(); updateNav(); 
                 } else {
-                    // 最後一題按「交卷」時觸發 Modal
                     trySubmit();
                 }
             };
@@ -284,24 +284,19 @@
                 const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
                 const s = (timeLeft % 60).toString().padStart(2, '0');
                 document.getElementById('timer').textContent = `${m}:${s}`;
-                if (timeLeft <= 0) finalSubmit(); // 時間到強制交卷
+                if (timeLeft <= 0) finalSubmit();
             }, 1000);
         }
 
-        // ★★★ 新增：打開交卷確認視窗 ★★★
         function trySubmit() {
-            recordTime(); // 記錄當下時間
-            
-            // 計算答題狀況
+            recordTime();
             const answeredCount = userAnswers.filter(a => a !== null).length;
             const unansweredCount = mockQuestions.length - answeredCount;
 
-            // 更新 Modal 內容
             document.getElementById('modalAnswered').textContent = answeredCount;
             const unEl = document.getElementById('modalUnanswered');
             unEl.textContent = unansweredCount;
             
-            // 根據是否有未答題，改變樣式
             if (unansweredCount > 0) {
                 unEl.className = "text-2xl font-bold text-red-500";
                 document.getElementById('modalWarning').classList.remove('hidden');
@@ -309,22 +304,20 @@
                 unEl.className = "text-2xl font-bold text-gray-400";
                 document.getElementById('modalWarning').classList.add('hidden');
             }
-
-            // 顯示 Modal
             document.getElementById('submitModal').classList.remove('hidden');
         }
 
-        // ★★★ 新增：關閉交卷視窗 ★★★
         function closeSubmitModal() {
             document.getElementById('submitModal').classList.add('hidden');
         }
 
-        // ★★★ 核心：最終交卷邏輯 ★★★
         function finalSubmit() {
             clearInterval(timerInterval);
             
             let correctCount = 0;
             let wrongList = [];
+            
+            // ★★★ 計算秒猜題數 (作答節奏分析) ★★★
             let fastCount = timeLog.filter(t => t < 3).length;
 
             mockQuestions.forEach((q, idx) => {
@@ -332,6 +325,7 @@
                 else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
             });
 
+            // ★★★ 判斷作弊等級 ★★★
             let cheatLevel = fastCount > 3 ? 'HIGH' : (fastCount > 0 ? 'MEDIUM' : 'NORMAL');
             let tabLevel = tabLog.length > 5 ? 'HIGH' : (tabLog.length > 0 ? 'MEDIUM' : 'NORMAL');
 
@@ -344,6 +338,7 @@
                 correctCount, 
                 totalCount: mockQuestions.length, 
                 wrongList,
+                // ★★★ 將分析數據傳遞給 Analysis 頁面 ★★★
                 analysis: { cheatLevel, fastCount, tabLevel, switchCount: tabLog.length, timeLog }
             };
 
@@ -351,12 +346,10 @@
             const historyKey = user ? `history_${user.username}` : `history_guest`;
             const wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
 
-            // 儲存歷史紀錄
             let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
             history.push(newRecord);
             localStorage.setItem(historyKey, JSON.stringify(history));
 
-            // 儲存錯題本 (去重)
             if (wrongList.length > 0) {
                 let db = JSON.parse(localStorage.getItem(wrongKey) || "[]");
                 const newWrongs = wrongList.filter(newQ => {
