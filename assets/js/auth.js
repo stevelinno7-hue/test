@@ -54,7 +54,7 @@ const Auth = {
 
         users.push(userData);
         localStorage.setItem(this.dbKey, JSON.stringify(users));
-        return { success: true, message: "註冊成功！歡迎加入翰林雲端學院。" };
+        return { success: true, message: "註冊成功！歡迎加入雲端學院。" };
     },
 
     login: function(username, password) {
