@@ -13,7 +13,6 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         /* 翻牌特效 */
         .perspective { perspective: 1000px; }
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
@@ -21,7 +20,6 @@
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .card-front { background: white; color: #334155; border: 2px solid #e2e8f0; }
         .card-back { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; transform: rotateY(180deg); }
-        
         .game-section { display: none; }
         .game-section.active { display: block; animation: fadeIn 0.3s ease-out; }
     </style>
@@ -39,30 +37,37 @@
     <script src="mockdata/templates_chemistry_core.js"></script>
     <script src="mockdata/templates_biology_core.js"></script> 
     <script src="mockdata/templates_english_core.js"></script>
+    <script src="mockdata/templates_english_vocab_7000.js"></script>
     <script src="mockdata/templates_chinese_core.js"></script>
     <script src="mockdata/templates_history_core.js"></script>
     <script src="mockdata/templates_geography_core.js"></script>
     <script src="mockdata/templates_civics_core.js"></script>
-
 </head>
 <body class="h-screen flex overflow-hidden">
     <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
         <div class="h-16 flex items-center px-6 border-b border-slate-50">
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
-            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+            <span class="text-lg font-bold text-slate-800 tracking-tight">雲端學院</span>
         </div>
-        <nav class="flex-grow px-3 py-6 space-y-1">
+        <div class="px-4 py-6">
+            <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base" id="sideUserName">--</h3>
+                <div class="text-[11px] text-slate-400 mt-1 mb-3 font-medium uppercase tracking-wider" id="sideUserRole">--</div>
+            </div>
+        </div>
+        <nav class="flex-grow px-3 space-y-1">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-th-large w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-book-medical w-5 text-center"></i> 錯題補救</a>
-          <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition-all text-sm">
-            <i class="fas fa-chart-pie w-5 text-center"></i> 學習分析
-        </a>
-        <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-comments w-5 text-center"></i> 解題論壇
-        </a>
             <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
             <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-50 text-indigo-600 font-bold shadow-sm"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-comments w-5 text-center"></i> 解題論壇</a>
         </nav>
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
     </aside>
 
     <main class="flex-grow flex flex-col h-full relative overflow-hidden">
@@ -181,16 +186,18 @@
 
         // 初始化
         const user = Auth.getCurrentUser();
-        if(user) document.getElementById('coinCount').textContent = user.coins || 0;
+        if(user) {
+            document.getElementById('sideUserName').textContent = user.name;
+            document.getElementById('sideUserRole').textContent = user.grade || "學生";
+            document.getElementById('coinCount').textContent = user.coins || 0;
+        }
 
         // 生成題目函式 (調用您的 Generator Engine)
         function generateGameQuestions(subject = 'math', count = 20) {
             if (window.generatePaper) {
-                // 使用您的 paper_generator.js
-                // 這裡預設抓取 'math' 或混合題目
-                // tags 可以根據需要調整
-                const q = window.generatePaper({ subject: subject, total: count, tags: ['國七','國八','國九','高一'] });
-                return q.filter(item => item && item.question); // 過濾無效題目
+                // 使用您的 paper_generator.js，tags 預設全包
+                const q = window.generatePaper({ subject: subject, total: count, tags: ['國七','國八','國九','高一','高二','高三'] });
+                return q.filter(item => item && item.question);
             }
             return [];
         }
@@ -216,27 +223,31 @@
 
         // --- Game 1: 閃示卡邏輯 ---
         function initFlashcard() {
-            // 嘗試生成題目，混合科目
-            let q1 = generateGameQuestions('math', 5);
-            let q2 = generateGameQuestions('english', 5);
-            let q3 = generateGameQuestions('science', 5); // 假設有 science
-            gameQuestions = [...q1, ...q2, ...q3]; // 混合
-            
-            if(gameQuestions.length === 0) {
-                alert("題庫載入中，請稍後再試...");
-                backToMenu();
-                return;
-            }
-            
-            currentQIdx = 0;
-            renderFlashcard();
+            // 嘗試生成題目，混合科目 (等待題庫載入)
+            setTimeout(() => {
+                let q1 = generateGameQuestions('math', 5);
+                let q2 = generateGameQuestions('english', 5); // 假設有英文
+                gameQuestions = [...q1, ...q2]; 
+                
+                if(gameQuestions.length === 0) {
+                    // 如果還是空的，可能題庫載入慢，重試一次
+                    alert("題庫載入中，請稍後再試...");
+                    backToMenu();
+                    return;
+                }
+                
+                // 洗牌
+                gameQuestions.sort(() => Math.random() - 0.5);
+                currentQIdx = 0;
+                renderFlashcard();
+            }, 500);
         }
 
         function renderFlashcard() {
             const q = gameQuestions[currentQIdx % gameQuestions.length];
             document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
             
-            // 處理答案顯示：如果是選擇題，顯示正確選項的文字
+            // 處理答案顯示
             let ansText = "";
             if (q.options && q.answer !== undefined) {
                 ansText = q.options[q.answer];
@@ -268,29 +279,31 @@
         // --- Game 2: 極速挑戰邏輯 ---
         function initMathRush() {
             // 專門生成數學題
-            gameQuestions = generateGameQuestions('math', 50);
-            if(gameQuestions.length === 0) {
-                alert("數學題庫載入失敗"); 
-                backToMenu(); 
-                return; 
-            }
+            setTimeout(() => {
+                gameQuestions = generateGameQuestions('math', 50);
+                if(gameQuestions.length === 0) {
+                    alert("數學題庫載入失敗"); 
+                    backToMenu(); 
+                    return; 
+                }
 
-            score = 0;
-            timer = 60;
-            currentQIdx = 0;
-            
-            document.getElementById('mrScore').textContent = score;
-            document.getElementById('mrTimer').textContent = timer;
-            document.getElementById('mrGameOver').classList.add('hidden');
-            
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timer--;
+                score = 0;
+                timer = 60;
+                currentQIdx = 0;
+                
+                document.getElementById('mrScore').textContent = score;
                 document.getElementById('mrTimer').textContent = timer;
-                if(timer <= 0) endGame();
-            }, 1000);
-            
-            renderMathQuestion();
+                document.getElementById('mrGameOver').classList.add('hidden');
+                
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    timer--;
+                    document.getElementById('mrTimer').textContent = timer;
+                    if(timer <= 0) endGame();
+                }, 1000);
+                
+                renderMathQuestion();
+            }, 500);
         }
 
         function renderMathQuestion() {
@@ -334,7 +347,6 @@
                 btnElement.classList.add('bg-red-500', 'text-white', 'border-red-600');
                 score = Math.max(0, score - 50);
                 document.getElementById('mrScore').textContent = score;
-                // 答錯不換題，直到答對 (或者可以設計成扣秒數)
             }
         }
 
