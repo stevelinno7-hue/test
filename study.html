@@ -13,39 +13,53 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* 卡片懸停 */
         .note-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .mastered { border-left: 4px solid #22c55e !important; background-color: #f0fdf4; }
-        /* 隱藏捲軸但可捲動 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
+    <script src="assets/js/generator_engine.js"></script>
+    <script src="mockdata/generator_engine_polyfill.js"></script>
+    <script src="mockdata/AutoTemplateFissionFactory.js"></script>
+    <script src="mockdata/auto_fission_bootstrap.js"></script>
+    <script src="mockdata/paper_generator.js"></script>
+    <script src="mockdata/curriculum_integrated.js"></script>
+    <script src="mockdata/templates_math_algebra_geometry.js"></script>
+    <script src="mockdata/templates_physics_multistep.js"></script>
+    <script src="mockdata/templates_chemistry_core.js"></script>
+    <script src="mockdata/templates_biology_core.js"></script> 
+    <script src="mockdata/templates_english_core.js"></script>
+    <script src="mockdata/templates_english_vocab_7000.js"></script>
+    <script src="mockdata/templates_chinese_core.js"></script>
+    <script src="mockdata/templates_history_core.js"></script>
+    <script src="mockdata/templates_geography_core.js"></script>
+    <script src="mockdata/templates_civics_core.js"></script>
 </head>
 <body class="h-screen flex overflow-hidden">
     <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
         <div class="h-16 flex items-center px-6 border-b border-slate-50">
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
-            <span class="text-lg font-bold text-slate-800 tracking-tight">雲端學院</span>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
         <div class="px-4 py-6">
             <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-white shadow-sm">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-slate-100">
                     <i class="fas fa-book-open"></i>
                 </div>
-                <h3 class="font-bold text-slate-800 text-base" id="sideUserName">--</h3>
+                <h3 class="font-bold text-slate-800" id="sideUserName">--</h3>
                 <div class="text-[11px] text-slate-400 mt-1 mb-3 font-medium uppercase tracking-wider" id="sideUserRole">--</div>
             </div>
         </div>
         <nav class="flex-grow px-3 space-y-1">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-th-large w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-book-medical w-5 text-center"></i> 錯題補救</a>
-            <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
             <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
             <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-comments w-5 text-center"></i> 解題論壇</a>
-    </nav>
+        </nav>
         <div class="p-4 border-t border-slate-50">
             <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
         </div>
@@ -57,24 +71,26 @@
                 <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
                     <span class="w-2 h-8 bg-blue-500 rounded-full"></span> 重點觀念庫
                 </h1>
-                <p class="text-sm text-gray-500 mt-1 pl-5">考前衝刺必備，系統化整理核心考點</p>
+                <p class="text-sm text-gray-500 mt-1 pl-5">系統自動從您的題庫中提取核心觀念</p>
             </div>
             
-            <div class="flex gap-2">
-                <button onclick="filterNotes('all')" class="px-4 py-2 text-sm font-bold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 focus:bg-blue-600 focus:text-white transition">全部</button>
-                <button onclick="filterNotes('math')" class="px-4 py-2 text-sm font-bold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 focus:bg-blue-600 focus:text-white transition">數學</button>
-                <button onclick="filterNotes('science')" class="px-4 py-2 text-sm font-bold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 focus:bg-blue-600 focus:text-white transition">自然</button>
-            </div>
+            <div class="flex gap-2" id="subjectButtons">
+                </div>
         </div>
 
         <div class="flex-grow overflow-y-auto p-4 md:p-8 scroll-smooth bg-slate-50" id="mainScroll">
             <div class="max-w-6xl mx-auto pb-20">
-                <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    </div>
+                <div id="loader" class="text-center py-20 hidden">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-400 font-bold">AI 正在整理重點...</p>
+                </div>
+
+                <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6"></div>
                 
                 <div id="emptyState" class="hidden text-center py-20 text-gray-400">
                     <i class="fas fa-search text-5xl mb-4"></i>
-                    <p>找不到相關筆記</p>
+                    <p>該科目目前沒有題庫資料</p>
+                    <p class="text-xs mt-2">請確認您的題庫檔案是否已載入</p>
                 </div>
             </div>
         </div>
@@ -87,47 +103,131 @@
             document.getElementById('sideUserRole').textContent = user.grade || "學生";
         }
 
-        // 模擬重點資料
-        const notesDB = [
-            { id: 1, type: 'math', title: '一元二次方程式公式解', tags: ['代數', '國八'], content: '若 $ax^2+bx+c=0$ ($a\\neq0$)，則解為：$$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$ 其中 $D=b^2-4ac$ 為判別式。' },
-            { id: 2, type: 'math', title: '畢氏定理', tags: ['幾何', '國八'], content: '直角三角形中，兩股平方和等於斜邊平方：$$a^2 + b^2 = c^2$$ 常見數組：(3,4,5), (5,12,13), (8,15,17)' },
-            { id: 3, type: 'science', title: '牛頓第二運動定律', tags: ['物理', '國九'], content: '物體受外力作用時，會產生與力同方向的加速度。$$F = ma$$ $F$: 外力 (N), $m$: 質量 (kg), $a$: 加速度 ($m/s^2$)' },
-            { id: 4, type: 'science', title: '光合作用', tags: ['生物', '國七'], content: '植物利用光能，將二氧化碳和水轉化為葡萄糖與氧氣。$$6CO_2 + 6H_2O \\xrightarrow{\\text{光能}} C_6H_{12}O_6 + 6O_2$$' },
-            { id: 5, type: 'math', title: '等差數列公式', tags: ['數列', '國八'], content: '第 $n$ 項公式：$$a_n = a_1 + (n-1)d$$ 總和公式：$$S_n = \\frac{n(a_1 + a_n)}{2}$$' }
-        ];
+        // 解析 URL 參數 (例如從 course_hub.html 過來的)
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentSubject = urlParams.get('filter') || 'math';
 
-        function renderNotes(filterType = 'all') {
+        // 頁面載入後執行
+        window.onload = function() {
+            renderSubjectButtons();
+            
+            // 延遲一下確保題庫載入
+            document.getElementById('loader').classList.remove('hidden');
+            setTimeout(() => {
+                if(window.initCurriculumData) window.initCurriculumData();
+                generateAndRenderNotes(currentSubject);
+                document.getElementById('loader').classList.add('hidden');
+            }, 800);
+        };
+
+        // 渲染上方科目按鈕
+        function renderSubjectButtons() {
+            const subjects = [
+                { id: 'math', name: '數學' },
+                { id: 'english', name: '英文' },
+                { id: 'physics', name: '物理' },
+                { id: 'chemistry', name: '化學' },
+                { id: 'biology', name: '生物' },
+                { id: 'history', name: '歷史' },
+                { id: 'geography', name: '地理' },
+                { id: 'civics', name: '公民' }
+            ];
+
+            const container = document.getElementById('subjectButtons');
+            container.innerHTML = '';
+            
+            subjects.forEach(sub => {
+                const isActive = sub.id === currentSubject;
+                const btnClass = isActive 
+                    ? "bg-blue-600 text-white shadow-md" 
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200";
+                
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 text-sm font-bold rounded-lg transition whitespace-nowrap ${btnClass}`;
+                btn.textContent = sub.name;
+                btn.onclick = () => {
+                    currentSubject = sub.id;
+                    renderSubjectButtons(); // 更新按鈕狀態
+                    generateAndRenderNotes(sub.id);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // ★★★ 核心：從題庫生成筆記 ★★★
+        function generateAndRenderNotes(subject) {
             const container = document.getElementById('notesContainer');
             container.innerHTML = '';
             
-            const filtered = filterType === 'all' ? notesDB : notesDB.filter(n => n.type === filterType);
-            
-            if (filtered.length === 0) {
+            // 1. 調用題庫生成器 (抓取 20 題，模擬一個章節的重點)
+            let generatedQuestions = [];
+            if (window.generatePaper) {
+                // 這裡我們不設 filter，讓它盡量抓該科目的所有題目
+                generatedQuestions = window.generatePaper({ subject: subject, total: 20, tags: [] });
+            }
+
+            if (!generatedQuestions || generatedQuestions.length === 0) {
                 document.getElementById('emptyState').classList.remove('hidden');
                 return;
             } else {
                 document.getElementById('emptyState').classList.add('hidden');
             }
 
+            // 2. 去重 (同樣的觀念只顯示一次)
+            const uniqueConcepts = new Set();
+            const notes = [];
+
+            generatedQuestions.forEach(q => {
+                // 以 "concept" 作為唯一鍵值，如果沒有 concept 就用題目當 key
+                const key = q.concept || q.question.substring(0, 10);
+                
+                if (!uniqueConcepts.has(key)) {
+                    uniqueConcepts.add(key);
+                    
+                    // 將題目轉換為筆記格式
+                    // 標題 = 觀念名稱
+                    // 內容 = 題目範例 + 解析 (如果沒有解析，就顯示答案)
+                    let contentHTML = `<strong class="text-indigo-600">📌 範例：</strong><br>${q.question.replace(/\n/g, '<br>')}<br><br>`;
+                    
+                    if (q.explanation && q.explanation.length > 0) {
+                        contentHTML += `<strong class="text-green-600">💡 解析重點：</strong><br>${q.explanation.join('<br>')}`;
+                    } else {
+                        // 處理選擇題或填充題答案顯示
+                        let ansText = "詳見詳解";
+                        if(q.options && q.answer !== undefined) ansText = q.options[q.answer];
+                        else if(typeof q.answer === 'string' || typeof q.answer === 'number') ansText = q.answer;
+                        
+                        contentHTML += `<strong class="text-green-600">💡 答案：</strong> ${ansText}`;
+                    }
+
+                    notes.push({
+                        id: key, // 用觀念當 ID
+                        title: q.concept || "綜合練習",
+                        content: contentHTML,
+                        tags: [subject, '重點']
+                    });
+                }
+            });
+
+            // 3. 渲染卡片
             const masteredIds = JSON.parse(localStorage.getItem(`study_mastered_${user?.username}`) || "[]");
 
-            filtered.forEach((note, idx) => {
+            notes.forEach((note, idx) => {
                 const isMastered = masteredIds.includes(note.id);
                 const statusClass = isMastered ? 'mastered' : 'border-l-4 border-blue-500';
                 const btnText = isMastered ? '<i class="fas fa-check"></i> 已熟練' : '<i class="far fa-circle"></i> 標記熟練';
-                
+                const btnColor = isMastered ? 'text-green-600' : 'text-slate-400 hover:text-blue-600';
+
                 const html = `
                     <div class="note-card bg-white p-6 rounded-xl shadow-sm border border-gray-200 transition-all fade-in ${statusClass}" style="animation-delay: ${idx * 0.05}s">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex gap-2">
-                                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">${note.tags[0]}</span>
-                                <span class="bg-gray-50 text-gray-400 text-xs px-2 py-1 rounded">${note.tags[1]}</span>
+                                <span class="bg-blue-50 text-blue-600 text-xs font-bold px-2 py-1 rounded border border-blue-100">${note.title}</span>
                             </div>
-                            <button onclick="toggleMaster(${note.id})" class="text-xs font-bold text-slate-400 hover:text-green-600 transition">
+                            <button onclick="toggleMaster('${note.id}')" class="text-xs font-bold ${btnColor} transition">
                                 ${btnText}
                             </button>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">${note.title}</h3>
                         <div class="bg-slate-50 p-4 rounded-lg text-slate-700 text-sm leading-relaxed border border-slate-100">
                             ${note.content}
                         </div>
@@ -145,14 +245,10 @@
             if (ids.includes(id)) ids = ids.filter(x => x !== id);
             else ids.push(id);
             localStorage.setItem(key, JSON.stringify(ids));
-            renderNotes(); 
+            
+            // 原地更新樣式，不重新渲染整個列表 (體驗更好)
+            generateAndRenderNotes(currentSubject);
         }
-
-        window.filterNotes = function(type) {
-            renderNotes(type);
-        }
-
-        renderNotes();
     </script>
 </body>
 </html>
