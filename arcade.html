@@ -13,6 +13,7 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         /* 翻牌特效 */
         .perspective { perspective: 1000px; }
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
@@ -20,6 +21,10 @@
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .card-front { background: white; color: #334155; border: 2px solid #e2e8f0; }
         .card-back { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; transform: rotateY(180deg); }
+        
+        /* 配對卡片樣式 */
+        .mem-card.matched .card-back { background: #22c55e !important; border-color: #22c55e; }
+        
         .game-section { display: none; }
         .game-section.active { display: block; animation: fadeIn 0.3s ease-out; }
     </style>
@@ -42,32 +47,21 @@
     <script src="mockdata/templates_history_core.js"></script>
     <script src="mockdata/templates_geography_core.js"></script>
     <script src="mockdata/templates_civics_core.js"></script>
+
 </head>
 <body class="h-screen flex overflow-hidden">
     <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
         <div class="h-16 flex items-center px-6 border-b border-slate-50">
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
-            <span class="text-lg font-bold text-slate-800 tracking-tight"> </span>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
-        <div class="px-4 py-6">
-            <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-white shadow-sm">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <h3 class="font-bold text-slate-800 text-base" id="sideUserName">--</h3>
-                <div class="text-[11px] text-slate-400 mt-1 mb-3 font-medium uppercase tracking-wider" id="sideUserRole">--</div>
-            </div>
-        </div>
-        <nav class="flex-grow px-3 space-y-1">
+        <nav class="flex-grow px-3 py-6 space-y-1">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-th-large w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-book-medical w-5 text-center"></i> 錯題補救</a>
             <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
-            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-50 text-indigo-600 font-bold shadow-sm"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
             <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-comments w-5 text-center"></i> 解題論壇</a>
-    </nav>
-        <div class="p-4 border-t border-slate-50">
-            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
-        </div>
+        </nav>
     </aside>
 
     <main class="flex-grow flex flex-col h-full relative overflow-hidden">
@@ -76,9 +70,9 @@
             <div class="flex justify-between items-center mb-8">
                 <div>
                     <h1 class="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
-                        <i class="fas fa-rocket text-indigo-500"></i> 學習遊戲場
+                        <i class="fas fa-rocket text-indigo-500"></i> <span id="gamePageTitle">學習遊戲場</span>
                     </h1>
-                    <p class="text-slate-500 mt-1">使用您的專屬題庫，邊玩邊學！</p>
+                    <p class="text-slate-500 mt-1" id="gamePageSub">載入您的專屬題庫中...</p>
                 </div>
                 <div class="flex gap-2">
                     <span class="px-4 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold flex items-center gap-2">
@@ -87,30 +81,37 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" id="gameMenu">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="gameMenu">
                 <div onclick="startGame('flashcard')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
                     <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
                         <i class="fas fa-clone"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-slate-800 mb-2">智能閃示卡</h3>
-                    <p class="text-slate-500">系統自動從題庫抽取題目，正面顯示問題，背面顯示答案與解析。適合零碎時間背誦。</p>
+                    <p class="text-slate-500">將題目轉為記憶卡，正面問題、背面答案。適合背誦單字、公式或歷史年代。</p>
                 </div>
 
-                <div onclick="startGame('math_rush')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                <div onclick="startGame('math_rush')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group" id="cardMathRush">
                     <div class="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
                         <i class="fas fa-stopwatch"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-slate-800 mb-2">極速挑戰賽</h3>
-                    <p class="text-slate-500">限時 60 秒！從您的數學題庫中隨機出題，答對越多分越高。挑戰反應速度！</p>
+                    <p class="text-slate-500">限時 60 秒！答對越多分越高。這是專屬於數學科的反應訓練。</p>
+                </div>
+
+                <div onclick="startGame('memory_match')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-2">知識對對碰</h3>
+                    <p class="text-slate-500">翻牌配對遊戲！找出題目與正確答案的組合，考驗您的記憶與觀念連結。</p>
                 </div>
             </div>
 
             <div id="game-flashcard" class="game-section max-w-2xl mx-auto hidden">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束練習</button>
-                    <span class="text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-lg">題目來源：您的題庫</span>
+                    <span class="text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-lg" id="fcSubjectTag">科目</span>
                 </div>
-                
                 <div class="perspective h-96 w-full cursor-pointer" onclick="flipCard(this)">
                     <div class="card-inner relative w-full h-full" id="flashCardInner">
                         <div class="card-face card-front flex-col p-8">
@@ -130,7 +131,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="flex justify-center gap-4 mt-8">
                     <button onclick="nextFlashcard()" class="px-8 py-3 bg-white border-2 border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition shadow-sm">
                         下一題 <i class="fas fa-arrow-right ml-2"></i>
@@ -150,59 +150,78 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-8 text-center relative overflow-hidden">
                     <div id="mrGameArea">
                         <div class="mb-8">
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Question</span>
                             <h2 class="text-4xl font-extrabold text-slate-800 mt-2 leading-tight" id="mrQuestion">準備開始...</h2>
                         </div>
-                        <div class="grid grid-cols-1 gap-3" id="mrOptions">
-                            </div>
+                        <div class="grid grid-cols-1 gap-3" id="mrOptions"></div>
                     </div>
-                    
                     <div id="mrGameOver" class="hidden absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center z-20">
-                        <div class="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm animate-bounce">
-                            <i class="fas fa-trophy"></i>
-                        </div>
+                        <div class="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm animate-bounce"><i class="fas fa-trophy"></i></div>
                         <h3 class="text-3xl font-extrabold text-slate-800 mb-2">時間到！</h3>
-                        <p class="text-slate-500 mb-6 font-bold">本次得分</p>
                         <div class="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-8" id="mrFinalScore">0</div>
                         <button onclick="initMathRush()" class="px-10 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transition transform hover:scale-105">再玩一次</button>
                     </div>
                 </div>
             </div>
 
+            <div id="game-memory_match" class="game-section max-w-4xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束遊戲</button>
+                    <span class="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-lg">找出對應的 題目 與 答案</span>
+                </div>
+                <div class="grid grid-cols-4 gap-4" id="memoryGrid"></div>
+            </div>
+
         </div>
     </main>
 
     <script>
-        // 共用變數
+        // 全域變數
         let gameQuestions = [];
         let currentQIdx = 0;
         let score = 0;
         let timer = 0;
         let timerInterval;
+        let flippedCards = [];
+        let matchedPairs = 0;
 
-        // 初始化
+        // 1. 初始化與參數解析
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentSubject = urlParams.get('subject') || 'all'; // 預設全部
+        const pageTitle = urlParams.get('title') || '綜合練習';
+
         const user = Auth.getCurrentUser();
         if(user) {
-            document.getElementById('sideUserName').textContent = user.name;
-            document.getElementById('sideUserRole').textContent = user.grade || "學生";
             document.getElementById('coinCount').textContent = user.coins || 0;
         }
 
-        // 生成題目函式 (調用您的 Generator Engine)
-        function generateGameQuestions(subject = 'math', count = 20) {
+        // 更新標題
+        document.getElementById('gamePageTitle').textContent = `${pageTitle} 遊戲場`;
+        document.getElementById('gamePageSub').textContent = `正在為您載入 ${pageTitle} 的專屬題庫...`;
+        document.getElementById('fcSubjectTag').textContent = pageTitle;
+
+        // 如果不是數學，隱藏「極速挑戰」(因為其他科題目太長不適合限時)
+        if (currentSubject !== 'math' && currentSubject !== 'all') {
+            document.getElementById('cardMathRush').classList.add('opacity-50', 'pointer-events-none');
+            document.getElementById('cardMathRush').innerHTML += '<div class="absolute inset-0 bg-white/50 flex items-center justify-center font-bold text-gray-500">限數學科</div>';
+        }
+
+        // 2. 核心：全科題庫生成器
+        function generateGameQuestions(subject, count = 20) {
             if (window.generatePaper) {
-                // 使用您的 paper_generator.js，tags 預設全包
-                const q = window.generatePaper({ subject: subject, total: count, tags: ['國七','國八','國九','高一','高二','高三'] });
+                // 如果 subject 是 'all'，則隨機抓取各科
+                let targetSubject = subject === 'all' ? 'math' : subject; 
+                // 注意：這裡直接調用您的 Generator Engine
+                const q = window.generatePaper({ subject: targetSubject, total: count, tags: ['國七','國八','國九','高一','高二','高三'] });
                 return q.filter(item => item && item.question);
             }
             return [];
         }
 
-        // --- 核心導航 ---
+        // 導航
         function startGame(gameId) {
             document.getElementById('gameMenu').classList.add('hidden');
             document.querySelectorAll('.game-section').forEach(el => el.classList.remove('active', 'hidden'));
@@ -210,6 +229,7 @@
 
             if(gameId === 'flashcard') initFlashcard();
             if(gameId === 'math_rush') initMathRush();
+            if(gameId === 'memory_match') initMemoryMatch();
         }
 
         function backToMenu() {
@@ -221,23 +241,20 @@
             clearInterval(timerInterval);
         }
 
-        // --- Game 1: 閃示卡邏輯 ---
+        // ============================================
+        //  Game 1: 智能閃示卡 (Flashcard) - 支援所有科目
+        // ============================================
         function initFlashcard() {
-            // 嘗試生成題目，混合科目 (等待題庫載入)
             setTimeout(() => {
-                let q1 = generateGameQuestions('math', 5);
-                let q2 = generateGameQuestions('english', 5); // 假設有英文
-                gameQuestions = [...q1, ...q2]; 
+                // 根據當前科目生成題目
+                gameQuestions = generateGameQuestions(currentSubject, 10);
                 
                 if(gameQuestions.length === 0) {
-                    // 如果還是空的，可能題庫載入慢，重試一次
-                    alert("題庫載入中，請稍後再試...");
+                    alert("目前科目題庫載入中或無題目，請稍後再試。");
                     backToMenu();
                     return;
                 }
                 
-                // 洗牌
-                gameQuestions.sort(() => Math.random() - 0.5);
                 currentQIdx = 0;
                 renderFlashcard();
             }, 500);
@@ -247,50 +264,35 @@
             const q = gameQuestions[currentQIdx % gameQuestions.length];
             document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
             
-            // 處理答案顯示
-            let ansText = "";
-            if (q.options && q.answer !== undefined) {
-                ansText = q.options[q.answer];
-            } else {
-                ansText = "詳見解析";
-            }
+            let ansText = "詳見解析";
+            if (q.options && q.answer !== undefined) ansText = q.options[q.answer];
+            else if (typeof q.answer === 'string' || typeof q.answer === 'number') ansText = q.answer;
             
             document.getElementById('fcAnswer').innerHTML = ansText;
-            document.getElementById('fcExplain').innerHTML = (q.explanation || []).join('<br>') || "觀念題";
+            document.getElementById('fcExplain').innerHTML = (q.explanation || []).join('<br>') || "本題為觀念題";
             
             document.getElementById('flashCardInner').classList.remove('is-flipped');
             if(window.MathJax) MathJax.typesetPromise();
         }
 
-        function flipCard(el) {
-            el.querySelector('.card-inner').classList.toggle('is-flipped');
-        }
-
+        function flipCard(el) { el.querySelector('.card-inner').classList.toggle('is-flipped'); }
         function nextFlashcard() {
             currentQIdx++;
             const inner = document.getElementById('flashCardInner');
             inner.style.opacity = '0';
-            setTimeout(() => {
-                renderFlashcard();
-                inner.style.opacity = '1';
-            }, 300);
+            setTimeout(() => { renderFlashcard(); inner.style.opacity = '1'; }, 300);
         }
 
-        // --- Game 2: 極速挑戰邏輯 ---
+        // ============================================
+        //  Game 2: 極速挑戰 (Math Rush) - 數學專用
+        // ============================================
         function initMathRush() {
-            // 專門生成數學題
             setTimeout(() => {
+                // 強制生成數學題 (50題)
                 gameQuestions = generateGameQuestions('math', 50);
-                if(gameQuestions.length === 0) {
-                    alert("數學題庫載入失敗"); 
-                    backToMenu(); 
-                    return; 
-                }
+                if(gameQuestions.length === 0) { alert("數學題庫載入失敗"); backToMenu(); return; }
 
-                score = 0;
-                timer = 60;
-                currentQIdx = 0;
-                
+                score = 0; timer = 60; currentQIdx = 0;
                 document.getElementById('mrScore').textContent = score;
                 document.getElementById('mrTimer').textContent = timer;
                 document.getElementById('mrGameOver').classList.add('hidden');
@@ -299,7 +301,7 @@
                 timerInterval = setInterval(() => {
                     timer--;
                     document.getElementById('mrTimer').textContent = timer;
-                    if(timer <= 0) endGame();
+                    if(timer <= 0) { clearInterval(timerInterval); document.getElementById('mrFinalScore').textContent = score; document.getElementById('mrGameOver').classList.remove('hidden'); }
                 }, 1000);
                 
                 renderMathQuestion();
@@ -307,53 +309,129 @@
         }
 
         function renderMathQuestion() {
-            if (currentQIdx >= gameQuestions.length) currentQIdx = 0; // 循環
+            if (currentQIdx >= gameQuestions.length) currentQIdx = 0;
             const q = gameQuestions[currentQIdx];
-            
             document.getElementById('mrQuestion').innerHTML = q.question;
             const container = document.getElementById('mrOptions');
             container.innerHTML = '';
             
-            q.options.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "w-full py-4 text-lg font-bold bg-slate-50 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition text-slate-700 shadow-sm";
-                btn.innerHTML = opt;
-                btn.onclick = () => checkAnswer(idx, q.answer, btn);
-                container.appendChild(btn);
-            });
-            
+            if(q.options) {
+                q.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full py-4 text-lg font-bold bg-slate-50 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition text-slate-700 shadow-sm";
+                    btn.innerHTML = opt;
+                    btn.onclick = () => {
+                        if(idx === q.answer) {
+                            score += 100; document.getElementById('mrScore').textContent = score;
+                            btn.classList.add('bg-green-500', 'text-white');
+                            setTimeout(() => { currentQIdx++; renderMathQuestion(); }, 200);
+                        } else {
+                            score = Math.max(0, score - 50); document.getElementById('mrScore').textContent = score;
+                            btn.classList.add('bg-red-500', 'text-white');
+                        }
+                    };
+                    container.appendChild(btn);
+                });
+            }
             if(window.MathJax) MathJax.typesetPromise();
         }
 
-        function checkAnswer(selected, correct, btnElement) {
-            if(selected === correct) {
-                score += 100;
-                document.getElementById('mrScore').textContent = score;
-                btnElement.classList.add('bg-green-500', 'text-white', 'border-green-600');
+        // ============================================
+        //  Game 3: 知識對對碰 (Memory Match) - 全科通用
+        // ============================================
+        function initMemoryMatch() {
+            setTimeout(() => {
+                // 1. 抓取 6 題
+                const rawQuestions = generateGameQuestions(currentSubject, 6);
+                if(rawQuestions.length < 6) { alert("題目數量不足以進行配對遊戲"); backToMenu(); return; }
+
+                const container = document.getElementById('memoryGrid');
+                container.innerHTML = '';
+                flippedCards = [];
+                matchedPairs = 0;
                 
-                // 答對特效：金幣+1
-                const user = Auth.getCurrentUser();
+                // 2. 製作卡片對 (Q卡 與 A卡)
+                let cards = [];
+                rawQuestions.forEach((q, i) => {
+                    // Q卡 (顯示題目)
+                    cards.push({ id: i, content: q.question, type: 'q' });
+                    // A卡 (顯示答案)
+                    let ansText = q.options ? q.options[q.answer] : q.answer;
+                    cards.push({ id: i, content: ansText, type: 'a' });
+                });
+
+                // 3. 洗牌
+                cards.sort(() => Math.random() - 0.5);
+
+                // 4. 渲染
+                cards.forEach((card, index) => {
+                    const el = document.createElement('div');
+                    el.className = 'perspective h-32 cursor-pointer'; // 卡片高度
+                    // 根據是 Q 還是 A 給予不同顏色提示
+                    const backColor = card.type === 'q' ? 'text-indigo-700 border-indigo-200' : 'text-green-700 border-green-200';
+                    const icon = card.type === 'q' ? 'fa-question' : 'fa-lightbulb';
+                    
+                    el.innerHTML = `
+                        <div class="card-inner w-full h-full relative transition-transform duration-500 transform-style-3d mem-card" id="mem-card-${index}" data-id="${card.id}">
+                            <div class="card-face absolute w-full h-full bg-indigo-500 rounded-xl flex items-center justify-center text-white text-2xl shadow-md border-b-4 border-indigo-700">
+                                <i class="fas ${icon}"></i>
+                            </div>
+                            <div class="card-face card-back absolute w-full h-full bg-white rounded-xl flex items-center justify-center p-2 text-center text-xs font-bold shadow-md border-2 ${backColor}" style="transform: rotateY(180deg); backface-visibility: hidden; overflow: hidden;">
+                                ${card.content}
+                            </div>
+                        </div>
+                    `;
+                    el.onclick = () => handleMemoryClick(index, card.id);
+                    container.appendChild(el);
+                });
+                if(window.MathJax) MathJax.typesetPromise();
+
+            }, 500);
+        }
+
+        function handleMemoryClick(index, id) {
+            const cardEl = document.getElementById(`mem-card-${index}`);
+            // 防止重複點擊、已翻開、已配對
+            if(flippedCards.length >= 2 || cardEl.classList.contains('is-flipped') || cardEl.classList.contains('matched')) return;
+
+            cardEl.style.transform = 'rotateY(180deg)';
+            cardEl.classList.add('is-flipped');
+            flippedCards.push({ index, id, element: cardEl });
+
+            if(flippedCards.length === 2) {
+                checkMemoryMatch();
+            }
+        }
+
+        function checkMemoryMatch() {
+            const [c1, c2] = flippedCards;
+            
+            if (c1.id === c2.id) {
+                // 配對成功
+                c1.element.classList.add('matched');
+                c2.element.classList.add('matched');
+                flippedCards = [];
+                matchedPairs++;
+                // 增加金幣
                 if(user) {
-                    user.coins = (user.coins || 0) + 1;
+                    user.coins = (user.coins || 0) + 10;
                     localStorage.setItem('currentUser', JSON.stringify(user));
                     document.getElementById('coinCount').textContent = user.coins;
                 }
 
-                setTimeout(() => {
-                    currentQIdx++;
-                    renderMathQuestion();
-                }, 200);
+                if(matchedPairs === 6) {
+                    setTimeout(() => alert("🎉 恭喜！全部配對成功！獲得 60 金幣！"), 500);
+                }
             } else {
-                btnElement.classList.add('bg-red-500', 'text-white', 'border-red-600');
-                score = Math.max(0, score - 50);
-                document.getElementById('mrScore').textContent = score;
+                // 配對失敗，翻回去
+                setTimeout(() => {
+                    c1.element.style.transform = 'rotateY(0deg)';
+                    c2.element.style.transform = 'rotateY(0deg)';
+                    c1.element.classList.remove('is-flipped');
+                    c2.element.classList.remove('is-flipped');
+                    flippedCards = [];
+                }, 1000);
             }
-        }
-
-        function endGame() {
-            clearInterval(timerInterval);
-            document.getElementById('mrFinalScore').textContent = score;
-            document.getElementById('mrGameOver').classList.remove('hidden');
         }
 
     </script>
