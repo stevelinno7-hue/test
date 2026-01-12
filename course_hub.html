@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課程首頁 - 雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .hover-card { transition: all 0.3s ease; }
+        .hover-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    </style>
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+</head>
+<body class="h-screen flex overflow-hidden">
+    <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
+        <div class="h-16 flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <nav class="flex-grow px-3 py-6 space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-800 font-bold"><i class="fas fa-th-large w-5 text-center"></i> 課程總覽</a>
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-book-medical w-5 text-center"></i> 錯題補救</a>
+            <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
+            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
+        </nav>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden">
+        <div class="p-8 overflow-y-auto h-full">
+            
+            <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+                <a href="dashboard.html" class="hover:text-blue-600">課程總覽</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <span id="breadcrumbCurrent" class="font-bold text-slate-700">載入中...</span>
+            </div>
+
+            <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-3xl p-8 text-white mb-10 shadow-lg relative overflow-hidden">
+                <div class="absolute right-0 bottom-0 opacity-10 text-9xl transform translate-y-10 translate-x-10">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="relative z-10">
+                    <div class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-bold mb-3 backdrop-blur-sm" id="gradeBadge">
+                        年級
+                    </div>
+                    <h1 class="text-4xl font-extrabold mb-2" id="courseTitle">載入中...</h1>
+                    <p class="text-slate-300">請選擇您要進行的學習模式：</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <a id="linkStudy" href="#" class="block bg-white p-8 rounded-2xl border border-slate-100 shadow-sm hover-card group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition group-hover:scale-110"></div>
+                    <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10">
+                        <i class="fas fa-highlighter"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">重點複習</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-4">
+                        考前衝刺必備！瀏覽章節核心觀念卡片，快速掌握知識點。
+                    </p>
+                    <span class="text-blue-600 font-bold text-sm flex items-center gap-2 group-hover:translate-x-1 transition">
+                        前往閱讀 <i class="fas fa-arrow-right"></i>
+                    </span>
+                </a>
+
+                <a id="linkExam" href="#" class="block bg-white p-8 rounded-2xl border border-slate-100 shadow-sm hover-card group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-full -mr-4 -mt-4 transition group-hover:scale-110"></div>
+                    <div class="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10">
+                        <i class="fas fa-pencil-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">開始測驗</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-4">
+                        AI 智能出題，根據您的程度動態調整難易度，精準診斷弱點。
+                    </p>
+                    <span class="text-orange-600 font-bold text-sm flex items-center gap-2 group-hover:translate-x-1 transition">
+                        立即挑戰 <i class="fas fa-arrow-right"></i>
+                    </span>
+                </a>
+
+                <a id="linkArcade" href="#" class="block bg-white p-8 rounded-2xl border border-slate-100 shadow-sm hover-card group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4 transition group-hover:scale-110"></div>
+                    <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mb-6 relative z-10">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">學習遊戲場</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-4">
+                        累了嗎？來玩點好玩的！透過翻牌與限時挑戰來複習，邊玩邊學。
+                    </p>
+                    <span class="text-indigo-600 font-bold text-sm flex items-center gap-2 group-hover:translate-x-1 transition">
+                        進入遊戲 <i class="fas fa-arrow-right"></i>
+                    </span>
+                </a>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // 解析 URL 參數
+        const urlParams = new URLSearchParams(window.location.search);
+        const subject = urlParams.get('subject') || 'math'; // 預設數學
+        const title = decodeURIComponent(urlParams.get('title') || '課程');
+        const grade = decodeURIComponent(urlParams.get('grade') || '七年級');
+
+        // 更新頁面資訊
+        document.getElementById('courseTitle').textContent = title;
+        document.getElementById('breadcrumbCurrent').textContent = title;
+        document.getElementById('gradeBadge').textContent = grade;
+
+        // 設定連結目標
+        // 1. 測驗：帶入科目與預設題數
+        document.getElementById('linkExam').href = `exam.html?subject=${subject}&title=${encodeURIComponent(title)}&count=10`;
+        
+        // 2. 複習：帶入科目 (study.html 需要稍微修改以支援自動篩選，或者使用者手動點)
+        document.getElementById('linkStudy').href = `study.html?filter=${subject}`;
+        
+        // 3. 遊戲：帶入科目 (arcade.html 需要稍微修改以支援自動篩選)
+        document.getElementById('linkArcade').href = `arcade.html?subject=${subject}`;
+
+    </script>
+</body>
+</html>
