@@ -63,7 +63,7 @@ const RealAITutor = {
      * =============================== */
     constructPrompt(title, content) {
         return `
-        你現在是【翰林出版的 AI 專業助教】，請用繁體中文回答。
+        你現在是【AI 專業助教】，請用繁體中文回答。
         
         【你的任務】：
         1. 分析學生的問題。
