@@ -29,6 +29,13 @@
                 return t.func({}, args || {}); // 傳入 args 以支援 tags 過濾
             }
         };
+    } else {
+        // 如果 Engine 已經存在，但也許版本過舊缺少此功能，這裏做補強
+        if (!global.RigorousGenerator.getTemplateIds) {
+            global.RigorousGenerator.getTemplateIds = function() {
+                 return Object.keys(this._templates);
+            };
+        }
     }
 
     // 確保 utils 存在
