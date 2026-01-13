@@ -667,6 +667,106 @@
                     { name: "單元 2：司法制度", topics: ["國民法官", "大法官釋憲", "修復式司法"] }
                 ]
             }
+        ],
+        
+        // --- 國文 (Chinese) ---
+        chinese: [
+            // Junior High (國中：以文體與語文常識為主軸)
+            {
+                id: "chi_j1", name: "國七國文 (上)", stage: "junior_high", subject: "chinese", book: "Book 1",
+                units: [
+                    { name: "單元 1：現代文學入門", topics: ["新詩的格律與欣賞", "現代散文(記敘與抒情)", "工具書的使用"] },
+                    { name: "單元 2：古典文學初探", topics: ["論語選讀(學習與修養)", "寓言故事", "絕句的格律(近體詩)"] },
+                    { name: "單元 3：語文常識 (一)", topics: ["標點符號", "漢字的構造(六書)", "書法欣賞(楷書)"] }
+                ]
+            },
+            {
+                id: "chi_j2", name: "國七國文 (下)", stage: "junior_high", subject: "chinese", book: "Book 2",
+                units: [
+                    { name: "單元 1：敘事與寫人", topics: ["現代散文(人物描寫)", "筆記小說(世說新語)", "傳記文學"] },
+                    { name: "單元 2：詩歌與季節", topics: ["律詩的格律(近體詩)", "五言律詩與七言律詩"] },
+                    { name: "單元 3：語文常識 (二)", topics: ["詞類(實詞與虛詞)", "成語運用", "書法(行書與草書)"] }
+                ]
+            },
+            {
+                id: "chi_j3", name: "國八國文 (上)", stage: "junior_high", subject: "chinese", book: "Book 3",
+                units: [
+                    { name: "單元 1：山水與遊記", topics: ["古體詩(樂府詩)", "古代遊記散文", "現代遊記"] },
+                    { name: "單元 2：詠物與感懷", topics: ["詠物詩詞", "現代散文(託物言志)"] },
+                    { name: "單元 3：語文常識 (三)", topics: ["修辭學(譬喻/轉化/誇飾)", "句型結構(四大句型)"] }
+                ]
+            },
+            {
+                id: "chi_j4", name: "國八國文 (下)", stage: "junior_high", subject: "chinese", book: "Book 4",
+                units: [
+                    { name: "單元 1：議論與說理", topics: ["論說文的結構", "儒家經典(孟子選)", "法家寓言"] },
+                    { name: "單元 2：宋詞之美", topics: ["詞的格律(詞牌)", "豪放派與婉約派"] },
+                    { name: "單元 3：語文常識 (四)", topics: ["修辭學(排比/對偶/層遞)", "應用文(書信與便條)"] }
+                ]
+            },
+            {
+                id: "chi_j5", name: "國九國文 (上)", stage: "junior_high", subject: "chinese", book: "Book 5",
+                units: [
+                    { name: "單元 1：小說的世界", topics: ["章回小說(三國/水滸/西遊)", "志怪小說", "現代極短篇"] },
+                    { name: "單元 2：元曲選", topics: ["曲的格律(散曲)", "元曲四大家"] },
+                    { name: "單元 3：語文常識 (五)", topics: ["應用文(題辭與對聯)", "修辭學(設問/引用/倒裝)"] }
+                ]
+            },
+            {
+                id: "chi_j6", name: "國九國文 (下)", stage: "junior_high", subject: "chinese", book: "Book 6",
+                units: [
+                    { name: "單元 1：文化與思想", topics: ["諸子百家思想(先秦)", "文化教材總整理"] },
+                    { name: "單元 2：歷代文體總複習", topics: ["韻文發展流變", "散文發展流變", "小說發展流變"] },
+                    { name: "單元 3：閱讀素養", topics: ["白話文閱讀理解", "文言文閱讀理解"] }
+                ]
+            },
+            // Senior High (高中：以核心古文 15 篇與文學流派為主軸)
+            {
+                id: "chi_s1", name: "高一國文 (上)", stage: "high_school", subject: "chinese", book: "Book 1",
+                units: [
+                    { name: "單元 1：先秦文學", topics: ["左傳(燭之武退秦師)", "禮記(大同與小康)", "論孟選讀"] },
+                    { name: "單元 2：現代文學 (一)", topics: ["現代詩流派", "現代散文(回憶文學)"] },
+                    { name: "單元 3：寫作力 (一)", topics: ["記敘文寫作", "知性統整與判斷"] }
+                ]
+            },
+            {
+                id: "chi_s2", name: "高一國文 (下)", stage: "high_school", subject: "chinese", book: "Book 2",
+                units: [
+                    { name: "單元 1：漢魏六朝", topics: ["史記(鴻門宴)", "出師表", "世說新語選"] },
+                    { name: "單元 2：唐宋散文 (一)", topics: ["韓愈(師說)", "柳宗元(始得西山宴遊記)"] },
+                    { name: "單元 3：古典詩歌 (一)", topics: ["古體詩選", "唐詩(近體詩)賞析"] }
+                ]
+            },
+            {
+                id: "chi_s3", name: "高二國文 (上)", stage: "high_school", subject: "chinese", book: "Book 3",
+                units: [
+                    { name: "單元 1：唐宋散文 (二)", topics: ["歐陽脩(醉翁亭記)", "蘇軾(赤壁賦)", "范仲淹(岳陽樓記)"] },
+                    { name: "單元 2：明清小品", topics: ["歸有光(項脊軒志)", "袁宏道(晚遊六橋待月記)"] },
+                    { name: "單元 3：古典詩歌 (二)", topics: ["宋詞賞析", "元曲賞析"] }
+                ]
+            },
+            {
+                id: "chi_s4", name: "高二國文 (下)", stage: "high_school", subject: "chinese", book: "Book 4",
+                units: [
+                    { name: "單元 1：明清與台灣古典", topics: ["蒲松齡(勞山道士)", "連橫(臺灣通史序)", "勸和論"] },
+                    { name: "單元 2：紅樓夢", topics: ["劉姥姥進大觀園", "紅樓夢人物分析"] },
+                    { name: "單元 3：現代文學 (二)", topics: ["鄉土文學", "原住民文學", "女性文學"] }
+                ]
+            },
+            {
+                id: "chi_s5", name: "高三國文 (選修-加深加廣)", stage: "high_school", subject: "chinese", book: "Book 5 (Elective)",
+                units: [
+                    { name: "單元 1：學術思想(經史子集)", topics: ["經學概說(十三經)", "史學概說(四史)", "子學概說"] },
+                    { name: "單元 2：語文表達", topics: ["自傳與履歷", "企劃書撰寫", "閱讀理解進階"] }
+                ]
+            },
+            {
+                id: "chi_s6", name: "高三國文 (選修-文學賞析)", stage: "high_school", subject: "chinese", book: "Book 6 (Elective)",
+                units: [
+                    { name: "單元 1：專題選讀", topics: ["飲食文學", "旅行文學", "科普寫作"] },
+                    { name: "單元 2：國學常識總整理", topics: ["歷代文學流變圖", "重要作家地位排行"] }
+                ]
+            }
         ]
     };
 
