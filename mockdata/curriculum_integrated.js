@@ -2,7 +2,7 @@
     'use strict';
 
     global.CurriculumLibrary = global.CurriculumLibrary || {};
-    global.CurriculumLibrary.version = "3.1.0-Expanded";
+    global.CurriculumLibrary.version = "5.0.0-EnglishFix";
     global.CurriculumLibrary.lastUpdated = "2026-01-14";
 
     // ==========================================
