@@ -66,12 +66,23 @@
             <div class="p-4 border-b border-slate-200 bg-white">
                 <label class="text-xs font-bold text-gray-400 uppercase">科目選擇</label>
                 <select id="subjectSelect" onchange="loadBookMenu()" class="w-full mt-1 p-2 border border-slate-200 rounded-lg font-bold text-slate-700 focus:outline-none focus:border-blue-500">
-                    <option value="math">📐 數學</option>
-                    <option value="english">🔤 英文</option>
-                    <option value="physics">🧲 物理</option>
-                    <option value="chemistry">⚗️ 化學</option>
-                    <option value="history">📜 歷史</option>
-                </select>
+    <optgroup label="主要學科">
+        <option value="math">📐 數學</option>
+        <option value="english">🔤 英文</option>
+        <option value="chinese">🀄 國文</option>
+    </optgroup>
+    <optgroup label="自然科學">
+        <option value="physics">🧲 物理 (理化)</option>
+        <option value="chemistry">⚗️ 化學 (理化)</option>
+        <option value="biology">🧬 生物</option>
+        <option value="earth">🌍 地球科學</option>
+    </optgroup>
+    <optgroup label="社會人文">
+        <option value="history">📜 歷史</option>
+        <option value="geography">🗺️ 地理</option>
+        <option value="civics">⚖️ 公民</option>
+    </optgroup>
+</select>
             </div>
             <div class="flex-grow overflow-y-auto p-2 space-y-4 no-scrollbar" id="unitMenu">
                 <div class="text-center py-10 text-gray-400 text-sm"><i class="fas fa-spinner fa-spin"></i> 載入中...</div>
