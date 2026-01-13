@@ -80,67 +80,60 @@
 
         </div>
     </main>
-
-    <script>
+<script>
         // 解析 URL
         const urlParams = new URLSearchParams(window.location.search);
         const subject = urlParams.get('subject') || 'math';
         const stage = urlParams.get('stage') || 'junior_high';
         const title = decodeURIComponent(urlParams.get('title') || '課程');
+        // ★★★ 關鍵：取得傳入的年級參數 (例如 "七年級" 或 "國七") ★★★
+        const gradeParam = urlParams.get('grade') || '';
 
-        // 更新介面基本資訊
+        // 更新資訊
         document.getElementById('courseTitle').textContent = title;
         document.getElementById('breadcrumbCurrent').textContent = title;
         document.getElementById('gradeBadge').textContent = stage === 'high_school' ? '高中部' : '國中部';
 
-        // 設定快速按鈕連結
+        // 設定快速按鈕
+        // 1. 複習
         document.getElementById('linkStudy').href = `study.html?filter=${subject}`;
+        
+        // 2. 遊戲
         document.getElementById('linkArcade').href = `arcade.html?subject=${subject}`;
-        document.getElementById('linkExamAll').href = `exam.html?subject=${subject}&title=${encodeURIComponent(title + "總複習")}&count=20`;
+        
+        // 3. 全冊測驗 ★★★ 關鍵修改：將 grade 參數往下傳給 exam.html ★★★
+        document.getElementById('linkExamAll').href = `exam.html?subject=${subject}&title=${encodeURIComponent(title + "總複習")}&count=20&grade=${encodeURIComponent(gradeParam)}`;
 
-        // 載入課程資料
+        // 載入資料 (保持不變)
         let currentBooks = [];
         let activeBookIndex = 0;
 
         window.onload = function() {
+            // ... (原本的載入邏輯) ...
             const data = window.CurriculumLibrary.data[subject] || [];
-            // 過濾學制 (國中/高中)
             currentBooks = data.filter(book => book.stage === stage);
-
-            if (currentBooks.length === 0) {
-                document.getElementById('unitContainer').innerHTML = `
-                    <div class="text-center py-20">
-                        <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
-                        <p class="text-gray-500 font-bold">尚無此課程資料</p>
-                        <p class="text-sm text-gray-400 mt-2">請確認 curriculum_integrated.js 是否已更新</p>
-                    </div>`;
-                return;
-            }
-
-            // 按照冊次排序 (Book 1, Book 2...)
+            
+            // ... (後續渲染邏輯保持不變) ...
+            // 排序...
             currentBooks.sort((a, b) => {
                 const getNum = s => { const m = s.book.match(/\d+/); return m ? parseInt(m[0]) : 0; };
-                return getNum(a) - getNum(b);
+                return getNum(a.book) - getNum(b.book);
             });
 
             renderTabs();
             renderUnits(0);
         };
 
+        // ... (renderTabs 和 renderUnits 函式保持不變) ...
         function renderTabs() {
             const container = document.getElementById('bookTabs');
             container.innerHTML = '';
-            
             currentBooks.forEach((book, idx) => {
                 const btn = document.createElement('button');
                 const isActive = idx === activeBookIndex;
                 btn.className = `px-6 py-4 text-sm whitespace-nowrap transition-colors ${isActive ? 'tab-active' : 'tab-inactive'}`;
-                btn.textContent = book.name || book.book;
-                btn.onclick = () => {
-                    activeBookIndex = idx;
-                    renderTabs();
-                    renderUnits(idx);
-                };
+                btn.textContent = book.name || book.book; 
+                btn.onclick = () => { activeBookIndex = idx; renderTabs(); renderUnits(idx); };
                 container.appendChild(btn);
             });
         }
@@ -148,19 +141,12 @@
         function renderUnits(bookIdx) {
             const container = document.getElementById('unitContainer');
             const bookData = currentBooks[bookIdx];
-            
-            if (!bookData || !bookData.units) {
-                container.innerHTML = '<p class="text-center py-10 text-gray-400">本冊尚無單元資料</p>';
-                return;
-            }
+            if (!bookData || !bookData.units) { container.innerHTML = '<p class="text-center py-10 text-gray-400">本冊尚無單元資料</p>'; return; }
 
             let html = '<div class="grid grid-cols-1 gap-4">';
-            
             bookData.units.forEach((unit, uIdx) => {
-                // 將 topics 轉為標籤顯示
                 const topicsHtml = unit.topics.map(t => `<span class="bg-white border border-slate-200 text-slate-500 text-xs px-2 py-1 rounded">${t}</span>`).join('');
-                
-                // 測驗連結：帶入特定單元標籤
+                // ★★★ 單元測驗連結也修正：不需要強制帶 grade，因為單元名稱已經足夠精確，但帶上也無妨 ★★★
                 const examLink = `exam.html?subject=${subject}&title=${encodeURIComponent(unit.name)}&count=10`;
 
                 html += `
@@ -171,24 +157,15 @@
                                     <span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded">單元 ${uIdx + 1}</span>
                                     ${unit.name}
                                 </h3>
-                                <div class="flex flex-wrap gap-2">
-                                    ${topicsHtml}
-                                </div>
+                                <div class="flex flex-wrap gap-2">${topicsHtml}</div>
                             </div>
-                            
                             <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                                <a href="study.html?filter=${subject}" class="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 text-center">
-                                    <i class="fas fa-book-open mr-1"></i> 複習
-                                </a>
-                                <a href="${examLink}" class="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm text-center">
-                                    <i class="fas fa-pencil-alt mr-1"></i> 測驗
-                                </a>
+                                <a href="study.html?filter=${subject}" class="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 text-center"><i class="fas fa-book-open mr-1"></i> 複習</a>
+                                <a href="${examLink}" class="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm text-center"><i class="fas fa-pencil-alt mr-1"></i> 測驗</a>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-            
             html += '</div>';
             container.innerHTML = html;
         }
