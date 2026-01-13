@@ -131,6 +131,20 @@
                 container.insertAdjacentHTML('beforeend', html);
             });
         }
+        function createCard(group, course) {
+                // ... (Config 省略) ...
+                
+                // ★★★ 關鍵修改：連結到 course_hub.html，並傳遞 stage 參數 ★★★
+                const stage = document.getElementById('currentStage').value;
+                const gradeLabel = getGradeName(stage, group.book) || group.book;
+                
+                // 這裡把 stage 參數帶過去
+                const linkHref = `course_hub.html?subject=${group.subject}&stage=${stage}&title=${encodeURIComponent(course.name)}&grade=${encodeURIComponent(gradeLabel)}`;
+                
+                // ... (其餘代碼不變) ...
+                
+                return `...`; // (回傳原本的卡片 HTML)
+            }
     </script>
 </body>
 </html>
