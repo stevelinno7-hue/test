@@ -8,15 +8,16 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
-        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .note-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .mastered { border-left: 4px solid #22c55e !important; background-color: #f0fdf4; }
+        /* 側邊欄樣式 */
+        .unit-item { cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+        .unit-item:hover { background-color: #f1f5f9; }
+        .unit-item.active { background-color: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: bold; }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* 隱藏捲軸 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -32,222 +33,202 @@
     <script src="mockdata/templates_chemistry_core.js"></script>
     <script src="mockdata/templates_biology_core.js"></script> 
     <script src="mockdata/templates_english_core.js"></script>
-    <script src="mockdata/templates_english_vocab_7000.js"></script>
     <script src="mockdata/templates_chinese_core.js"></script>
     <script src="mockdata/templates_history_core.js"></script>
     <script src="mockdata/templates_geography_core.js"></script>
     <script src="mockdata/templates_civics_core.js"></script>
 </head>
 <body class="h-screen flex overflow-hidden">
-    <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
-        <div class="h-16 flex items-center px-6 border-b border-slate-50">
-            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
-            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+    <aside class="w-16 md:w-64 bg-white border-r border-slate-100 flex-shrink-0 flex flex-col z-20">
+        <div class="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-50">
+            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold">學</div>
+            <span class="text-lg font-bold text-slate-800 ml-2 hidden md:block">雲端學院</span>
         </div>
-        <div class="px-4 py-6">
-            <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-slate-100">
-                    <i class="fas fa-book-open"></i>
-                </div>
-                <h3 class="font-bold text-slate-800" id="sideUserName">--</h3>
-                <div class="text-[11px] text-slate-400 mt-1 mb-3 font-medium uppercase tracking-wider" id="sideUserRole">--</div>
-            </div>
-        </div>
-        <nav class="flex-grow px-3 space-y-1">
-            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-th-large w-5 text-center"></i> 課程總覽</a>
-            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-book-medical w-5 text-center"></i> 錯題補救</a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
-            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
-            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium"><i class="fas fa-comments w-5 text-center"></i> 解題論壇</a>
+        <nav class="flex-grow px-2 md:px-3 py-6 space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-3 px-2 md:px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition">
+                <i class="fas fa-th-large w-5 text-center"></i> <span class="hidden md:block">課程總覽</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-2 md:px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm">
+                <i class="fas fa-highlighter w-5 text-center"></i> <span class="hidden md:block">重點複習</span>
+            </a>
+            <a href="arcade.html" class="flex items-center gap-3 px-2 md:px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition">
+                <i class="fas fa-gamepad w-5 text-center"></i> <span class="hidden md:block">遊戲場</span>
+            </a>
+            <a href="remedial.html" class="flex items-center gap-3 px-2 md:px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition">
+                <i class="fas fa-book-medical w-5 text-center"></i> <span class="hidden md:block">錯題補救</span>
+            </a>
         </nav>
-        <div class="p-4 border-t border-slate-50">
-            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
-        </div>
     </aside>
 
-    <main class="flex-grow flex flex-col h-full relative overflow-hidden">
-        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 sticky top-0 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
-                    <span class="w-2 h-8 bg-blue-500 rounded-full"></span> 重點觀念庫
-                </h1>
-                <p class="text-sm text-gray-500 mt-1 pl-5">系統自動從您的題庫中提取核心觀念</p>
+    <main class="flex-grow flex h-full relative overflow-hidden">
+        
+        <div class="w-64 bg-slate-50 border-r border-slate-200 flex-shrink-0 flex flex-col h-full">
+            <div class="p-4 border-b border-slate-200 bg-white">
+                <label class="text-xs font-bold text-gray-400 uppercase">科目選擇</label>
+                <select id="subjectSelect" onchange="loadBookMenu()" class="w-full mt-1 p-2 border border-slate-200 rounded-lg font-bold text-slate-700 focus:outline-none focus:border-blue-500">
+                    <option value="math">📐 數學</option>
+                    <option value="english">🔤 英文</option>
+                    <option value="physics">🧲 物理</option>
+                    <option value="chemistry">⚗️ 化學</option>
+                    <option value="history">📜 歷史</option>
+                </select>
             </div>
-            
-            <div class="flex gap-2" id="subjectButtons">
-                </div>
-        </div>
-
-        <div class="flex-grow overflow-y-auto p-4 md:p-8 scroll-smooth bg-slate-50" id="mainScroll">
-            <div class="max-w-6xl mx-auto pb-20">
-                <div id="loader" class="text-center py-20 hidden">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p class="text-gray-400 font-bold">AI 正在整理重點...</p>
-                </div>
-
-                <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6"></div>
-                
-                <div id="emptyState" class="hidden text-center py-20 text-gray-400">
-                    <i class="fas fa-search text-5xl mb-4"></i>
-                    <p>該科目目前沒有題庫資料</p>
-                    <p class="text-xs mt-2">請確認您的題庫檔案是否已載入</p>
-                </div>
+            <div class="flex-grow overflow-y-auto p-2 space-y-4 no-scrollbar" id="unitMenu">
+                <div class="text-center py-10 text-gray-400 text-sm"><i class="fas fa-spinner fa-spin"></i> 載入中...</div>
             </div>
         </div>
+
+        <div class="flex-grow flex flex-col h-full bg-white relative">
+            <div class="h-16 border-b border-slate-100 flex items-center justify-between px-8 bg-white z-10">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800" id="currentUnitTitle">請選擇單元</h2>
+                    <p class="text-xs text-slate-400" id="currentUnitSub">點擊左側目錄以檢視重點</p>
+                </div>
+            </div>
+
+            <div class="flex-grow overflow-y-auto p-8 scroll-smooth" id="contentScroll">
+                <div class="max-w-3xl mx-auto space-y-6" id="notesContainer">
+                    <div class="flex flex-col items-center justify-center h-full text-slate-300 py-20">
+                        <i class="fas fa-book-open text-6xl mb-4"></i>
+                        <p>請從左側選擇一個單元開始複習</p>
+                    </div>
+                </div>
+                <div class="h-20"></div> </div>
+        </div>
+
     </main>
 
     <script>
-        const user = Auth.getCurrentUser();
-        if (user) {
-            document.getElementById('sideUserName').textContent = user.name;
-            document.getElementById('sideUserRole').textContent = user.grade || "學生";
-        }
-
-        // 解析 URL 參數 (例如從 course_hub.html 過來的)
+        // 初始化
         const urlParams = new URLSearchParams(window.location.search);
         let currentSubject = urlParams.get('filter') || 'math';
+        document.getElementById('subjectSelect').value = currentSubject;
 
-        // 頁面載入後執行
+        const user = Auth.getCurrentUser();
+        // 判斷學制：簡單邏輯，國小國中為 junior，高中為 senior
+        const userStage = (user && user.grade && user.grade.includes('高')) ? 'high_school' : 'junior_high';
+
         window.onload = function() {
-            renderSubjectButtons();
-            
-            // 延遲一下確保題庫載入
-            document.getElementById('loader').classList.remove('hidden');
             setTimeout(() => {
-                if(window.initCurriculumData) window.initCurriculumData();
-                generateAndRenderNotes(currentSubject);
-                document.getElementById('loader').classList.add('hidden');
-            }, 800);
+                if(window.initCurriculumData) window.initCurriculumData(); // 確保資料載入
+                loadBookMenu();
+            }, 300);
         };
 
-        // 渲染上方科目按鈕
-        function renderSubjectButtons() {
-            const subjects = [
-                { id: 'math', name: '數學' },
-                { id: 'english', name: '英文' },
-                { id: 'physics', name: '物理' },
-                { id: 'chemistry', name: '化學' },
-                { id: 'biology', name: '生物' },
-                { id: 'history', name: '歷史' },
-                { id: 'geography', name: '地理' },
-                { id: 'civics', name: '公民' }
-            ];
+        function loadBookMenu() {
+            currentSubject = document.getElementById('subjectSelect').value;
+            const menu = document.getElementById('unitMenu');
+            menu.innerHTML = '';
 
-            const container = document.getElementById('subjectButtons');
-            container.innerHTML = '';
-            
-            subjects.forEach(sub => {
-                const isActive = sub.id === currentSubject;
-                const btnClass = isActive 
-                    ? "bg-blue-600 text-white shadow-md" 
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200";
-                
-                const btn = document.createElement('button');
-                btn.className = `px-4 py-2 text-sm font-bold rounded-lg transition whitespace-nowrap ${btnClass}`;
-                btn.textContent = sub.name;
-                btn.onclick = () => {
-                    currentSubject = sub.id;
-                    renderSubjectButtons(); // 更新按鈕狀態
-                    generateAndRenderNotes(sub.id);
-                };
-                container.appendChild(btn);
-            });
-        }
+            const allBooks = window.CurriculumLibrary.data[currentSubject] || [];
+            // 篩選學制
+            const books = allBooks.filter(b => b.stage === userStage);
 
-        // ★★★ 核心：從題庫生成筆記 ★★★
-        function generateAndRenderNotes(subject) {
-            const container = document.getElementById('notesContainer');
-            container.innerHTML = '';
-            
-            // 1. 調用題庫生成器 (抓取 20 題，模擬一個章節的重點)
-            let generatedQuestions = [];
-            if (window.generatePaper) {
-                // 這裡我們不設 filter，讓它盡量抓該科目的所有題目
-                generatedQuestions = window.generatePaper({ subject: subject, total: 20, tags: [] });
-            }
-
-            if (!generatedQuestions || generatedQuestions.length === 0) {
-                document.getElementById('emptyState').classList.remove('hidden');
+            if (books.length === 0) {
+                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">此科目尚無資料</div>`;
                 return;
-            } else {
-                document.getElementById('emptyState').classList.add('hidden');
             }
 
-            // 2. 去重 (同樣的觀念只顯示一次)
-            const uniqueConcepts = new Set();
-            const notes = [];
-
-            generatedQuestions.forEach(q => {
-                // 以 "concept" 作為唯一鍵值，如果沒有 concept 就用題目當 key
-                const key = q.concept || q.question.substring(0, 10);
+            // 依冊次生成目錄
+            books.forEach((book, bIdx) => {
+                const detailsOpen = bIdx === 0 ? 'open' : ''; // 預設展開第一冊
+                let unitsHtml = '';
                 
-                if (!uniqueConcepts.has(key)) {
-                    uniqueConcepts.add(key);
-                    
-                    // 將題目轉換為筆記格式
-                    // 標題 = 觀念名稱
-                    // 內容 = 題目範例 + 解析 (如果沒有解析，就顯示答案)
-                    let contentHTML = `<strong class="text-indigo-600">📌 範例：</strong><br>${q.question.replace(/\n/g, '<br>')}<br><br>`;
-                    
-                    if (q.explanation && q.explanation.length > 0) {
-                        contentHTML += `<strong class="text-green-600">💡 解析重點：</strong><br>${q.explanation.join('<br>')}`;
-                    } else {
-                        // 處理選擇題或填充題答案顯示
-                        let ansText = "詳見詳解";
-                        if(q.options && q.answer !== undefined) ansText = q.options[q.answer];
-                        else if(typeof q.answer === 'string' || typeof q.answer === 'number') ansText = q.answer;
-                        
-                        contentHTML += `<strong class="text-green-600">💡 答案：</strong> ${ansText}`;
-                    }
-
-                    notes.push({
-                        id: key, // 用觀念當 ID
-                        title: q.concept || "綜合練習",
-                        content: contentHTML,
-                        tags: [subject, '重點']
-                    });
-                }
-            });
-
-            // 3. 渲染卡片
-            const masteredIds = JSON.parse(localStorage.getItem(`study_mastered_${user?.username}`) || "[]");
-
-            notes.forEach((note, idx) => {
-                const isMastered = masteredIds.includes(note.id);
-                const statusClass = isMastered ? 'mastered' : 'border-l-4 border-blue-500';
-                const btnText = isMastered ? '<i class="fas fa-check"></i> 已熟練' : '<i class="far fa-circle"></i> 標記熟練';
-                const btnColor = isMastered ? 'text-green-600' : 'text-slate-400 hover:text-blue-600';
+                book.units.forEach((unit, uIdx) => {
+                    // 將 tags 存入 data 屬性
+                    const tagsStr = encodeURIComponent(JSON.stringify(unit.tags || []));
+                    unitsHtml += `
+                        <div class="unit-item px-4 py-3 text-sm text-slate-600 rounded-lg mb-1 flex items-center gap-2" 
+                             onclick="loadUnitContent('${unit.name}', '${tagsStr}', this)">
+                            <i class="fas fa-circle text-[6px] text-slate-300"></i>
+                            ${unit.name}
+                        </div>`;
+                });
 
                 const html = `
-                    <div class="note-card bg-white p-6 rounded-xl shadow-sm border border-gray-200 transition-all fade-in ${statusClass}" style="animation-delay: ${idx * 0.05}s">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex gap-2">
-                                <span class="bg-blue-50 text-blue-600 text-xs font-bold px-2 py-1 rounded border border-blue-100">${note.title}</span>
-                            </div>
-                            <button onclick="toggleMaster('${note.id}')" class="text-xs font-bold ${btnColor} transition">
-                                ${btnText}
-                            </button>
+                    <details ${detailsOpen} class="group">
+                        <summary class="flex items-center justify-between p-3 font-bold text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg list-none">
+                            <span>${book.book}</span>
+                            <i class="fas fa-chevron-down text-xs text-slate-400 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <div class="pl-2 mt-1 space-y-1 border-l-2 border-slate-100 ml-3">
+                            ${unitsHtml}
                         </div>
-                        <div class="bg-slate-50 p-4 rounded-lg text-slate-700 text-sm leading-relaxed border border-slate-100">
-                            ${note.content}
-                        </div>
-                    </div>
+                    </details>
                 `;
-                container.insertAdjacentHTML('beforeend', html);
+                menu.insertAdjacentHTML('beforeend', html);
             });
-
-            if (window.MathJax) MathJax.typesetPromise();
         }
 
-        window.toggleMaster = function(id) {
-            const key = `study_mastered_${user?.username}`;
-            let ids = JSON.parse(localStorage.getItem(key) || "[]");
-            if (ids.includes(id)) ids = ids.filter(x => x !== id);
-            else ids.push(id);
-            localStorage.setItem(key, JSON.stringify(ids));
-            
-            // 原地更新樣式，不重新渲染整個列表 (體驗更好)
-            generateAndRenderNotes(currentSubject);
+        // ★★★ 核心：根據單元標籤生成內容 ★★★
+        function loadUnitContent(unitName, tagsStr, el) {
+            // UI 更新
+            document.querySelectorAll('.unit-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('currentUnitTitle').textContent = unitName;
+            document.getElementById('currentUnitSub').textContent = `科目：${currentSubject} | 來源：智慧題庫`;
+
+            // 讀取資料
+            const tags = JSON.parse(decodeURIComponent(tagsStr));
+            const container = document.getElementById('notesContainer');
+            container.innerHTML = '<div class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin"></i> AI 正在整理重點...</div>';
+
+            setTimeout(() => {
+                let questions = [];
+                if (window.generatePaper) {
+                    // 使用題庫生成器，限制 tags，抓取 5~8 題作為重點範例
+                    questions = window.generatePaper({ subject: currentSubject, total: 8, tags: tags });
+                }
+
+                if (!questions || questions.length === 0) {
+                    container.innerHTML = `
+                        <div class="bg-yellow-50 border border-yellow-100 p-8 rounded-xl text-center">
+                            <i class="fas fa-exclamation-circle text-yellow-500 text-3xl mb-3"></i>
+                            <p class="text-yellow-700 font-bold">本單元目前尚無重點資料</p>
+                            <p class="text-xs text-yellow-600 mt-1">請嘗試其他單元或聯繫管理員更新題庫。</p>
+                        </div>`;
+                    return;
+                }
+
+                // 渲染卡片
+                let contentHtml = '';
+                questions.forEach((q, idx) => {
+                    const concept = q.concept || unitName.split(' ')[1] || '核心觀念';
+                    const explain = (q.explanation && q.explanation.length > 0) ? q.explanation.join('<br>') : "觀念應用題";
+                    
+                    contentHtml += `
+                        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm fade-in hover:shadow-md transition" style="animation-delay: ${idx * 0.1}s">
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="bg-indigo-50 text-indigo-600 text-xs font-bold px-2 py-1 rounded">重點 ${idx + 1}</span>
+                                <span class="text-sm font-bold text-slate-700">${concept}</span>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="text-xs font-bold text-slate-400 uppercase mb-1">Example</div>
+                                <div class="text-slate-800 font-medium text-lg leading-relaxed">
+                                    ${q.question.replace(/\n/g, '<br>')}
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <div class="flex gap-3">
+                                    <div class="mt-0.5"><i class="fas fa-lightbulb text-yellow-500"></i></div>
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-500 mb-1">觀念解析</div>
+                                        <div class="text-sm text-slate-600 leading-relaxed">
+                                            ${explain}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = contentHtml;
+                if(window.MathJax) MathJax.typesetPromise();
+
+            }, 300); // 模擬載入感
         }
     </script>
 </body>
