@@ -81,59 +81,88 @@
         </div>
     </main>
 <script>
-        // 解析 URL
+        // 解析 URL 參數
         const urlParams = new URLSearchParams(window.location.search);
         const subject = urlParams.get('subject') || 'math';
         const stage = urlParams.get('stage') || 'junior_high';
         const title = decodeURIComponent(urlParams.get('title') || '課程');
-        // ★★★ 關鍵：取得傳入的年級參數 (例如 "七年級" 或 "國七") ★★★
         const gradeParam = urlParams.get('grade') || '';
 
-        // 更新資訊
+        // 更新頁面資訊
         document.getElementById('courseTitle').textContent = title;
         document.getElementById('breadcrumbCurrent').textContent = title;
         document.getElementById('gradeBadge').textContent = stage === 'high_school' ? '高中部' : '國中部';
 
-        // 設定快速按鈕
-        // 1. 複習
+        // 設定快速按鈕連結
         document.getElementById('linkStudy').href = `study.html?filter=${subject}`;
-        
-        // 2. 遊戲
         document.getElementById('linkArcade').href = `arcade.html?subject=${subject}`;
-        
-        // 3. 全冊測驗 ★★★ 關鍵修改：將 grade 參數往下傳給 exam.html ★★★
         document.getElementById('linkExamAll').href = `exam.html?subject=${subject}&title=${encodeURIComponent(title + "總複習")}&count=20&grade=${encodeURIComponent(gradeParam)}`;
 
-        // 載入資料 (保持不變)
+        // 載入資料變數
         let currentBooks = [];
         let activeBookIndex = 0;
 
         window.onload = function() {
-            // ... (原本的載入邏輯) ...
+            // 1. 確保資料庫已載入
+            if(window.initCurriculumData) window.initCurriculumData();
+
+            // 2. 讀取該科目的資料
             const data = window.CurriculumLibrary.data[subject] || [];
-            currentBooks = data.filter(book => book.stage === stage);
             
-            // ... (後續渲染邏輯保持不變) ...
-            // 排序...
+            // 3. 過濾學制 (國中/高中)
+            currentBooks = data.filter(book => book.stage === stage);
+
+            if (currentBooks.length === 0) {
+                document.getElementById('unitContainer').innerHTML = `
+                    <div class="text-center py-20">
+                        <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500 font-bold">尚無此課程資料</p>
+                        <p class="text-sm text-gray-400 mt-2">請確認 curriculum_integrated.js 是否包含 [${subject}] 的資料</p>
+                    </div>`;
+                return;
+            }
+
+            // 4. ★★★ 修正後的排序邏輯 (防呆版) ★★★
+            // 避免因為找不到 book 屬性而報錯
             currentBooks.sort((a, b) => {
-                const getNum = s => { const m = s.book.match(/\d+/); return m ? parseInt(m[0]) : 0; };
-                return getNum(a.book) - getNum(b.book);
+                const getNum = (item) => {
+                    // 安全讀取：如果 book 是空的，就用 name，再沒有就給空字串
+                    const str = (item.book || item.name || "").toString();
+                    
+                    // 嘗試抓取阿拉伯數字 (Book 1)
+                    const match = str.match(/\d+/);
+                    if (match) return parseInt(match[0]);
+
+                    // 如果是中文數字 (國七、第一冊)，簡單轉換權重
+                    const map = { '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9, '全':0 };
+                    for(let k in map) {
+                        if(str.includes(k)) return map[k];
+                    }
+                    return 99; // 沒數字的排最後
+                };
+                return getNum(a) - getNum(b);
             });
 
+            // 5. 渲染畫面
             renderTabs();
             renderUnits(0);
         };
 
-        // ... (renderTabs 和 renderUnits 函式保持不變) ...
         function renderTabs() {
             const container = document.getElementById('bookTabs');
             container.innerHTML = '';
+            
             currentBooks.forEach((book, idx) => {
                 const btn = document.createElement('button');
                 const isActive = idx === activeBookIndex;
                 btn.className = `px-6 py-4 text-sm whitespace-nowrap transition-colors ${isActive ? 'tab-active' : 'tab-inactive'}`;
-                btn.textContent = book.name || book.book; 
-                btn.onclick = () => { activeBookIndex = idx; renderTabs(); renderUnits(idx); };
+                // 優先顯示 name (例如"國七數學"), 沒有才顯示 book (例如"Book 1")
+                btn.textContent = book.name || book.book || `第 ${idx+1} 冊`; 
+                btn.onclick = () => {
+                    activeBookIndex = idx;
+                    renderTabs();
+                    renderUnits(idx);
+                };
                 container.appendChild(btn);
             });
         }
@@ -141,12 +170,25 @@
         function renderUnits(bookIdx) {
             const container = document.getElementById('unitContainer');
             const bookData = currentBooks[bookIdx];
-            if (!bookData || !bookData.units) { container.innerHTML = '<p class="text-center py-10 text-gray-400">本冊尚無單元資料</p>'; return; }
+            
+            if (!bookData || !bookData.units || bookData.units.length === 0) {
+                container.innerHTML = '<p class="text-center py-10 text-gray-400">本冊尚無單元資料</p>';
+                return;
+            }
 
             let html = '<div class="grid grid-cols-1 gap-4">';
+            
             bookData.units.forEach((unit, uIdx) => {
-                const topicsHtml = unit.topics.map(t => `<span class="bg-white border border-slate-200 text-slate-500 text-xs px-2 py-1 rounded">${t}</span>`).join('');
-                // ★★★ 單元測驗連結也修正：不需要強制帶 grade，因為單元名稱已經足夠精確，但帶上也無妨 ★★★
+                // 安全處理 tags (如果沒有 tags 則給空陣列)
+                const tags = unit.tags || [];
+                const topics = unit.topics || [];
+                
+                // 將 tags/topics 轉為標籤顯示
+                // 優先顯示 tags，如果沒有則顯示 topics (兼容舊資料)
+                const displayTags = tags.length > 0 ? tags : topics;
+                const topicsHtml = displayTags.map(t => `<span class="bg-white border border-slate-200 text-slate-500 text-xs px-2 py-1 rounded">${t}</span>`).join('');
+                
+                // 測驗連結：傳遞單元名稱作為 title
                 const examLink = `exam.html?subject=${subject}&title=${encodeURIComponent(unit.name)}&count=10`;
 
                 html += `
@@ -157,15 +199,24 @@
                                     <span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded">單元 ${uIdx + 1}</span>
                                     ${unit.name}
                                 </h3>
-                                <div class="flex flex-wrap gap-2">${topicsHtml}</div>
+                                <div class="flex flex-wrap gap-2">
+                                    ${topicsHtml}
+                                </div>
                             </div>
+                            
                             <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                                <a href="study.html?filter=${subject}" class="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 text-center"><i class="fas fa-book-open mr-1"></i> 複習</a>
-                                <a href="${examLink}" class="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm text-center"><i class="fas fa-pencil-alt mr-1"></i> 測驗</a>
+                                <a href="study.html?filter=${subject}" class="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 text-center">
+                                    <i class="fas fa-book-open mr-1"></i> 複習
+                                </a>
+                                <a href="${examLink}" class="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm text-center">
+                                    <i class="fas fa-pencil-alt mr-1"></i> 測驗
+                                </a>
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+                `;
             });
+            
             html += '</div>';
             container.innerHTML = html;
         }
