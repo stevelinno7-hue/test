@@ -227,74 +227,82 @@
             }
         });
 
-        // ==========================================
-        //  1. 準備考試 (Smart Tag Resolution)
-        // ==========================================
+        // ★★★ 核心修正：智慧單元比對 + 強制年級鎖定 ★★★
+        let retryCount = 0;
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
             let subject = urlParams.get('subject') || 'math';
             const count = parseInt(urlParams.get('count')) || 10;
-            const title = decodeURIComponent(urlParams.get('title') || '綜合測驗');
-            const urlGrade = decodeURIComponent(urlParams.get('grade') || ''); // 從 URL 來的年級
-
+            // 解碼並移除多餘空格，確保比對準確
+            const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
+            const title = rawTitle.trim(); 
+            
             // 修正科目代碼
             if (subject === 'earth_science') subject = 'earth';
             if (subject === 'social') subject = 'history';
 
-            // ★★★ 核心邏輯：反查 tags ★★★
-            // 目標：根據 title (例如 "單元 1：數與式") 去 curriculum_integrated.js 找出對應的 tags
+            // 1. 嘗試從 V3.0 課綱資料庫中反查該單元的 Tags
             let targetTags = [];
-            
-            // 1. 嘗試從課綱資料庫反查
             const library = window.CurriculumLibrary?.data || {};
             const subjectBooks = library[subject] || [];
             
             let foundUnit = false;
+            
+            // ★★★ 新增：模糊比對邏輯 ★★★
+            // 有時候 URL 傳來的 "單元 1：整數" 跟資料庫的 "單元 1: 整數" (冒號差異) 會導致比對失敗
+            // 我們把標點符號和空格都拿掉來比對
+            const cleanString = (str) => str.replace(/[：:\s\t─-]/g, "");
+
             for (const book of subjectBooks) {
                 if (book.units) {
-                    const unit = book.units.find(u => u.name === title);
+                    // 嘗試精確比對 或 模糊比對
+                    const unit = book.units.find(u => 
+                        u.name === title || 
+                        cleanString(u.name) === cleanString(title)
+                    );
+                    
                     if (unit && unit.tags) {
-                        targetTags = unit.tags; // 找到精確的單元 Tags (例如 ["數與式", "絕對值"])
+                        targetTags = unit.tags;
                         foundUnit = true;
+                        console.log(`🎯 成功鎖定單元 [${unit.name}]，Tags:`, targetTags);
                         break;
                     }
                 }
             }
 
-            // 2. 如果沒找到單元 (例如是「全冊測驗」或 URL 只有 grade)，則使用 Broad Tags
+            // 2. 如果真的沒找到單元，啟用「備案模式」
             if (!foundUnit) {
-                console.log("ℹ️ 未找到特定單元，使用廣泛搜尋模式");
+                console.warn(`⚠️ 單元名稱 [${title}] 比對失敗，啟動備案模式`);
                 
-                // 優先使用 URL 的 grade，沒有則抓使用者的 grade
-                let gradeTag = urlGrade;
-                if (!gradeTag) {
-                    const user = Auth.getCurrentUser();
-                    if (user && user.grade) gradeTag = user.grade;
+                // 嘗試從標題猜測年級 (例如標題含有 "國七")
+                let detectedGrade = "";
+                if (title.includes("國七") || title.includes("七年級")) detectedGrade = "國七";
+                else if (title.includes("國八") || title.includes("八年級")) detectedGrade = "國八";
+                else if (title.includes("國九") || title.includes("九年級")) detectedGrade = "國九";
+                else if (title.includes("高一")) detectedGrade = "高一";
+                else if (title.includes("高二")) detectedGrade = "高二";
+                else if (title.includes("高三")) detectedGrade = "高三";
+
+                // 如果標題沒寫，才去抓使用者年級
+                if (!detectedGrade) {
+                     const user = Auth.getCurrentUser();
+                     if (user && user.grade) detectedGrade = user.grade;
                 }
 
-                // 建立標籤：[科目] + [年級(若有)]
-                // 例如：["math", "高一"]
+                // 建立備案標籤
                 targetTags = [subject];
-                if (gradeTag) {
-                    // 簡單標準化
-                    if (gradeTag.includes('七')) gradeTag = '國七';
-                    else if (gradeTag.includes('八')) gradeTag = '國八';
-                    else if (gradeTag.includes('九')) gradeTag = '國九';
-                    targetTags.push(gradeTag);
-                }
+                if (detectedGrade) targetTags.push(detectedGrade);
+                
+                console.log(`ℹ️ 備案標籤:`, targetTags);
             }
 
-            console.log(`🎯 最終鎖定 Tags:`, targetTags);
-
-            // 設定基本資訊
             examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: count * 60 };
             timeLeft = examInfo.timeLimit;
-            document.getElementById('examTitle').textContent = title;
+            document.getElementById('examTitle').textContent = examInfo.title;
             document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
 
-            // 生成題目
+            // 3. 生成題目
             if (window.generatePaper) {
-                // 呼叫核心引擎
                 mockQuestions = window.generatePaper({ 
                     subject: subject, 
                     total: count, 
@@ -302,14 +310,32 @@
                 });
             }
 
-            // 防呆：如果沒題目
+            // ... (後續渲染邏輯保持不變) ...
             if (!mockQuestions || mockQuestions.length === 0) {
-                alert("⚠️ 題庫生成失敗或找不到符合該範圍的題目。\n系統將自動返回課程頁面。");
+                 if (retryCount < 2) {
+                    retryCount++;
+                    console.warn("題目不足，嘗試放寬條件重試...");
+                    // 重試時，只保留科目和年級，拿掉單元細項，確保至少有題目
+                    // 這裡是一個保險：如果 "1-1 負數" 沒題，至少出 "國七" 的題，不要出到 "國九"
+                    const fallbackTags = targetTags.filter(t => ["國七","國八","國九","高一","高二","高三", subject].includes(t));
+                    
+                    if (window.generatePaper) {
+                        mockQuestions = window.generatePaper({ subject: subject, total: count, tags: fallbackTags });
+                    }
+                    
+                    if (mockQuestions.length > 0) {
+                        renderQuestion();
+                        updatePalette();
+                        startTimer();
+                        return;
+                    }
+                }
+                
+                alert("⚠️ 題庫生成失敗，請確認該單元是否有對應題庫。");
                 window.history.back();
                 return;
             }
 
-            // 初始化數據
             userAnswers = new Array(mockQuestions.length).fill(null);
             timeLog = new Array(mockQuestions.length).fill(0);
             
@@ -317,7 +343,6 @@
             updatePalette();
             startTimer();
         }
-
         // ==========================================
         //  2. 渲染題目與介面
         // ==========================================
