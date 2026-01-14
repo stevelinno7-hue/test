@@ -70,7 +70,6 @@
             if(user) {
                 document.getElementById('sideUserName').textContent = user.name;
                 document.getElementById('sideUserRole').textContent = user.grade;
-                // 自動判斷年級
                 if(user.grade && user.grade.includes('國')) setStage('junior_high');
                 else setStage('high_school');
             } else {
@@ -99,6 +98,8 @@
             container.innerHTML = '';
 
             const subjects = [
+                // ★★★ 這裡補上了國文 ★★★
+                { id: 'chinese', name: '國文', icon: 'fa-book-open', color: 'red' }, 
                 { id: 'math', name: '數學', icon: 'fa-calculator', color: 'blue' },
                 { id: 'english', name: '英文', icon: 'fa-language', color: 'purple' },
                 { id: 'physics', name: '物理', icon: 'fa-atom', color: 'indigo' },
@@ -110,7 +111,7 @@
             ];
 
             subjects.forEach((sub, idx) => {
-                // 生成連結：帶入 subject 和 stage
+                // 傳遞 subject 和 stage 參數給 course_hub.html
                 const linkHref = `course_hub.html?subject=${sub.id}&stage=${stage}&title=${encodeURIComponent(sub.name)}`;
                 
                 const html = `
@@ -130,20 +131,6 @@
                 container.insertAdjacentHTML('beforeend', html);
             });
         }
-        function createCard(group, course) {
-                // ... (Config 省略) ...
-                
-                // ★★★ 關鍵修改：連結到 course_hub.html，並傳遞 stage 參數 ★★★
-                const stage = document.getElementById('currentStage').value;
-                const gradeLabel = getGradeName(stage, group.book) || group.book;
-                
-                // 這裡把 stage 參數帶過去
-                const linkHref = `course_hub.html?subject=${group.subject}&stage=${stage}&title=${encodeURIComponent(course.name)}&grade=${encodeURIComponent(gradeLabel)}`;
-                
-                // ... (其餘代碼不變) ...
-                
-                return `...`; // (回傳原本的卡片 HTML)
-            }
     </script>
 </body>
 </html>
