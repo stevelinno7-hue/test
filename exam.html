@@ -197,7 +197,7 @@
         let timeLeft = 0;
         let timerInterval;
         let examInfo = {};
-        let retryCount = 0; // ★ 這裡宣告一次就好
+        let retryCount = 0; // ★ 修正點：全域宣告，避免重複
         
         // 分析數據
         let timeLog = [];      
@@ -284,6 +284,8 @@
                      else if (title.includes("高三")) detectedGrade = "高三";
                 }
                 
+                // 只有在標題完全沒寫年級時，才去抓使用者年級
+                // 這樣可以避免「點國七出國九」的問題
                 if (!detectedGrade) {
                      const user = Auth.getCurrentUser();
                      if (user && user.grade) detectedGrade = user.grade;
@@ -311,7 +313,7 @@
             // 檢查題目數量
             if (!mockQuestions || mockQuestions.length === 0) {
                  if (retryCount < 2) {
-                    retryCount++; // 這裡使用全域變數，不會報錯了
+                    retryCount++; 
                     console.warn("題目不足，嘗試放寬條件重試...");
                     // 放寬策略：只保留年級和科目
                     const fallbackTags = targetTags.filter(t => ["國七","國八","國九","高一","高二","高三", subject].includes(t));
@@ -342,6 +344,9 @@
             startTimer();
         }
 
+        // ... (renderQuestion, selectAnswer, updateNavButtons 等其他 UI 函式保持不變，與之前版本相同) ...
+        // 為節省篇幅，請確保您有保留 renderQuestion, selectAnswer, updateNavButtons, updatePalette, recordTime, startTimer, trySubmit, closeSubmitModal, finalSubmit 等函式
+        
         // ==========================================
         //  2. 渲染與互動
         // ==========================================
@@ -448,9 +453,6 @@
             }, 1000);
         }
 
-        // ==========================================
-        //  3. 交卷與結算
-        // ==========================================
         function trySubmit() {
             recordTime();
             const answered = userAnswers.filter(a => a !== null).length;
