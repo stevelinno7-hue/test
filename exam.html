@@ -13,30 +13,13 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* 選項卡片樣式 */
-        .option-card { 
-            transition: all 0.2s ease; 
-            border: 2px solid #e2e8f0; 
-            cursor: pointer; 
-            position: relative;
-            overflow: hidden;
-        }
+        .option-card { transition: all 0.2s ease; border: 2px solid #e2e8f0; cursor: pointer; position: relative; overflow: hidden; }
         .option-card:hover { border-color: #3b82f6; background-color: #f8fafc; }
-        .option-card.selected { 
-            border-color: #2563eb; 
-            background-color: #eff6ff; 
-            color: #1e3a8a; 
-            font-weight: 700;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
-        }
-        /* 題號面板樣式 */
+        .option-card.selected { border-color: #2563eb; background-color: #eff6ff; color: #1e3a8a; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); }
         .q-dot { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .q-dot.active { background-color: #2563eb; color: white; transform: scale(1.1); box-shadow: 0 0 10px rgba(37, 99, 235, 0.4); }
         .q-dot.answered { background-color: #dbeafe; color: #2563eb; border: 1px solid #bfdbfe; }
         .q-dot.normal { background-color: #f1f5f9; color: #94a3b8; }
-
-        /* Modal 動畫 */
         .modal-enter { animation: modalIn 0.2s ease-out forwards; }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
@@ -75,7 +58,6 @@
                     </div>
                 </div>
             </div>
-            
             <div class="flex items-center gap-4">
                 <div class="flex items-center bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-mono font-bold text-lg border border-slate-200">
                     <i class="far fa-clock mr-2 text-slate-400"></i>
@@ -89,15 +71,12 @@
     </header>
 
     <main class="flex-grow flex bg-[#f8fafc] relative overflow-hidden">
-        
         <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth p-4 md:p-8" id="mainScroll">
             <div class="w-full max-w-3xl">
-                
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 min-h-[500px] flex flex-col fade-in relative overflow-hidden">
                     <div class="w-full bg-slate-100 h-1.5 absolute top-0 left-0">
                         <div id="progressBar" class="bg-blue-500 h-1.5 transition-all duration-500 rounded-r-full" style="width: 0%"></div>
                     </div>
-
                     <div class="p-8 md:p-10 flex-grow">
                         <div class="flex justify-between items-start mb-6">
                             <div class="flex items-center gap-2">
@@ -106,22 +85,17 @@
                             </div>
                             <span class="text-slate-300 text-4xl font-black font-mono select-none opacity-20">Q<span id="currentQNumDisplay">1</span></span>
                         </div>
-
                         <div class="mb-8">
-                            <h2 id="questionText" class="text-xl md:text-2xl font-bold text-slate-800 leading-relaxed">
-                                </h2>
+                            <h2 id="questionText" class="text-xl md:text-2xl font-bold text-slate-800 leading-relaxed">題目載入中...</h2>
                         </div>
-
-                        <div id="optionsContainer" class="space-y-3">
-                            </div>
+                        <div id="optionsContainer" class="space-y-3"></div>
                     </div>
-
                     <div class="bg-slate-50 px-8 py-5 border-t border-slate-100 flex justify-between items-center">
                         <button id="prevBtn" class="text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-200 transition">
                             <i class="fas fa-arrow-left"></i> 上一題
                         </button>
                         <div class="text-xs text-slate-400 font-bold">
-                            <span id="currentQIdx">1</span> / <span id="totalQCount">10</span>
+                            <span id="currentQIdx">1</span> / <span id="totalQCount">--</span>
                         </div>
                         <button id="nextBtn" class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition">
                             下一題 <i class="fas fa-arrow-right"></i>
@@ -131,169 +105,92 @@
                 <div class="h-20"></div>
             </div>
         </div>
-
         <aside class="w-80 bg-white border-l border-slate-200 hidden xl:flex flex-col z-10">
             <div class="p-6 border-b border-slate-100">
-                <h3 class="font-bold text-slate-700 flex items-center gap-2">
-                    <i class="fas fa-th"></i> 答題狀況
-                </h3>
+                <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-th"></i> 答題狀況</h3>
             </div>
             <div class="flex-grow overflow-y-auto p-6">
-                <div class="grid grid-cols-5 gap-3" id="questionPalette">
-                    </div>
-            </div>
-            <div class="p-6 bg-slate-50 border-t border-slate-100">
-                <div class="text-xs text-slate-400 mb-2">圖例說明</div>
-                <div class="flex gap-4 text-xs font-bold">
-                    <div class="flex items-center gap-1"><div class="w-3 h-3 bg-blue-600 rounded-full"></div> 當前</div>
-                    <div class="flex items-center gap-1"><div class="w-3 h-3 bg-blue-100 border border-blue-200 rounded-full"></div> 已答</div>
-                    <div class="flex items-center gap-1"><div class="w-3 h-3 bg-slate-200 rounded-full"></div> 未答</div>
-                </div>
+                <div class="grid grid-cols-5 gap-3" id="questionPalette"></div>
             </div>
         </aside>
-
     </main>
 
     <div id="submitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 mx-4 modal-enter">
             <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-blue-500 animate-pulse">
-                    <i class="fas fa-clipboard-check"></i>
-                </div>
                 <h3 class="text-xl font-bold text-slate-800">準備交卷了嗎？</h3>
-                <p class="text-slate-500 text-sm mt-2">交卷後將立即計算成績與落點。</p>
+                <p class="text-slate-500 text-sm mt-2">交卷後將立即計算成績。</p>
             </div>
-            
-            <div class="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100 flex justify-around">
-                <div class="text-center">
-                    <div class="text-xs text-slate-400 font-bold uppercase">已作答</div>
-                    <div class="text-2xl font-black text-blue-600" id="modalAnswered">0</div>
-                </div>
-                <div class="w-px bg-slate-200"></div>
-                <div class="text-center">
-                    <div class="text-xs text-slate-400 font-bold uppercase">未作答</div>
-                    <div class="text-2xl font-black text-slate-400" id="modalUnanswered">0</div>
-                </div>
+            <div class="flex justify-around mb-6">
+                <div class="text-center"><div class="text-xs text-slate-400 font-bold">已作答</div><div class="text-2xl font-black text-blue-600" id="modalAnswered">0</div></div>
+                <div class="text-center"><div class="text-xs text-slate-400 font-bold">未作答</div><div class="text-2xl font-black text-slate-400" id="modalUnanswered">0</div></div>
             </div>
-
-            <div id="modalWarning" class="hidden text-center text-red-500 text-sm font-bold mb-4 bg-red-50 py-2 rounded-lg">
-                <i class="fas fa-exclamation-triangle mr-1"></i> 還有題目沒寫完喔！
-            </div>
-
             <div class="flex gap-3">
                 <button onclick="closeSubmitModal()" class="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50">再檢查</button>
-                <button onclick="finalSubmit()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">確認交卷</button>
+                <button onclick="finalSubmit()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg">確認交卷</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        //  系統核心變數 (只宣告一次！)
-        // ==========================================
-        let mockQuestions = [];
-        let currentQIndex = 0;
-        let userAnswers = [];
-        let timeLeft = 0;
-        let timerInterval;
-        let examInfo = {};
-        let retryCount = 0; // ★ 修正點：全域宣告，避免重複
-        
-        // 分析數據
-        let timeLog = [];      
-        let tabLog = [];       
-        let tabLeaveStart = null;
-        let questionStartTime = 0;
+        let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval, examInfo = {};
+        let timeLog = [], tabLog = [], tabLeaveStart = null, questionStartTime = 0;
+        let retryCount = 0; // 全域變數
 
-        // ==========================================
-        //  初始化
-        // ==========================================
         window.onload = function() {
             if (!Auth.requireLogin()) return;
-            // 延遲執行以確保資料庫載入
             setTimeout(prepareExam, 500); 
         };
 
-        // 監聽分頁切換
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                tabLeaveStart = Date.now();
-            } else if (tabLeaveStart) {
-                const duration = (Date.now() - tabLeaveStart) / 1000;
-                if (duration > 1) {
-                    tabLog.push(Math.round(duration));
-                    console.log(`⚠️ 分頁切換：離開 ${Math.round(duration)} 秒`);
-                }
-                tabLeaveStart = null;
-            }
-        });
-
-        // ==========================================
-        //  1. 準備考試 (Smart Tag Resolution)
-        // ==========================================
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
             let subject = urlParams.get('subject') || 'math';
             const count = parseInt(urlParams.get('count')) || 10;
             const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
-            const title = rawTitle.trim(); 
+            const title = rawTitle.trim();
             const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
 
-            // 修正科目代碼
             if (subject === 'earth_science') subject = 'earth';
             if (subject === 'social') subject = 'history';
 
-            // ★★★ 智慧反查 Tags ★★★
+            const superClean = (str) => str.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, "");
+            
             let targetTags = [];
             const library = window.CurriculumLibrary?.data || {};
             const subjectBooks = library[subject] || [];
-            
             let foundUnit = false;
-            
-            // 清除標點符號以便比對 (例如 "Unit 1: Be" vs "Unit 1 Be")
-            const cleanString = (str) => str.replace(/[：:\s\t─-]/g, "");
+
+            const cleanTitle = superClean(title);
+            console.log(`🔎 正在搜尋單元: [${title}] -> 清洗後: [${cleanTitle}]`);
 
             for (const book of subjectBooks) {
                 if (book.units) {
-                    const unit = book.units.find(u => 
-                        u.name === title || 
-                        cleanString(u.name) === cleanString(title)
-                    );
-                    
+                    const unit = book.units.find(u => superClean(u.name) === cleanTitle);
                     if (unit && unit.tags) {
                         targetTags = unit.tags;
                         foundUnit = true;
-                        console.log(`🎯 成功鎖定單元 [${unit.name}]，Tags:`, targetTags);
+                        console.log(`🎯 命中單元: [${unit.name}]`, targetTags);
                         break;
                     }
                 }
             }
 
-            // 如果沒找到單元，啟用備案模式
             if (!foundUnit) {
-                console.warn(`⚠️ 單元名稱 [${title}] 比對失敗，啟動備案模式`);
-                
+                console.warn(`⚠️ 比對失敗，啟動備案模式`);
                 let detectedGrade = urlGrade;
                 if (!detectedGrade) {
-                     // 嘗試從標題猜測
-                     if (title.includes("國七") || title.includes("七年級")) detectedGrade = "國七";
-                     else if (title.includes("國八") || title.includes("八年級")) detectedGrade = "國八";
-                     else if (title.includes("國九") || title.includes("九年級")) detectedGrade = "國九";
+                     if (title.includes("國七") || title.includes("Unit 1") || title.includes("Unit 2")) detectedGrade = "國七";
+                     else if (title.includes("國八") || title.includes("Unit 3") || title.includes("Unit 4")) detectedGrade = "國八";
+                     else if (title.includes("國九") || title.includes("Unit 5") || title.includes("Unit 6")) detectedGrade = "國九";
                      else if (title.includes("高一")) detectedGrade = "高一";
-                     else if (title.includes("高二")) detectedGrade = "高二";
-                     else if (title.includes("高三")) detectedGrade = "高三";
                 }
-                
-                // 只有在標題完全沒寫年級時，才去抓使用者年級
-                // 這樣可以避免「點國七出國九」的問題
                 if (!detectedGrade) {
                      const user = Auth.getCurrentUser();
-                     if (user && user.grade) detectedGrade = user.grade;
+                     if (user && user.grade && !title.includes("Unit")) detectedGrade = user.grade;
                 }
-
                 targetTags = [subject];
                 if (detectedGrade) targetTags.push(detectedGrade);
-                console.log(`ℹ️ 備案標籤:`, targetTags);
+                console.log(`ℹ️ 備案 Tags:`, targetTags);
             }
 
             examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: count * 60 };
@@ -301,33 +198,20 @@
             document.getElementById('examTitle').textContent = examInfo.title;
             document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
 
-            // 生成題目
             if (window.generatePaper) {
-                mockQuestions = window.generatePaper({ 
-                    subject: subject, 
-                    total: count, 
-                    tags: targetTags 
-                });
+                mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
             }
 
-            // 檢查題目數量
             if (!mockQuestions || mockQuestions.length === 0) {
                  if (retryCount < 2) {
-                    retryCount++; 
-                    console.warn("題目不足，嘗試放寬條件重試...");
-                    // 放寬策略：只保留年級和科目
+                    retryCount++;
+                    console.warn("題目不足，嘗試放寬條件...");
                     const fallbackTags = targetTags.filter(t => ["國七","國八","國九","高一","高二","高三", subject].includes(t));
-                    
                     if (window.generatePaper) {
                         mockQuestions = window.generatePaper({ subject: subject, total: count, tags: fallbackTags });
                     }
-                    
-                    if (mockQuestions.length > 0) {
-                        initGame();
-                        return;
-                    }
+                    if (mockQuestions.length > 0) { initGame(); return; }
                 }
-                
                 alert("⚠️ 題庫生成失敗，請確認該單元是否有對應題庫。");
                 window.history.back();
                 return;
@@ -344,16 +228,9 @@
             startTimer();
         }
 
-        // ... (renderQuestion, selectAnswer, updateNavButtons 等其他 UI 函式保持不變，與之前版本相同) ...
-        // 為節省篇幅，請確保您有保留 renderQuestion, selectAnswer, updateNavButtons, updatePalette, recordTime, startTimer, trySubmit, closeSubmitModal, finalSubmit 等函式
-        
-        // ==========================================
-        //  2. 渲染與互動
-        // ==========================================
         function renderQuestion() {
             recordTime(); 
             questionStartTime = Date.now();
-
             const q = mockQuestions[currentQIndex];
             
             document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
@@ -370,13 +247,8 @@
                 const isSelected = userAnswers[currentQIndex] === idx;
                 const optDiv = document.createElement('div');
                 optDiv.className = `option-card w-full p-4 rounded-xl flex items-center gap-4 ${isSelected ? 'selected' : 'bg-white text-slate-600'}`;
-                optDiv.innerHTML = `
-                    <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-200 text-slate-400'}">
-                        ${String.fromCharCode(65+idx)}
-                    </div>
-                    <div class="flex-grow font-medium">${opt}</div>
-                `;
-                optDiv.onclick = () => selectAnswer(idx);
+                optDiv.innerHTML = `<div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-200 text-slate-400'}">${String.fromCharCode(65+idx)}</div><div class="flex-grow font-medium">${opt}</div>`;
+                optDiv.onclick = () => { userAnswers[currentQIndex] = idx; renderQuestion(); };
                 container.appendChild(optDiv);
             });
 
@@ -385,23 +257,12 @@
             updatePalette();
         }
 
-        function selectAnswer(idx) {
-            userAnswers[currentQIndex] = idx;
-            renderQuestion();
-        }
-
         function updateNavButtons() {
             const nextBtn = document.getElementById('nextBtn');
             const prevBtn = document.getElementById('prevBtn');
-
             prevBtn.disabled = currentQIndex === 0;
-            prevBtn.className = currentQIndex === 0 
-                ? "text-slate-300 font-bold flex items-center gap-2 px-4 py-2 cursor-not-allowed"
-                : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-200 transition cursor-pointer";
-            
-            prevBtn.onclick = () => {
-                if (currentQIndex > 0) { currentQIndex--; renderQuestion(); }
-            };
+            prevBtn.className = currentQIndex === 0 ? "text-slate-300 font-bold flex items-center gap-2 px-4 py-2 cursor-not-allowed" : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-200 transition cursor-pointer";
+            prevBtn.onclick = () => { if (currentQIndex > 0) { currentQIndex--; renderQuestion(); } };
 
             if (currentQIndex === mockQuestions.length - 1) {
                 nextBtn.innerHTML = `交卷 <i class="fas fa-check-circle ml-2"></i>`;
@@ -418,12 +279,7 @@
             const p = document.getElementById('questionPalette');
             p.innerHTML = '';
             mockQuestions.forEach((_, i) => {
-                const answered = userAnswers[i] !== null;
-                const active = i === currentQIndex;
-                let cls = 'q-dot normal';
-                if (answered) cls = 'q-dot answered';
-                if (active) cls = 'q-dot active';
-                
+                const cls = userAnswers[i] !== null ? 'q-dot answered' : (i === currentQIndex ? 'q-dot active' : 'q-dot normal');
                 const dot = document.createElement('div');
                 dot.className = cls;
                 dot.textContent = i + 1;
@@ -435,8 +291,7 @@
         function recordTime() {
             if (questionStartTime === 0) return;
             const now = Date.now();
-            const duration = (now - questionStartTime) / 1000;
-            timeLog[currentQIndex] = (timeLog[currentQIndex] || 0) + duration;
+            timeLog[currentQIndex] = (timeLog[currentQIndex] || 0) + (now - questionStartTime) / 1000;
         }
 
         function startTimer() {
@@ -455,31 +310,14 @@
 
         function trySubmit() {
             recordTime();
-            const answered = userAnswers.filter(a => a !== null).length;
-            const unanswered = mockQuestions.length - answered;
-
-            document.getElementById('modalAnswered').textContent = answered;
-            const unEl = document.getElementById('modalUnanswered');
-            unEl.textContent = unanswered;
-            
-            if (unanswered > 0) {
-                unEl.classList.replace('text-slate-400', 'text-red-500');
-                document.getElementById('modalWarning').classList.remove('hidden');
-            } else {
-                unEl.classList.replace('text-red-500', 'text-slate-400');
-                document.getElementById('modalWarning').classList.add('hidden');
-            }
-            
+            document.getElementById('modalAnswered').textContent = userAnswers.filter(a => a !== null).length;
+            document.getElementById('modalUnanswered').textContent = mockQuestions.length - userAnswers.filter(a => a !== null).length;
             document.getElementById('submitModal').classList.remove('hidden');
         }
-
-        function closeSubmitModal() {
-            document.getElementById('submitModal').classList.add('hidden');
-        }
+        function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
         function finalSubmit() {
             clearInterval(timerInterval);
-            
             let correctCount = 0;
             let wrongList = [];
             let fastCount = timeLog.filter(t => t < 3 && t > 0).length;
@@ -488,9 +326,6 @@
                 if (userAnswers[idx] === q.answer) correctCount++;
                 else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
             });
-
-            let cheatLevel = fastCount > 3 ? 'HIGH' : (fastCount > 0 ? 'MEDIUM' : 'NORMAL');
-            let tabLevel = tabLog.length > 3 ? 'HIGH' : (tabLog.length > 0 ? 'MEDIUM' : 'NORMAL');
 
             const resultData = {
                 id: Date.now(),
@@ -501,17 +336,15 @@
                 correctCount,
                 totalCount: mockQuestions.length,
                 wrongList,
-                analysis: { cheatLevel, fastCount, tabLevel, switchCount: tabLog.length, timeLog }
+                analysis: { cheatLevel: fastCount > 3 ? 'HIGH' : 'NORMAL', fastCount, tabLevel: tabLog.length > 3 ? 'HIGH' : 'NORMAL', switchCount: tabLog.length, timeLog }
             };
 
             localStorage.setItem('examResult', JSON.stringify(resultData));
-            
             const user = Auth.getCurrentUser();
             const historyKey = user ? `history_${user.username}` : `history_guest`;
             let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
             history.push(resultData);
             localStorage.setItem(historyKey, JSON.stringify(history));
-
             window.location.href = "analysis.html";
         }
     </script>
