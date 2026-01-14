@@ -10,13 +10,14 @@
     // 2. 確保模板儲存空間存在
     G._templates = G._templates || {};
 
-    // 3. ★★★ 關鍵修復：補上 getTemplateIds ★★★
-    // 這是造成您系統崩潰的主因，我們強制補上它
+    // 3. ★★★ 關鍵修復：補上 getTemplateIds 函式 ★★★
+    // 您的 paper_generator.js 就是因為找不到這個函式而當機的
     if (typeof G.getTemplateIds !== 'function') {
         G.getTemplateIds = function() {
+            // 回傳所有已註冊模板的 ID 列表
             return Object.keys(this._templates);
         };
-        console.log("🔧 [Polyfill] 已修復缺失的 getTemplateIds 函式");
+        console.log("🔧 [Polyfill] 已修復缺失的 getTemplateIds 功能");
     }
 
     // 4. 確保註冊函式存在
@@ -39,7 +40,7 @@
         };
     }
 
-    // 6. 確保工具箱存在
+    // 6. 確保工具箱存在 (避免 randInt 報錯)
     G.utils = G.utils || {
         randInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
         pick: (arr) => arr[Math.floor(Math.random() * arr.length)],
@@ -51,7 +52,17 @@
             }
             return a;
         },
-        generateNumericOptions: (ans) => [ans, ans+1, ans-1, ans*2].sort(() => Math.random() - 0.5)
+        generateNumericOptions: (ans) => {
+            const set = new Set([ans]);
+            if(typeof ans === 'number') {
+                set.add(ans + 1);
+                set.add(ans - 1);
+                set.add(ans * 2);
+            } else {
+                set.add("0");
+            }
+            return Array.from(set).sort(() => Math.random() - 0.5).slice(0, 4);
+        }
     };
 
     console.log("🔧 [Polyfill] Engine 修復完成，系統已準備就緒。");
