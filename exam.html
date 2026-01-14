@@ -229,6 +229,8 @@
 
         // ★★★ 核心修正：智慧單元比對 + 強制年級鎖定 ★★★
         let retryCount = 0;
+       // ★★★ 核心修正：智慧單元比對 + 強制年級鎖定 ★★★
+        let retryCount = 0;
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
             let subject = urlParams.get('subject') || 'math';
@@ -241,7 +243,7 @@
             if (subject === 'earth_science') subject = 'earth';
             if (subject === 'social') subject = 'history';
 
-            // 1. 嘗試從 V3.0 課綱資料庫中反查該單元的 Tags
+            // 1. 嘗試從課綱資料庫中反查該單元的 Tags
             let targetTags = [];
             const library = window.CurriculumLibrary?.data || {};
             const subjectBooks = library[subject] || [];
@@ -269,6 +271,78 @@
                     }
                 }
             }
+
+            // 2. 如果真的沒找到單元，啟用「備案模式」
+            if (!foundUnit) {
+                console.warn(`⚠️ 單元名稱 [${title}] 比對失敗，啟動備案模式`);
+                
+                // 嘗試從標題猜測年級 (例如標題含有 "國七")
+                let detectedGrade = "";
+                if (title.includes("國七") || title.includes("七年級")) detectedGrade = "國七";
+                else if (title.includes("國八") || title.includes("八年級")) detectedGrade = "國八";
+                else if (title.includes("國九") || title.includes("九年級")) detectedGrade = "國九";
+                else if (title.includes("高一")) detectedGrade = "高一";
+                else if (title.includes("高二")) detectedGrade = "高二";
+                else if (title.includes("高三")) detectedGrade = "高三";
+
+                // 如果標題沒寫，才去抓使用者年級
+                if (!detectedGrade) {
+                     const user = Auth.getCurrentUser();
+                     if (user && user.grade) detectedGrade = user.grade;
+                }
+
+                // 建立備案標籤
+                targetTags = [subject];
+                if (detectedGrade) targetTags.push(detectedGrade);
+                
+                console.log(`ℹ️ 備案標籤:`, targetTags);
+            }
+
+            examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: count * 60 };
+            timeLeft = examInfo.timeLimit;
+            document.getElementById('examTitle').textContent = examInfo.title;
+            document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
+
+            // 3. 生成題目
+            if (window.generatePaper) {
+                mockQuestions = window.generatePaper({ 
+                    subject: subject, 
+                    total: count, 
+                    tags: targetTags 
+                });
+            }
+
+            // ... (後續渲染邏輯保持不變) ...
+            if (!mockQuestions || mockQuestions.length === 0) {
+                 if (retryCount < 2) {
+                    retryCount++;
+                    console.warn("題目不足，嘗試放寬條件重試...");
+                    const fallbackTags = targetTags.filter(t => ["國七","國八","國九","高一","高二","高三", subject].includes(t));
+                    
+                    if (window.generatePaper) {
+                        mockQuestions = window.generatePaper({ subject: subject, total: count, tags: fallbackTags });
+                    }
+                    
+                    if (mockQuestions.length > 0) {
+                        renderQuestion();
+                        updatePalette();
+                        startTimer();
+                        return;
+                    }
+                }
+                
+                alert("⚠️ 題庫生成失敗，請確認該單元是否有對應題庫。");
+                window.history.back();
+                return;
+            }
+
+            userAnswers = new Array(mockQuestions.length).fill(null);
+            timeLog = new Array(mockQuestions.length).fill(0);
+            
+            renderQuestion();
+            updatePalette();
+            startTimer();
+        }
 
             // 2. 如果真的沒找到單元，啟用「備案模式」
             if (!foundUnit) {
