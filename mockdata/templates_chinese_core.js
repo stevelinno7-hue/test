@@ -162,26 +162,35 @@
         // 1. 建立所有獨特的組合 (例如: "國七_成語", "高一_古文")
         const combinations = new Set();
         chiData.forEach(item => {
-            const key = `${item.tag[0]}_${item.tag[1]}`; // ex: 國七_成語
-            combinations.add(key);
+            if(item.tag && item.tag.length >= 2) {
+                // Ensure tags are trimmed to avoid invisible space mismatch
+                const t0 = item.tag[0].trim();
+                const t1 = item.tag[1].trim();
+                const key = `${t0}_${t1}`; 
+                combinations.add(key);
+            }
         });
 
         // 2. 為每個組合註冊專屬模板
         combinations.forEach(combo => {
             const [grade, topic] = combo.split('_');
             
-            // 只篩選出該組合的題目
-            const pool = chiData.filter(q => q.tag[0] === grade && q.tag[1] === topic);
+            // 只篩選出該組合的題目 (Use trim for safety)
+            const pool = chiData.filter(q => q.tag[0].trim() === grade && q.tag[1].trim() === topic);
 
             if (pool.length > 0) {
                 
+                // IMPORTANT: Move grade and topic to the START of the tag list
+                // Search engines often prioritize or limit search to the first few tags.
+                // New Order: ["chinese", "國七", "成語", "國文", "語文"]
+                const registerTags = ["chinese", grade, topic, "國文", "語文"];
+
                 // 模板 A: 定義題 (問Q答A)
                 G.registerTemplate(`chi_def_${grade}_${topic}`, (ctx, rnd) => {
                     const item = pick(pool);
                     
-                    // 智慧誘答：優先找同領域但不同題目的答案
                     const sameTag = pool.filter(x => x.q !== item.q);
-                    const others = chiData.filter(x => x.tag[1] === topic); // 同領域跨年級
+                    const others = chiData.filter(x => x.tag[1] === topic); 
                     
                     let wrongOpts = [];
                     if (sameTag.length >= 3) {
@@ -205,7 +214,7 @@
                         concept: topic,
                         explanation: [`正確答案：${item.a}`]
                     };
-                }, ["chinese", "國文", "語文", grade, topic]); // ★ 關鍵：只加上該年級和單元
+                }, registerTags); 
 
                 // 模板 B: 反向題 (問A答Q)
                 G.registerTemplate(`chi_rev_${grade}_${topic}`, (ctx, rnd) => {
@@ -235,11 +244,17 @@
                         concept: topic,
                         explanation: [`「${item.q}」：${item.a}`]
                     };
-                }, ["chinese", "國文", "語文", grade, topic]);
+                }, registerTags);
             }
         });
 
-        console.log(`🎉 國文題庫 (V7.0 精準鎖定版) 已載入！共註冊 ${combinations.size * 2} 個模板。`);
+        console.log(`🎉 國文題庫 (V7.1 Fix) 已載入！註冊 ${combinations.size * 2} 個模板。`);
+        // DEBUG: Print one example to verify tags are correct
+        if(combinations.size > 0) {
+             const firstExample = Array.from(combinations)[0];
+             const [g, t] = firstExample.split('_');
+             console.log(`🔧 [Debug] 範例註冊標籤: ["chinese", "${g}", "${t}", "國文", "語文"]`);
+        }
     }
 
     init();
