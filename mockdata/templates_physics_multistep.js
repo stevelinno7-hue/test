@@ -1,133 +1,95 @@
 (function(global){
     'use strict';
-    console.log("⚛️ [Physics V9.0] 物理核心題庫 (含自動演算工廠) 啟動...");
 
-    // 1. 建立物理避難所
-    window.__PHYSICS_REPO__ = window.__PHYSICS_REPO__ || {};
+    if (!window.__SCIENCE_REPO__) window.__SCIENCE_REPO__ = {};
+    console.log("🚀 [Science Core] 理化題庫 (獨立版) 啟動...");
 
     const Utils = {
-        shuffle: (arr) => arr.sort(() => Math.random() - 0.5),
-        rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+        rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
+        genOptions: (ans) => {
+            // 理化選項通常會有小數點
+            let opts = new Set([ans]);
+            while(opts.size < 4) {
+                let v = ans + Utils.rnd(-5, 5);
+                if(v <= 0) v = 1; 
+                opts.add(v);
+            }
+            return Array.from(opts).sort(() => Math.random() - 0.5);
+        }
     };
 
-    // =================================================================
-    // 工廠 A: 運動學 (v = d / t) - 自動生成 15 題
-    // =================================================================
-    for(let i=0; i<15; i++) {
-        const v = Utils.rnd(10, 60); // 速度
-        const t = Utils.rnd(5, 20);  // 時間
-        const d = v * t;             // 距離
-        const id = `phy_motion_${i}`;
-        const tags = ["physics", "物理", "運動學", "國九"];
+    const generators = [
+        {
+            id: "sci_density",
+            tags: ["science", "理化", "自然", "國八", "密度"],
+            generate: () => {
+                const M = Utils.rnd(20, 100);
+                const V = Utils.rnd(5, 20);
+                // 為了讓題目漂亮，我們反過來設計，確保整除或小數點漂亮
+                // D = M/V
+                const validD = [0.5, 0.8, 1.2, 2.5, 5, 8.9, 13.6]; // 常見物質密度
+                const D = validD[Math.floor(Math.random()*validD.length)];
+                const realM = D * 10; // 假設體積 10
+                
+                return {
+                    question: `某金屬塊體積為 $10 cm^3$，質量為 $${realM} g$，請問其密度為何？`,
+                    options: Utils.genOptions(D),
+                    correctValue: D,
+                    concept: "密度定義",
+                    explanation: [`$$ D = \\frac{M}{V} $$`, `$$ D = \\frac{${realM}}{10} = ${D} g/cm^3 $$`]
+                };
+            }
+        },
+        {
+            id: "sci_wave_speed",
+            tags: ["science", "理化", "自然", "國八", "波動", "波速"],
+            generate: () => {
+                // v = f * lambda
+                const f = Utils.rnd(2, 10); // 頻率
+                const lambda = Utils.rnd(5, 20); // 波長
+                const v = f * lambda;
+                
+                return {
+                    question: `一繩波的頻率為 $${f} Hz$，波長為 $${lambda} cm$，求波速為多少 $cm/s$？`,
+                    options: Utils.genOptions(v),
+                    correctValue: v,
+                    concept: "波速公式",
+                    explanation: [`公式：波速 = 頻率 × 波長`, `$$ v = f \\times \\lambda $$`, `$$ v = ${f} \\times ${lambda} = ${v} $$`]
+                };
+            }
+        },
+        {
+            id: "sci_ohm_law",
+            tags: ["science", "理化", "自然", "國九", "歐姆定律", "電路"],
+            generate: () => {
+                // V = I * R
+                const I = Utils.rnd(1, 5);
+                const R = Utils.rnd(10, 50);
+                const V = I * R;
 
-        const func = () => {
-            const wr = [d+10, d*2, v+t].map(x => `${x} m`);
-            const ans = `${d} m`;
-            const opts = Utils.shuffle([ans, ...wr]);
-            return {
-                question: `【運動學】一輛跑車以 $${v} m/s$ 的速度維持等速行駛 $${t} s$，請問它移動了多少距離？`,
-                options: opts,
-                answer: opts.indexOf(ans),
-                explanation: [
-                    `公式：$位移 = 速度 \\times 時間$`,
-                    `計算：$${v} \\times ${t} = ${d}$`,
-                    `
-
-[Image of velocity time graph]
-`
-                ],
-                subject: "physics", tags: tags
-            };
-        };
-        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
-    }
-
-    // =================================================================
-    // 工廠 B: 牛頓第二定律 (F = ma) - 自動生成 15 題
-    // =================================================================
-    for(let i=0; i<15; i++) {
-        const m = Utils.rnd(2, 20);  // 質量 kg
-        const a = Utils.rnd(2, 10);  // 加速度 m/s^2
-        const f = m * a;             // 力 N
-        const id = `phy_force_${i}`;
-        const tags = ["physics", "物理", "力學", "國九"];
-
-        const func = () => {
-            const wr = [f+5, m+a, f*10].map(x => `${x} N`);
-            const ans = `${f} N`;
-            const opts = Utils.shuffle([ans, ...wr]);
-            return {
-                question: `【力學】質量 $${m} kg$ 的物體，受力後產生 $${a} m/s^2$ 的加速度，求該物體所受合力？`,
-                options: opts,
-                answer: opts.indexOf(ans),
-                explanation: [
-                    `牛頓第二定律：$F = ma$`,
-                    `計算：$${m} \\times ${a} = ${f} N$`,
-                    `
-
-[Image of newton second law diagram]
-`
-                ],
-                subject: "physics", tags: tags
-            };
-        };
-        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
-    }
-
-    // =================================================================
-    // 工廠 C: 電學 (V = IR) - 自動生成 10 題
-    // =================================================================
-    for(let i=0; i<10; i++) {
-        const I = Utils.rnd(1, 10);
-        const R = Utils.rnd(10, 100);
-        const V = I * R;
-        const id = `phy_elec_${i}`;
-        const tags = ["physics", "物理", "電學", "國九"];
-
-        const func = () => {
-            const wr = [V+10, R+I, V*2].map(x => `${x} V`);
-            const ans = `${V} V`;
-            const opts = Utils.shuffle([ans, ...wr]);
-            return {
-                question: `【電學】一電路中，通過電阻的電流為 $${I} A$，電阻值為 $${R} \\Omega$，求電壓降？`,
-                options: opts,
-                answer: opts.indexOf(ans),
-                explanation: [
-                    `歐姆定律：$V = I \\times R$`,
-                    `計算：$${I} \\times ${R} = ${V} V$`,
-                    ``
-                ],
-                subject: "physics", tags: tags
-            };
-        };
-        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
-    }
-
-    // =================================================================
-    // 工廠 D: 概念題 (波動、能量、熱學) - 10 題
-    // =================================================================
-    const concepts = [
-        {q:"聲音在下列何種介質中傳播最快？", a:"鋼鐵 (固體)", o:["水 (液體)","空氣 (氣體)","真空"], t:"波動"},
-        {q:"下列何者不是熱的傳播方式？", a:"折射", o:["傳導","對流","輻射"], t:"熱學"},
-        {q:"動能的大小與下列何者成正比？", a:"速度的平方", o:["高度","時間","重力加速度"], t:"能量"},
-        {q:"凸透鏡成像中，物體在兩倍焦距外，會產生？", a:"縮小倒立實像", o:["放大倒立實像","放大正立虛像","相等倒立實像"], t:"光學"},
-        {q:"摩擦力做功通常會轉換為何種能量形式？", a:"熱能", o:["位能","動能","化學能"], t:"能量"}
+                return {
+                    question: `某電阻器電阻為 $${R} \\Omega$，流經電流為 $${I} A$，則兩端電壓為多少 $V$？`,
+                    options: Utils.genOptions(V),
+                    correctValue: V,
+                    concept: "歐姆定律",
+                    explanation: [`$$ V = I \\times R $$`, `$$ V = ${I} \\times ${R} = ${V} $$`]
+                };
+            }
+        }
     ];
 
-    concepts.forEach((item, idx) => {
-        const id = `phy_con_${idx}`;
-        const tags = ["physics", "物理", item.t, "國八"];
-        const func = () => {
-            const opts = Utils.shuffle([item.a, ...item.o]);
-            return {
-                question: `【${item.t}】${item.q}`,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                explanation: [`正確答案：${item.a}`, ``],
-                subject: "physics", tags: tags
+    generators.forEach(gen => {
+        for(let i=0; i<5; i++) {
+            const uId = `${gen.id}_${i}`;
+            window.__SCIENCE_REPO__[uId] = {
+                func: () => {
+                    const d = gen.generate();
+                    return { ...d, answer: d.options.indexOf(d.correctValue), subject: "science", tags: gen.tags };
+                },
+                tags: gen.tags,
+                subject: "science"
             };
-        };
-        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
+        }
     });
 
 })(window);
