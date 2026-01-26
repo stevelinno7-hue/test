@@ -2,18 +2,18 @@
     'use strict';
 
     // ------------------------------------------------------------------
-    //  V7.5 核心修復：更強大的引擎偵測與參數兼容 (Argument Compatibility)
+    //  V7.6 最終手段：全面覆蓋 (Brute Force Registration)
     // ------------------------------------------------------------------
     function init() {
-        // 1. 強力搜尋所有可能的引擎名稱
         const G = window.RigorousGenerator || window.GeneratorEngine || window.PaperGenerator || (window.global && window.global.RigorousGenerator);
         
-        // 若找不到引擎，持續重試 (每 100ms 一次)
         if (!G || typeof G.registerTemplate !== 'function') { 
-            console.log("⏳ 等待 Generator Engine 就緒...");
+            console.log("⏳ [Chinese V7.6] 等待 Generator Engine...");
             setTimeout(init, 100); 
             return; 
         }
+
+        console.log("🚀 [Chinese V7.6] 引擎已鎖定，準備強制注入...");
 
         // ==========================================
         // 國文科核心資料庫 (Chinese Core Database)
@@ -84,25 +84,27 @@
             const pool = chiData.filter(q => q.tag[0].trim() === grade && q.tag[1].trim() === topic);
 
             if (pool.length > 0) {
-                // 標籤處理：全部轉小寫以防大小寫不匹配
-                const rawTags = ["chinese", topic, grade, "國文", "語文"];
+                // ★ V7.6 關鍵：標籤大滿貫
+                // 同時放入 chinese (小寫), Chinese (大寫), 國文, 語文
+                // 確保不管 PaperGenerator 用什麼關鍵字過濾都能抓到
+                const rawTags = ["chinese", "Chinese", "國文", "語文", topic, grade];
                 const uniqueTags = [...new Set(rawTags)];
 
-                // 產生器函數 (與 V7.4 相同，但 return 物件結構增強)
+                // 產生器函數
                 const generatorFunc = (ctx, rnd) => {
                     const item = pool[Math.floor(Math.random() * pool.length)];
                     const others = chiData.filter(x => x.tag[1] === topic && x.q !== item.q);
                     
-                    // 選項混淆
                     const wrongOpts = others.sort(() => 0.5 - Math.random()).slice(0, 3).map(x => x.a);
                     while(wrongOpts.length < 3) wrongOpts.push("以上皆非");
                     
                     const opts = [item.a, ...wrongOpts].sort(() => 0.5 - Math.random());
                     
-                    let qText = topic === "成語" ? `「${item.q}」的意思為何？` : 
-                               topic === "修辭" ? `「${item.q}」使用了哪種修辭？` :
-                               topic === "古文" ? `「${item.q}」出自何處或何人？` :
-                               `關於「${item.q}」，下列敘述何者正確？`;
+                    let qText = "";
+                    if (topic === "成語") qText = `「${item.q}」的意思為何？`;
+                    else if (topic === "修辭") qText = `「${item.q}」使用了哪種修辭？`;
+                    else if (topic === "古文") qText = `「${item.q}」出自何處或何人？`;
+                    else qText = `關於「${item.q}」，下列敘述何者正確？`;
 
                     return {
                         question: `【${topic}】${qText}`,
@@ -110,39 +112,32 @@
                         answer: opts.indexOf(item.a),
                         concept: topic,
                         explanation: [`正確答案：${item.a}`],
-                        // ★ V7.5 雙重保險：同時在根目錄與 meta 提供 Subject ★
+                        // ★ V7.6 雙保險：回傳物件中包含所有識別資訊
                         subject: "chinese",
                         tags: uniqueTags,
                         meta: { subject: "chinese", grade: grade, topic: topic }
                     };
                 };
 
-                // ★★★ V7.5 關鍵修正：同時支援「陣列」與「展開」註冊模式 ★★★
-                // 這是為了解決 GeneratorEngine 參數不匹配導致標籤失效的主因
+                // ★ V7.6 暴力修復：屬性刺青
+                // 直接把標籤綁在函數上，有些引擎會檢查這裡
+                generatorFunc.tags = uniqueTags;
+                generatorFunc.subject = "chinese"; // ★ 這是關鍵！很多引擎檢查這個屬性
+
                 try {
-                    // 嘗試模式 A: 傳遞陣列 (Modern)
-                    G.registerTemplate(`chi_def_${grade}_${topic}`, generatorFunc, uniqueTags);
+                    // 策略 A: 陣列模式 (ID後綴 _arr)
+                    G.registerTemplate(`chi_${grade}_${topic}_arr`, generatorFunc, uniqueTags);
                     
-                    // 嘗試模式 B: 傳遞展開參數 (Legacy) - 以防系統使用舊版引擎
-                    // 注意：這不會報錯，如果 ID 重複，通常引擎會覆蓋或忽略，這是安全的
-                    if (G.registerTemplate.length > 2) { 
-                        G.registerTemplate(`chi_def_legacy_${grade}_${topic}`, generatorFunc, ...uniqueTags);
-                    }
+                    // 策略 B: 展開模式 (ID後綴 _spr) - 無條件執行，不檢查 length
+                    G.registerTemplate(`chi_${grade}_${topic}_spr`, generatorFunc, ...uniqueTags);
+                    
                 } catch (e) {
                     console.error("Template Reg Error:", e);
                 }
             }
         });
 
-        console.log(`🎉 國文題庫 (V7.5 Universal Fix) 已載入！註冊 ${combinations.size} 組模板。`);
-        
-        // 額外診斷訊息
-        if (window.PaperGenerator) {
-             console.log("🔍 PaperGenerator 狀態檢查:", 
-                "Registered count:", Object.keys(window.RigorousGenerator?.templates || {}).length,
-                "Has Chinese Tag?", JSON.stringify(uniqueTags || "N/A")
-             );
-        }
+        console.log(`🎉 國文題庫 (V7.6 Brute Force) 已載入！註冊 ${combinations.size * 2} 組模板 (雙通道模式)。`);
     }
 
     init();
