@@ -1,161 +1,67 @@
 (function(global){
     'use strict';
-    console.log("⚖️ [Civics V9.0] 公民核心題庫 (法律/經濟/政治) 啟動...");
-
+    console.log("⚖️ [Civics V9.5] 公民科精準對齊版 (含心理/法律/經濟/政治) 啟動...");
     window.__CIVICS_REPO__ = window.__CIVICS_REPO__ || {};
 
-    const Utils = {
-        shuffle: (arr) => arr.sort(() => Math.random() - 0.5),
-        rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
-    };
+    const Utils = { shuffle: (arr) => arr.sort(() => Math.random() - 0.5) };
 
-    // =================================================================
-    // 工廠 A: 法律年齡自動生成 (10 題)
-    // =================================================================
-    // 根據台灣現行法律 (民法18歲成年, 刑法18歲完全責任)
-    const lawAges = [
-        {age: 18, type: "民法", status: "完全行為能力人", desc: "可獨立簽訂契約、結婚"},
-        {age: 7, type: "民法", status: "無行為能力人 (7歲以下)", desc: "需由法定代理人代為意思表示"},
-        {age: 14, type: "刑法", status: "無責任能力人 (14歲以下)", desc: "不罰 (但得施以保安處分)"},
-        {age: 18, type: "刑法", status: "完全責任能力人", desc: "需負完全刑事責任"},
-        {age: 80, type: "刑法", status: "得減輕其刑", desc: "滿80歲人之行為，得減輕其刑"}
+    // ==========================================
+    // 1. 國七：自我與社會 (對應課綱：自我, 性別, 家庭, 社區)
+    // ==========================================
+    const social = [
+        {q:"根據馬斯洛需求理論，最高層次的需求是？", a:"自我實現", o:["尊重需求","愛與隸屬","生理需求"], t:["自我","國七"]},
+        {q:"對於性別角色的看法，下列何者符合性別平等觀念？", a:"尊重個人的特質與選擇", o:["男主外女主內","女生不適合讀理科","男生不能哭"], t:["性別","國七"]},
+        {q:"由一對夫妻及其未婚子女組成的家庭型態是？", a:"小家庭 (核心家庭)", o:["折衷家庭","大家庭","單親家庭"], t:["家庭","國七"]},
+        {q:"社區營造的主要目的是？", a:"凝聚居民共識，改善生活環境", o:["提高房價","增加商業利益","應付政府檢查"], t:["社區","國七"]}
     ];
+    social.forEach((item,i) => register(item, `civ_soc_${i}`));
 
-    for(let i=0; i<10; i++) {
-        const law = lawAges[i % lawAges.length];
-        const id = `civ_law_${i}`;
-        const tags = ["civics", "公民", "法律", "國八"];
-
-        const func = () => {
-            const opts = Utils.shuffle(["完全行為能力", "限制行為能力", "無行為能力", "完全責任能力", "無責任能力"]);
-            // 確保正確答案在選項中
-            if(!opts.includes(law.status.split(" ")[0])) opts[0] = law.status.split(" ")[0];
-            
-            return {
-                question: `【法律】依據我國《${law.type}》，年齡為 ${law.age} 歲者，在法律上的狀態通常為？`,
-                options: opts,
-                answer: opts.indexOf(law.status.split(" ")[0]) >= 0 ? opts.indexOf(law.status.split(" ")[0]) : 0, // 簡化處理
-                explanation: [
-                    `依據《${law.type}》，${law.status}。`,
-                    `說明：${law.desc}`,
-                    ``
-                ],
-                subject: "civics", tags: tags
-            };
-        };
-        // 修正上面的 answer 邏輯，直接用正確字串匹配
-        func.gen = () => { // 重新封裝一個乾淨的
-           const correct = law.status.split(" ")[0]; // 取短名
-           const others = ["完全行為能力人", "限制行為能力人", "無行為能力人", "無責任能力人", "得減輕其刑"].filter(x=>!x.includes(correct));
-           const opts = Utils.shuffle([law.status, ...others.slice(0,3)]);
-           return {
-               question: `【法律】依據我國《${law.type}》，${law.age} 歲通常被視為？`,
-               options: opts,
-               answer: opts.indexOf(law.status),
-               explanation: [`說明：${law.desc}`, `
-
-[Image of justice scale]
-`],
-               subject: "civics", tags: tags
-           };
-        };
-        window.__CIVICS_REPO__[id] = { func: func.gen, tags, subject: "civics" };
-    }
-
-    // =================================================================
-    // 工廠 B: 經濟學供需法則 (15 題)
-    // =================================================================
-    const scenarios = [
-        {event: "颱風來襲，蔬菜受損", curve: "供給減少", price: "上漲", qty: "減少"},
-        {event: "手機技術突破，生產成本下降", curve: "供給增加", price: "下跌", qty: "增加"},
-        {event: "夏天到了，冰品大受歡迎", curve: "需求增加", price: "上漲", qty: "增加"},
-        {event: "新聞報導某產品致癌", curve: "需求減少", price: "下跌", qty: "減少"},
-        {event: "政府發放消費券", curve: "需求增加", price: "上漲", qty: "增加"}
+    // ==========================================
+    // 2. 國八：政治與法律 (對應課綱：國家, 政治, 法律, 民法, 刑法)
+    // ==========================================
+    const politics = [
+        {q:"國家的組成要素中，最具排他性與最高性的是？", a:"主權", o:["人民","領土","政府"], t:["國家","國八"]},
+        {q:"我國負責解釋憲法、統一解釋法律的機關是？", a:"司法院 (大法官)", o:["立法院","行政院","最高法院"], t:["政治","五權分立","國八"]},
+        {q:"依據《民法》，滿幾歲為完全行為能力人？", a:"18歲", o:["20歲","16歲","7歲"], t:["法律","民法","國八"]},
+        {q:"刑法對於「責任能力」的規定，未滿14歲之行為？", a:"不罰", o:["得減輕其刑","需負完全責任","由父母代罰"], t:["法律","刑法","國八"]}
     ];
+    politics.forEach((item,i) => register(item, `civ_pol_${i}`));
 
-    for(let i=0; i<15; i++) {
-        const s = scenarios[i % scenarios.length];
-        const id = `civ_econ_${i}`;
-        const tags = ["civics", "公民", "經濟", "國九"];
-
-        const func = () => {
-            const qType = Math.random() > 0.5 ? "price" : "curve";
-            let qText, ans, opts;
-            
-            if (qType === "price") {
-                qText = `「${s.event}」，依據供需法則，該商品的市場價格與交易量會如何變化？`;
-                ans = `價格${s.price}，數量${s.qty}`;
-                opts = Utils.shuffle(["價格上漲，數量增加", "價格下跌，數量增加", "價格上漲，數量減少", "價格下跌，數量減少"]);
-            } else {
-                qText = `「${s.event}」，這會造成供需圖上的哪種變動？`;
-                ans = s.curve;
-                opts = Utils.shuffle(["供給增加", "供給減少", "需求增加", "需求減少"]);
-            }
-            
-            return {
-                question: `【經濟】${qText}`,
-                options: opts,
-                answer: opts.indexOf(ans),
-                explanation: [
-                    `分析：${s.event} 會導致 ${s.curve}。`,
-                    `結果：市場均衡點移動，${ans}。`,
-                    `
-
-[Image of supply and demand curve shift]
-`
-                ],
-                subject: "civics", tags: tags
-            };
-        };
-        window.__CIVICS_REPO__[id] = { func, tags, subject: "civics" };
-    }
-
-    // =================================================================
-    // 工廠 C: 政府體制 (五權分立) (15 題)
-    // =================================================================
-    const govs = [
-        {name: "立法院", power: "制定法律、審查預算", check: "對行政院提出不信任案"},
-        {name: "行政院", power: "執行政策、編列預算", check: "對立法院決議提覆議"},
-        {name: "司法院", power: "解釋憲法、審判", check: "宣告法律違憲"},
-        {name: "監察院", power: "彈劾、糾舉、審計", check: "監督公務人員"},
-        {name: "考試院", power: "公務員考試、任用", check: "管理公務人力"}
+    // ==========================================
+    // 3. 國九：經濟與全球 (對應課綱：經濟, 機會成本, 全球化)
+    // ==========================================
+    const econ = [
+        {q:"魚與熊掌不可兼得，在做選擇時放棄價值最高者稱為？", a:"機會成本", o:["生產成本","沉沒成本","外部成本"], t:["經濟","機會成本","國九"]},
+        {q:"根據需求法則，當商品價格下跌時？", a:"需求量增加", o:["需求量減少","供給量增加","需求不變"], t:["經濟","供需","國九"]},
+        {q:"為了促進世界貿易自由化而成立的國際組織是？", a:"世界貿易組織 (WTO)", o:["世界衛生組織 (WHO)","亞太經合會 (APEC)","歐盟 (EU)"], t:["全球","全球化","國九"]},
+        {q:"下列何者屬於公共財的特性？", a:"無法排他性", o:["獨佔性","競爭性","可分割性"], t:["經濟","國九"]}
     ];
+    econ.forEach((item,i) => register(item, `civ_eco_${i}`));
 
-    govs.forEach((g, idx) => {
-        const id = `civ_gov_${idx}`;
-        const tags = ["civics", "公民", "政治", "國八"];
+    // ==========================================
+    // 4. 高中：進階公民 (對應課綱：人權, 憲法, 經濟)
+    // ==========================================
+    const highCiv = [
+        {q:"憲法保障人民的基本權利，若要限制必須符合？", a:"比例原則 (公益、必要、法律保留)", o:["多數決原則","效率原則","行政指導"], t:["憲法","人權","高一"]},
+        {q:"政府對違法行政行為造成人民損害時，人民可請求？", a:"國家賠償", o:["損失補償","社會救助","犯罪被害補償"], t:["行政法","高一"]},
+        {q:"國內生產毛額 (GDP) 是指一國在特定期間內生產的？", a:"最終產品與勞務的市價總值", o:["中間產品總值","國民所得毛額","地下經濟總值"], t:["經濟","高二"]},
+        {q:"為了保障弱勢群體，在此範圍內給予差別待遇，稱為？", a:"實質平等 (優惠性差別待遇)", o:["形式平等","齊頭式平等","絕對平等"], t:["人權","公益","高一"]}
+    ];
+    highCiv.forEach((item,i) => register(item, `civ_high_${i}`));
+
+    // --- 註冊 helper ---
+    function register(item, id) {
+        const finalTags = ["civics", "公民", ...item.t];
         window.__CIVICS_REPO__[id] = {
             func: () => {
-                const wr = Utils.shuffle(govs.filter(x => x.name !== g.name)).slice(0, 3).map(x => x.name);
-                const opts = Utils.shuffle([g.name, ...wr]);
+                const opts = Utils.shuffle([item.a, ...item.o]);
                 return {
-                    question: `【政治】在我國政府體制中，負責「${g.power}」的機關是？`,
-                    options: opts,
-                    answer: opts.indexOf(g.name),
-                    explanation: [`${g.name} 的職權包括：${g.power}。`, ``],
-                    subject: "civics", tags: tags
+                    question: `【公民】${item.q}`,
+                    options: opts, answer: opts.indexOf(item.a),
+                    explanation: [`正確答案：${item.a}`, `} concept]`],
+                    subject: "civics", tags: finalTags
                 };
-            }, tags: tags, subject: "civics"
+            }, tags: finalTags, subject: "civics"
         };
-        
-        // 變體：制衡
-        const id2 = `civ_gov_check_${idx}`;
-        window.__CIVICS_REPO__[id2] = {
-            func: () => {
-                const wr = Utils.shuffle(govs.filter(x => x.check !== g.check)).slice(0, 3).map(x => x.check);
-                const opts = Utils.shuffle([g.check, ...wr]);
-                return {
-                    question: `【政治】${g.name} 可以透過下列何種方式制衡其他權力？`,
-                    options: opts,
-                    answer: opts.indexOf(g.check),
-                    explanation: [`${g.name} 可行使 ${g.check}。`, `
-
-[Image of checks and balances diagram]
-`],
-                    subject: "civics", tags: tags
-                };
-            }, tags: tags, subject: "civics"
-        };
-    });
-
+    }
 })(window);
