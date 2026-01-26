@@ -1,86 +1,98 @@
 (function(global){
     'use strict';
-    
-    // 建立數學避難所
-    if (!window.__MATH_REPO__) window.__MATH_REPO__ = {};
+    console.log("📐 [Math V9.0] 數學工廠：正在生產 50 道動態試題...");
+    window.__MATH_REPO__ = window.__MATH_REPO__ || {};
 
-    console.log("🚀 [Math V8.0] 數學引擎啟動...");
+    const U = {
+        rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
+        shuffle: (arr) => arr.sort(() => Math.random() - 0.5)
+    };
 
-    // ----------------------------------------------------------------
-    // 題型 1: 一元一次方程式 (Algebra)
-    // ----------------------------------------------------------------
-    const algebraFunc = function(ctx, rnd) {
-        // 生成 ax + b = c
-        const a = Math.floor(rnd() * 8) + 2; // 2~9
-        const x = Math.floor(rnd() * 10) + 1; // 答案
-        const b = Math.floor(rnd() * 20) - 10; // -10 ~ 9
-        const c = a * x + b;
-
-        const bStr = b >= 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
-        const qStr = `${a}x ${bStr} = ${c}`;
-        
-        // 產生選項
-        const ans = x;
-        const opts = new Set([ans]);
-        while(opts.size < 4) {
-            opts.add(ans + Math.floor(rnd() * 5) - 2); // 混淆項
-        }
-
-        const optArray = Array.from(opts).sort((a,b) => a - b); // 排序讓選項整齊
-
-        return {
-            question: `解方程式： $${qStr}$，則 $x$ 為何？`,
-            options: optArray.map(n => `$${n}$`),
-            answer: optArray.indexOf(ans),
-            concept: "一元一次方程式",
-            subject: "math",
-            tags: ["math", "algebra", "國七"]
+    // 工廠 1: 整數四則運算 (10題)
+    for(let i=0; i<10; i++) {
+        const a = U.rnd(-20, 20), b = U.rnd(2, 10), c = U.rnd(-10, 10);
+        const ans = a * b + c;
+        const id = `math_0_${i}`;
+        const func = () => {
+            const opts = U.shuffle([ans, ans+b, ans-c, -ans]);
+            return {
+                question: `【整數】計算 $${a} \\times ${b} + (${c}) = ?$`,
+                options: opts, answer: opts.indexOf(ans),
+                explanation: ["先乘除後加減", `計算過程：$${a*b} + (${c}) = ${ans}$`],
+                subject: "math", tags: ["math", "數學", "整數", "國七"]
+            };
         };
-    };
-    // 刺青 & 存入避難所
-    algebraFunc.subject = "math";
-    algebraFunc.tags = ["math", "algebra", "國七"];
-    window.__MATH_REPO__['math_alg_linear_eq_safe'] = { 
-        func: algebraFunc, tags: algebraFunc.tags, subject: "math" 
-    };
+        window.__MATH_REPO__[id] = { func, tags: ["math", "國七"], subject: "math" };
+    }
 
-    // ----------------------------------------------------------------
-    // 題型 2: 幾何面積 (Geometry)
-    // ----------------------------------------------------------------
-    const geoFunc = function(ctx, rnd) {
-        const w = Math.floor(rnd() * 10) + 5;
-        const h = Math.floor(rnd() * 10) + 5;
-        const area = w * h;
-        
-        return {
-            question: `一個長方形長為 ${w} 公分，寬為 ${h} 公分，求面積？`,
-            options: [
-                `${area} cm²`,
-                `${2*(w+h)} cm²`, // 周長 (陷阱)
-                `${area + 10} cm²`,
-                `${area - 5} cm²`
-            ].sort(() => 0.5 - rnd()),
-            answer: 0, // 這裡簡化處理，實際要對應選項index
-            concept: "幾何面積",
-            subject: "math",
-            tags: ["math", "geometry", "國七"]
+    // 工廠 2: 一元一次方程式 (10題)
+    for(let i=0; i<10; i++) {
+        const x = U.rnd(2, 12), a = U.rnd(2, 9), b = U.rnd(1, 20);
+        const res = a * x + b;
+        const id = `math_1_${i}`;
+        const func = () => {
+            const opts = U.shuffle([x, x+1, x-1, x*2]);
+            return {
+                question: `【方程式】解方程式 $${a}x + ${b} = ${res}$，則 $x=?$`,
+                options: opts, answer: opts.indexOf(x),
+                explanation: [`移項：$${a}x = ${res} - ${b}$`, `$${a}x = ${res-b}$`, `故 $x=${x}$`],
+                subject: "math", tags: ["math", "數學", "方程式", "國七"]
+            };
         };
-    };
-    // 修正選項 index 邏輯
-    const geoFuncWrapper = (ctx, rnd) => {
-        const q = geoFunc(ctx, rnd);
-        const correctVal = q.options[0]; // 原始的第一個是答案
-        q.options.sort(() => 0.5 - Math.random()); // 洗牌
-        q.answer = q.options.indexOf(correctVal); // 找回答案位置
-        return q;
-    };
+        window.__MATH_REPO__[id] = { func, tags: ["math", "國七"], subject: "math" };
+    }
 
-    geoFuncWrapper.subject = "math";
-    geoFuncWrapper.tags = ["math", "geometry", "國七"];
-    window.__MATH_REPO__['math_geo_rect_area_safe'] = {
-        func: geoFuncWrapper, tags: geoFuncWrapper.tags, subject: "math"
-    };
+    // 工廠 3: 畢氏定理 (10題)
+    const pythagoreanTriples = [[3,4,5], [5,12,13], [6,8,10], [8,15,17], [9,12,15]];
+    for(let i=0; i<10; i++) {
+        const triple = pythagoreanTriples[i % pythagoreanTriples.length];
+        const [a, b, c] = triple;
+        const id = `math_2_${i}`;
+        const func = () => {
+            const opts = U.shuffle([c, c+1, c+2, a+b]);
+            return {
+                question: `【幾何】直角三角形兩股長為 ${a}, ${b}，求斜邊長？`,
+                options: opts, answer: opts.indexOf(c),
+                explanation: [`公式：$a^2 + b^2 = c^2$`, ``],
+                subject: "math", tags: ["math", "數學", "畢氏定理", "國八"]
+            };
+        };
+        window.__MATH_REPO__[id] = { func, tags: ["math", "國八"], subject: "math" };
+    }
 
-    console.log(`🎉 數學題庫 (V8.0) 已存入避難所，共 ${Object.keys(window.__MATH_REPO__).length} 題。`);
+    // 工廠 4: 等差數列 (10題)
+    for(let i=0; i<10; i++) {
+        const a1 = U.rnd(1, 10), d = U.rnd(2, 5), n = 10;
+        const an = a1 + (n-1)*d;
+        const id = `math_3_${i}`;
+        const func = () => {
+            const opts = U.shuffle([an, an+d, an-d, an*2]);
+            return {
+                question: `【數列】等差數列首項 ${a1}，公差 ${d}，求第 ${n} 項？`,
+                options: opts, answer: opts.indexOf(an),
+                explanation: [`公式：$a_n = a_1 + (n-1)d$`, `$${a1} + 9 \\times ${d} = ${an}$`],
+                subject: "math", tags: ["math", "數學", "數列", "國八"]
+            };
+        };
+        window.__MATH_REPO__[id] = { func, tags: ["math", "國八"], subject: "math" };
+    }
+
+    // 工廠 5: 統計機率 (10題)
+    for(let i=0; i<10; i++) {
+        const total = U.rnd(10, 50);
+        const target = U.rnd(1, total);
+        const prob = Math.round((target/total)*100)/100;
+        const id = `math_4_${i}`;
+        const func = () => {
+            const opts = U.shuffle([prob, prob+0.1, 1-prob, 0.5]);
+            return {
+                question: `【機率】箱中有 ${total} 顆球，其中紅球 ${target} 顆，抽中紅球機率為何？(取小數點後兩位)`,
+                options: opts, answer: opts.indexOf(prob),
+                explanation: [`機率 = 目標數 / 總數`, `$${target} / ${total} \\approx ${prob}$`],
+                subject: "math", tags: ["math", "數學", "機率", "國九"]
+            };
+        };
+        window.__MATH_REPO__[id] = { func, tags: ["math", "國九"], subject: "math" };
+    }
 
 })(window);
