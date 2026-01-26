@@ -2,21 +2,56 @@
     'use strict';
 
     // ------------------------------------------------------------------
-    //  V7.6 最終手段：全面覆蓋 (Brute Force Registration)
+    //  V7.7 自癒核心版 (Self-Healing Engine)
+    //  解決「註冊成功但讀不到」的問題，強制建立共享儲存區
     // ------------------------------------------------------------------
-    function init() {
-        const G = window.RigorousGenerator || window.GeneratorEngine || window.PaperGenerator || (window.global && window.global.RigorousGenerator);
-        
-        if (!G || typeof G.registerTemplate !== 'function') { 
-            console.log("⏳ [Chinese V7.6] 等待 Generator Engine...");
-            setTimeout(init, 100); 
-            return; 
+    
+    function ensureEngine() {
+        // 如果全域引擎不存在，我們就自己造一個！
+        if (!window.RigorousGenerator) {
+            console.warn("⚠️ [Chinese V7.7] 偵測到引擎尚未初始化，正在執行「緊急架設」...");
+            window.RigorousGenerator = {
+                _templates: {},
+                registerTemplate: function(id, func, tags) {
+                    // 支援 V7.6 的屬性注入
+                    if (func.tags) tags = func.tags;
+                    
+                    this._templates[id] = {
+                        func: func,
+                        tags: tags || [],
+                        meta: tags || [], // 雙重備份
+                        subject: func.subject || "chinese" // 確保科目屬性
+                    };
+                    // console.log(`📦 [Emergency] Template registered: ${id}`);
+                },
+                getTemplateIds: function() {
+                    return Object.keys(this._templates);
+                },
+                generateQuestion: function(id, ctx) {
+                    const t = this._templates[id];
+                    if(!t) return null;
+                    try {
+                        return t.func(ctx || {}, Math.random);
+                    } catch(e) {
+                        console.error("Gen Error:", e);
+                        return null;
+                    }
+                }
+            };
+            // 建立別名，確保 PaperGenerator 也能找到
+            window.GeneratorEngine = window.RigorousGenerator;
         }
+        return window.RigorousGenerator;
+    }
 
-        console.log("🚀 [Chinese V7.6] 引擎已鎖定，準備強制注入...");
+    function init() {
+        // ★ 強制獲取或創建引擎
+        const G = ensureEngine();
+        
+        console.log("🚀 [Chinese V7.7] 引擎鎖定完畢 (ID: RigorousGenerator)，準備注入資料...");
 
         // ==========================================
-        // 國文科核心資料庫 (Chinese Core Database)
+        // 國文科核心資料庫
         // ==========================================
         const chiData = [
             // 1. 成語判讀
@@ -84,13 +119,10 @@
             const pool = chiData.filter(q => q.tag[0].trim() === grade && q.tag[1].trim() === topic);
 
             if (pool.length > 0) {
-                // ★ V7.6 關鍵：標籤大滿貫
-                // 同時放入 chinese (小寫), Chinese (大寫), 國文, 語文
-                // 確保不管 PaperGenerator 用什麼關鍵字過濾都能抓到
+                // 生成所有可能的標籤 (大小寫混用)
                 const rawTags = ["chinese", "Chinese", "國文", "語文", topic, grade];
                 const uniqueTags = [...new Set(rawTags)];
 
-                // 產生器函數
                 const generatorFunc = (ctx, rnd) => {
                     const item = pool[Math.floor(Math.random() * pool.length)];
                     const others = chiData.filter(x => x.tag[1] === topic && x.q !== item.q);
@@ -112,32 +144,30 @@
                         answer: opts.indexOf(item.a),
                         concept: topic,
                         explanation: [`正確答案：${item.a}`],
-                        // ★ V7.6 雙保險：回傳物件中包含所有識別資訊
+                        // ★ V7.7 強制回傳屬性
                         subject: "chinese",
                         tags: uniqueTags,
                         meta: { subject: "chinese", grade: grade, topic: topic }
                     };
                 };
 
-                // ★ V7.6 暴力修復：屬性刺青
-                // 直接把標籤綁在函數上，有些引擎會檢查這裡
+                // ★ V7.7 屬性刺青 (Property Injection)
+                generatorFunc.subject = "chinese"; 
                 generatorFunc.tags = uniqueTags;
-                generatorFunc.subject = "chinese"; // ★ 這是關鍵！很多引擎檢查這個屬性
+                generatorFunc.grade = grade;
 
+                // 註冊
                 try {
-                    // 策略 A: 陣列模式 (ID後綴 _arr)
-                    G.registerTemplate(`chi_${grade}_${topic}_arr`, generatorFunc, uniqueTags);
-                    
-                    // 策略 B: 展開模式 (ID後綴 _spr) - 無條件執行，不檢查 length
-                    G.registerTemplate(`chi_${grade}_${topic}_spr`, generatorFunc, ...uniqueTags);
-                    
+                    // ID 命名規則: chi_國七_成語_auto
+                    const templateId = `chi_${grade}_${topic}_auto`;
+                    G.registerTemplate(templateId, generatorFunc, uniqueTags);
                 } catch (e) {
                     console.error("Template Reg Error:", e);
                 }
             }
         });
 
-        console.log(`🎉 國文題庫 (V7.6 Brute Force) 已載入！註冊 ${combinations.size * 2} 組模板 (雙通道模式)。`);
+        console.log(`🎉 國文題庫 (V7.7 Self-Healing) 已載入！註冊 ${combinations.size} 組模板 (至 RigorousGenerator)。`);
     }
 
     init();
