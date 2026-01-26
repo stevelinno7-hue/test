@@ -1,67 +1,133 @@
 (function(global){
     'use strict';
-    console.log("🧪 [Chemistry V9.0] 化學工廠：正在生產 50 道動態試題...");
-    window.__CHEMISTRY_REPO__ = window.__CHEMISTRY_REPO__ || {};
-    const U = { rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min, shuffle: (arr) => arr.sort(() => Math.random() - 0.5) };
+    console.log("⚛️ [Physics V9.0] 物理核心題庫 (含自動演算工廠) 啟動...");
 
-    const elements = [{n:'碳',m:12,s:'C'},{n:'氧',m:16,s:'O'},{n:'氮',m:14,s:'N'},{n:'氫',m:1,s:'H'},{n:'鈉',m:23,s:'Na'}];
+    // 1. 建立物理避難所
+    window.__PHYSICS_REPO__ = window.__PHYSICS_REPO__ || {};
 
-    // 1. 分子量計算
-    for(let i=0; i<10; i++){
-        const e1 = elements[i%elements.length], e2 = elements[(i+1)%elements.length];
-        const mw = e1.m + e2.m;
-        window.__CHEMISTRY_REPO__[`chem_0_${i}`] = {
-            func: () => {
-                const o = U.shuffle([mw, mw+10, mw*2, Math.abs(e1.m-e2.m)]);
-                return { question: `【分子量】若 ${e1.n}=${e1.m}, ${e2.n}=${e2.m}，則 ${e1.s}${e2.s} 分子量？`, options: o, answer: o.indexOf(mw), explanation: [`${e1.m} + ${e2.m} = ${mw}`], subject: "chemistry", tags:["chemistry","國八"] };
-            }, tags:["chemistry","國八"], subject:"chemistry"
-        };
-    }
-    // 2. 濃度計算
-    for(let i=0; i<10; i++){
-        const solute = U.rnd(10,50), solvent = U.rnd(50,150), total = solute+solvent;
-        const p = Math.round((solute/total)*100);
-        window.__CHEMISTRY_REPO__[`chem_1_${i}`] = {
-            func: () => {
-                const o = U.shuffle([`${p}%`, `${p+10}%`, `${p-5}%`, "50%"]);
-                return { question: `【濃度】溶質 ${solute}g 溶於水 ${solvent}g，重量百分濃度約？`, options: o, answer: o.indexOf(`${p}%`), explanation: [`溶質/溶液 total`], subject: "chemistry", tags:["chemistry","國八"] };
-            }, tags:["chemistry","國八"], subject:"chemistry"
-        };
-    }
-    // 3. pH值
-    for(let i=0; i<10; i++){
-        const ph = U.rnd(1,13);
-        const ans = ph<7?"酸性":(ph>7?"鹼性":"中性");
-        window.__CHEMISTRY_REPO__[`chem_2_${i}`] = {
-            func: () => {
-                const o = U.shuffle(["酸性","鹼性","中性","無法判斷"]);
-                return { question: `【酸鹼】pH=${ph} 的溶液性質？`, options: o, answer: o.indexOf(ans), explanation: [`pH<7酸, >7鹼`, `
+    const Utils = {
+        shuffle: (arr) => arr.sort(() => Math.random() - 0.5),
+        rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+    };
 
-[Image of pH scale]
-`], subject: "chemistry", tags:["chemistry","國八"] };
-            }, tags:["chemistry","國八"], subject:"chemistry"
+    // =================================================================
+    // 工廠 A: 運動學 (v = d / t) - 自動生成 15 題
+    // =================================================================
+    for(let i=0; i<15; i++) {
+        const v = Utils.rnd(10, 60); // 速度
+        const t = Utils.rnd(5, 20);  // 時間
+        const d = v * t;             // 距離
+        const id = `phy_motion_${i}`;
+        const tags = ["physics", "物理", "運動學", "國九"];
+
+        const func = () => {
+            const wr = [d+10, d*2, v+t].map(x => `${x} m`);
+            const ans = `${d} m`;
+            const opts = Utils.shuffle([ans, ...wr]);
+            return {
+                question: `【運動學】一輛跑車以 $${v} m/s$ 的速度維持等速行駛 $${t} s$，請問它移動了多少距離？`,
+                options: opts,
+                answer: opts.indexOf(ans),
+                explanation: [
+                    `公式：$位移 = 速度 \\times 時間$`,
+                    `計算：$${v} \\times ${t} = ${d}$`,
+                    `
+
+[Image of velocity time graph]
+`
+                ],
+                subject: "physics", tags: tags
+            };
         };
+        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
     }
-    // 4. 原子結構
-    const parts = [{q:"帶正電",a:"質子"},{q:"不帶電",a:"中子"},{q:"帶負電",a:"電子"},{q:"決定原子序",a:"質子數"}];
-    for(let i=0; i<10; i++){
-        const p = parts[i%4];
-        window.__CHEMISTRY_REPO__[`chem_3_${i}`] = {
-            func: () => {
-                const o = U.shuffle(["質子","中子","電子","夸克"]);
-                return { question: `【原子】原子中${p.q}的粒子是？`, options: o, answer: o.indexOf(p.a), explanation: [`原子核含質子中子`], subject: "chemistry", tags:["chemistry","國八"] };
-            }, tags:["chemistry","國八"], subject:"chemistry"
+
+    // =================================================================
+    // 工廠 B: 牛頓第二定律 (F = ma) - 自動生成 15 題
+    // =================================================================
+    for(let i=0; i<15; i++) {
+        const m = Utils.rnd(2, 20);  // 質量 kg
+        const a = Utils.rnd(2, 10);  // 加速度 m/s^2
+        const f = m * a;             // 力 N
+        const id = `phy_force_${i}`;
+        const tags = ["physics", "物理", "力學", "國九"];
+
+        const func = () => {
+            const wr = [f+5, m+a, f*10].map(x => `${x} N`);
+            const ans = `${f} N`;
+            const opts = Utils.shuffle([ans, ...wr]);
+            return {
+                question: `【力學】質量 $${m} kg$ 的物體，受力後產生 $${a} m/s^2$ 的加速度，求該物體所受合力？`,
+                options: opts,
+                answer: opts.indexOf(ans),
+                explanation: [
+                    `牛頓第二定律：$F = ma$`,
+                    `計算：$${m} \\times ${a} = ${f} N$`,
+                    `
+
+[Image of newton second law diagram]
+`
+                ],
+                subject: "physics", tags: tags
+            };
         };
+        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
     }
-    // 5. 有機化學
-    const orgs = [{n:"甲烷",f:"CH4"},{n:"乙醇",f:"C2H5OH"},{n:"乙酸",f:"CH3COOH"},{n:"葡萄糖",f:"C6H12O6"}];
-    for(let i=0; i<10; i++){
-        const item = orgs[i%4];
-        window.__CHEMISTRY_REPO__[`chem_4_${i}`] = {
-            func: () => {
-                const o = U.shuffle(orgs.map(x=>x.f));
-                return { question: `【有機】${item.n}的化學式為？`, options: o, answer: o.indexOf(item.f), explanation: [`記憶題`], subject: "chemistry", tags:["chemistry","國八"] };
-            }, tags:["chemistry","國八"], subject:"chemistry"
+
+    // =================================================================
+    // 工廠 C: 電學 (V = IR) - 自動生成 10 題
+    // =================================================================
+    for(let i=0; i<10; i++) {
+        const I = Utils.rnd(1, 10);
+        const R = Utils.rnd(10, 100);
+        const V = I * R;
+        const id = `phy_elec_${i}`;
+        const tags = ["physics", "物理", "電學", "國九"];
+
+        const func = () => {
+            const wr = [V+10, R+I, V*2].map(x => `${x} V`);
+            const ans = `${V} V`;
+            const opts = Utils.shuffle([ans, ...wr]);
+            return {
+                question: `【電學】一電路中，通過電阻的電流為 $${I} A$，電阻值為 $${R} \\Omega$，求電壓降？`,
+                options: opts,
+                answer: opts.indexOf(ans),
+                explanation: [
+                    `歐姆定律：$V = I \\times R$`,
+                    `計算：$${I} \\times ${R} = ${V} V$`,
+                    ``
+                ],
+                subject: "physics", tags: tags
+            };
         };
+        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
     }
+
+    // =================================================================
+    // 工廠 D: 概念題 (波動、能量、熱學) - 10 題
+    // =================================================================
+    const concepts = [
+        {q:"聲音在下列何種介質中傳播最快？", a:"鋼鐵 (固體)", o:["水 (液體)","空氣 (氣體)","真空"], t:"波動"},
+        {q:"下列何者不是熱的傳播方式？", a:"折射", o:["傳導","對流","輻射"], t:"熱學"},
+        {q:"動能的大小與下列何者成正比？", a:"速度的平方", o:["高度","時間","重力加速度"], t:"能量"},
+        {q:"凸透鏡成像中，物體在兩倍焦距外，會產生？", a:"縮小倒立實像", o:["放大倒立實像","放大正立虛像","相等倒立實像"], t:"光學"},
+        {q:"摩擦力做功通常會轉換為何種能量形式？", a:"熱能", o:["位能","動能","化學能"], t:"能量"}
+    ];
+
+    concepts.forEach((item, idx) => {
+        const id = `phy_con_${idx}`;
+        const tags = ["physics", "物理", item.t, "國八"];
+        const func = () => {
+            const opts = Utils.shuffle([item.a, ...item.o]);
+            return {
+                question: `【${item.t}】${item.q}`,
+                options: opts,
+                answer: opts.indexOf(item.a),
+                explanation: [`正確答案：${item.a}`, ``],
+                subject: "physics", tags: tags
+            };
+        };
+        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
+    });
+
 })(window);
