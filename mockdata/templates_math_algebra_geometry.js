@@ -2,51 +2,57 @@
     'use strict';
 
     if (!window.__MATH_REPO__) window.__MATH_REPO__ = {};
-    console.log("🚀 [Math Core] 數學題庫 (算式優化版) 啟動...");
+    console.log("🚀 [Math Core] 數學題庫 (純文字自然版) 啟動...");
 
     const Utils = {
         rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
-        pick: (arr) => arr[Math.floor(Math.random() * arr.length)],
+        
         genOptions: (ans) => {
             let opts = new Set([ans]);
             while(opts.size < 4) {
                 let offset = Utils.rnd(1, 10);
-                opts.add(Math.random() > 0.5 ? ans + offset : ans - offset);
+                let val = Math.random() > 0.5 ? ans + offset : ans - offset;
+                opts.add(val);
             }
             return Array.from(opts).sort(() => Math.random() - 0.5);
         },
-        // ★ 新增：人類算式美化器 (把 + -5 變成 - 5)
-        formatOp: (val) => val < 0 ? `- ${Math.abs(val)}` : `+ ${val}`
+
+        // 人類算式翻譯機：把負數變成 "- 10"，正數變成 "+ 10"
+        formatOp: (val) => {
+            if (val < 0) return `- ${Math.abs(val)}`; 
+            return `+ ${val}`;
+        }
     };
 
     const generators = [
+        // 1. 整數四則運算
         {
             id: "math_int_ops",
             tags: ["math", "數學", "國七", "整數", "四則運算"],
             generate: () => {
-                // 產生更自然的算式
-                const a = Utils.rnd(-15, 15);
-                const b = Utils.rnd(-15, 15);
+                const a = Utils.rnd(-9, 9);
+                const b = Utils.rnd(2, 9);
                 const c = Utils.rnd(-10, 10);
-                
-                // 邏輯：計算 a * b + c (先乘除後加減)
-                // 優化顯示：如果 b 或 c 是負數，用括號或直接變號
                 const ans = a * b + c;
-                
-                // 顯示邏輯：比如 -5 * 3 - 2
-                // b < 0 時加括號，c 直接用 formatOp 處理
-                const bStr = b < 0 ? `(${b})` : `${b}`; 
-                const cStr = Utils.formatOp(c);
+
+                // 翻譯成人類語法 (例如 "- 5")
+                const cStr = Utils.formatOp(c); 
 
                 return {
-                    question: `計算： $$ ${a} \\times ${bStr} ${cStr} = ? $$`,
+                    // ★ 修改：拿掉 $$，換成一般符號
+                    question: `【整數】計算 ${a} × ${b} ${cStr} = ?`,
                     options: Utils.genOptions(ans),
                     correctValue: ans,
                     concept: "整數四則運算",
-                    explanation: [`先乘除，後加減。`, `$$ ${a} \\times ${bStr} = ${a*b} $$`, `$$ ${a*b} ${cStr} = ${ans} $$`]
+                    explanation: [
+                        `先乘除，後加減。`,
+                        `步驟一：${a} × ${b} = ${a*b}`,
+                        `步驟二：${a*b} ${cStr} = ${ans}`
+                    ]
                 };
             }
         },
+        // 2. 一元一次方程式
         {
             id: "math_linear_eq",
             tags: ["math", "數學", "國七", "一元一次方程式"],
@@ -54,37 +60,50 @@
                 const x = Utils.rnd(2, 9);
                 const a = Utils.rnd(2, 5);
                 const b = Utils.rnd(-10, 10);
-                const result = a * x + b;
+                const c = a * x + b;
                 
                 const bStr = Utils.formatOp(b);
 
                 return {
-                    question: `解方程式： $$ ${a}x ${bStr} = ${result} $$`,
+                    // ★ 修改：拿掉 $$，直接顯示文字
+                    question: `【代數】解方程式： ${a}x ${bStr} = ${c} ，求 x = ?`,
                     options: Utils.genOptions(x),
                     correctValue: x,
                     concept: "移項法則",
-                    explanation: [`先處理加減，再處理乘除。`, `$$ ${a}x = ${result} - (${b}) $$`, `$$ x = ${x} $$`]
+                    explanation: [
+                        `方程式：${a}x ${bStr} = ${c}`,
+                        `移項：${a}x = ${c} - (${b})`,
+                        `計算：${a}x = ${c - b}`,
+                        `答案：x = ${x}`
+                    ]
                 };
             }
         },
+        // 3. 比例式
         {
             id: "math_ratio",
             tags: ["math", "數學", "國七", "比與比例式"],
             generate: () => {
-                const x = Utils.rnd(2, 10);
                 const m = Utils.rnd(2, 5);
-                // 題目形如： 3 : 5 = 6 : x
                 const a = Utils.rnd(2, 9);
                 const b = Utils.rnd(3, 11);
-                const c = a * m;
+                
+                const term1 = a;
+                const term2 = b;
+                const term3 = a * m;
                 const ans = b * m;
 
                 return {
-                    question: `若 $$ ${a} : ${b} = ${c} : x $$，則 $$ x = ? $$`,
+                    // ★ 修改：拿掉 $$，冒號直接用鍵盤打的 :
+                    question: `【比例】若 ${term1} : ${term2} = ${term3} : x ，求 x 之值？`,
                     options: Utils.genOptions(ans),
                     correctValue: ans,
                     concept: "內項乘積=外項乘積",
-                    explanation: [`比例式性質：內項相乘等於外項相乘。`, `$$ ${a} \\cdot x = ${b} \\cdot ${c} $$`, `$$ x = ${ans} $$`]
+                    explanation: [
+                        `口訣：內項相乘 = 外項相乘`,
+                        `計算：${term2} × ${term3} = ${term1} × x`,
+                        `答案：x = ${ans}`
+                    ]
                 };
             }
         }
@@ -96,7 +115,12 @@
             window.__MATH_REPO__[uId] = {
                 func: () => {
                     const d = gen.generate();
-                    return { ...d, answer: d.options.indexOf(d.correctValue), subject: "math", tags: gen.tags };
+                    return { 
+                        ...d, 
+                        answer: d.options.indexOf(d.correctValue), 
+                        subject: "math", 
+                        tags: gen.tags 
+                    };
                 },
                 tags: gen.tags,
                 subject: "math"
