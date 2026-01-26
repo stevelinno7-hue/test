@@ -1,98 +1,107 @@
 (function(global){
     'use strict';
-    console.log("📐 [Math V9.0] 數學工廠：正在生產 50 道動態試題...");
-    window.__MATH_REPO__ = window.__MATH_REPO__ || {};
 
-    const U = {
+    if (!window.__MATH_REPO__) window.__MATH_REPO__ = {};
+    console.log("🚀 [Math Core] 數學題庫 (算式優化版) 啟動...");
+
+    const Utils = {
         rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
-        shuffle: (arr) => arr.sort(() => Math.random() - 0.5)
+        pick: (arr) => arr[Math.floor(Math.random() * arr.length)],
+        genOptions: (ans) => {
+            let opts = new Set([ans]);
+            while(opts.size < 4) {
+                let offset = Utils.rnd(1, 10);
+                opts.add(Math.random() > 0.5 ? ans + offset : ans - offset);
+            }
+            return Array.from(opts).sort(() => Math.random() - 0.5);
+        },
+        // ★ 新增：人類算式美化器 (把 + -5 變成 - 5)
+        formatOp: (val) => val < 0 ? `- ${Math.abs(val)}` : `+ ${val}`
     };
 
-    // 工廠 1: 整數四則運算 (10題)
-    for(let i=0; i<10; i++) {
-        const a = U.rnd(-20, 20), b = U.rnd(2, 10), c = U.rnd(-10, 10);
-        const ans = a * b + c;
-        const id = `math_0_${i}`;
-        const func = () => {
-            const opts = U.shuffle([ans, ans+b, ans-c, -ans]);
-            return {
-                question: `【整數】計算 $${a} \\times ${b} + (${c}) = ?$`,
-                options: opts, answer: opts.indexOf(ans),
-                explanation: ["先乘除後加減", `計算過程：$${a*b} + (${c}) = ${ans}$`],
-                subject: "math", tags: ["math", "數學", "整數", "國七"]
-            };
-        };
-        window.__MATH_REPO__[id] = { func, tags: ["math", "國七"], subject: "math" };
-    }
+    const generators = [
+        {
+            id: "math_int_ops",
+            tags: ["math", "數學", "國七", "整數", "四則運算"],
+            generate: () => {
+                // 產生更自然的算式
+                const a = Utils.rnd(-15, 15);
+                const b = Utils.rnd(-15, 15);
+                const c = Utils.rnd(-10, 10);
+                
+                // 邏輯：計算 a * b + c (先乘除後加減)
+                // 優化顯示：如果 b 或 c 是負數，用括號或直接變號
+                const ans = a * b + c;
+                
+                // 顯示邏輯：比如 -5 * 3 - 2
+                // b < 0 時加括號，c 直接用 formatOp 處理
+                const bStr = b < 0 ? `(${b})` : `${b}`; 
+                const cStr = Utils.formatOp(c);
 
-    // 工廠 2: 一元一次方程式 (10題)
-    for(let i=0; i<10; i++) {
-        const x = U.rnd(2, 12), a = U.rnd(2, 9), b = U.rnd(1, 20);
-        const res = a * x + b;
-        const id = `math_1_${i}`;
-        const func = () => {
-            const opts = U.shuffle([x, x+1, x-1, x*2]);
-            return {
-                question: `【方程式】解方程式 $${a}x + ${b} = ${res}$，則 $x=?$`,
-                options: opts, answer: opts.indexOf(x),
-                explanation: [`移項：$${a}x = ${res} - ${b}$`, `$${a}x = ${res-b}$`, `故 $x=${x}$`],
-                subject: "math", tags: ["math", "數學", "方程式", "國七"]
-            };
-        };
-        window.__MATH_REPO__[id] = { func, tags: ["math", "國七"], subject: "math" };
-    }
+                return {
+                    question: `計算： $$ ${a} \\times ${bStr} ${cStr} = ? $$`,
+                    options: Utils.genOptions(ans),
+                    correctValue: ans,
+                    concept: "整數四則運算",
+                    explanation: [`先乘除，後加減。`, `$$ ${a} \\times ${bStr} = ${a*b} $$`, `$$ ${a*b} ${cStr} = ${ans} $$`]
+                };
+            }
+        },
+        {
+            id: "math_linear_eq",
+            tags: ["math", "數學", "國七", "一元一次方程式"],
+            generate: () => {
+                const x = Utils.rnd(2, 9);
+                const a = Utils.rnd(2, 5);
+                const b = Utils.rnd(-10, 10);
+                const result = a * x + b;
+                
+                const bStr = Utils.formatOp(b);
 
-    // 工廠 3: 畢氏定理 (10題)
-    const pythagoreanTriples = [[3,4,5], [5,12,13], [6,8,10], [8,15,17], [9,12,15]];
-    for(let i=0; i<10; i++) {
-        const triple = pythagoreanTriples[i % pythagoreanTriples.length];
-        const [a, b, c] = triple;
-        const id = `math_2_${i}`;
-        const func = () => {
-            const opts = U.shuffle([c, c+1, c+2, a+b]);
-            return {
-                question: `【幾何】直角三角形兩股長為 ${a}, ${b}，求斜邊長？`,
-                options: opts, answer: opts.indexOf(c),
-                explanation: [`公式：$a^2 + b^2 = c^2$`, ``],
-                subject: "math", tags: ["math", "數學", "畢氏定理", "國八"]
-            };
-        };
-        window.__MATH_REPO__[id] = { func, tags: ["math", "國八"], subject: "math" };
-    }
+                return {
+                    question: `解方程式： $$ ${a}x ${bStr} = ${result} $$`,
+                    options: Utils.genOptions(x),
+                    correctValue: x,
+                    concept: "移項法則",
+                    explanation: [`先處理加減，再處理乘除。`, `$$ ${a}x = ${result} - (${b}) $$`, `$$ x = ${x} $$`]
+                };
+            }
+        },
+        {
+            id: "math_ratio",
+            tags: ["math", "數學", "國七", "比與比例式"],
+            generate: () => {
+                const x = Utils.rnd(2, 10);
+                const m = Utils.rnd(2, 5);
+                // 題目形如： 3 : 5 = 6 : x
+                const a = Utils.rnd(2, 9);
+                const b = Utils.rnd(3, 11);
+                const c = a * m;
+                const ans = b * m;
 
-    // 工廠 4: 等差數列 (10題)
-    for(let i=0; i<10; i++) {
-        const a1 = U.rnd(1, 10), d = U.rnd(2, 5), n = 10;
-        const an = a1 + (n-1)*d;
-        const id = `math_3_${i}`;
-        const func = () => {
-            const opts = U.shuffle([an, an+d, an-d, an*2]);
-            return {
-                question: `【數列】等差數列首項 ${a1}，公差 ${d}，求第 ${n} 項？`,
-                options: opts, answer: opts.indexOf(an),
-                explanation: [`公式：$a_n = a_1 + (n-1)d$`, `$${a1} + 9 \\times ${d} = ${an}$`],
-                subject: "math", tags: ["math", "數學", "數列", "國八"]
-            };
-        };
-        window.__MATH_REPO__[id] = { func, tags: ["math", "國八"], subject: "math" };
-    }
+                return {
+                    question: `若 $$ ${a} : ${b} = ${c} : x $$，則 $$ x = ? $$`,
+                    options: Utils.genOptions(ans),
+                    correctValue: ans,
+                    concept: "內項乘積=外項乘積",
+                    explanation: [`比例式性質：內項相乘等於外項相乘。`, `$$ ${a} \\cdot x = ${b} \\cdot ${c} $$`, `$$ x = ${ans} $$`]
+                };
+            }
+        }
+    ];
 
-    // 工廠 5: 統計機率 (10題)
-    for(let i=0; i<10; i++) {
-        const total = U.rnd(10, 50);
-        const target = U.rnd(1, total);
-        const prob = Math.round((target/total)*100)/100;
-        const id = `math_4_${i}`;
-        const func = () => {
-            const opts = U.shuffle([prob, prob+0.1, 1-prob, 0.5]);
-            return {
-                question: `【機率】箱中有 ${total} 顆球，其中紅球 ${target} 顆，抽中紅球機率為何？(取小數點後兩位)`,
-                options: opts, answer: opts.indexOf(prob),
-                explanation: [`機率 = 目標數 / 總數`, `$${target} / ${total} \\approx ${prob}$`],
-                subject: "math", tags: ["math", "數學", "機率", "國九"]
+    generators.forEach(gen => {
+        for(let i=0; i<5; i++) {
+            const uId = `${gen.id}_${i}`;
+            window.__MATH_REPO__[uId] = {
+                func: () => {
+                    const d = gen.generate();
+                    return { ...d, answer: d.options.indexOf(d.correctValue), subject: "math", tags: gen.tags };
+                },
+                tags: gen.tags,
+                subject: "math"
             };
-        };
-        window.__MATH_REPO__[id] = { func, tags: ["math", "國九"], subject: "math" };
-    }
+        }
+    });
 
 })(window);
