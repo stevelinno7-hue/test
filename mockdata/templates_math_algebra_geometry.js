@@ -25,7 +25,7 @@
     };
 
     const generators = [
-      const generators = [
+
     // 單元 1：整數的運算
     {
         id: "math_abs",
@@ -1800,7 +1800,7 @@
 
 ];
 
-    ];
+    
 
     generators.forEach(gen => {
         for(let i=0; i<5; i++) {
