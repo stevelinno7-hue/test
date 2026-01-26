@@ -1,162 +1,182 @@
 (function(global){
     'use strict';
 
-    console.log("🚀 [English V9.0] 英文核心題庫 (含完整文法 Mega DB) 啟動...");
+    // 1. 初始化英文避難所
+    if (!window.__ENGLISH_REPO__) window.__ENGLISH_REPO__ = {};
+    console.log("🚀 [English V9.5] 英文題庫 (課綱標籤精準對齊版) 啟動...");
 
-    // 1. 初始化避難所
-    window.__ENGLISH_REPO__ = window.__ENGLISH_REPO__ || {};
-
-    // 2. 工具函數
     const Utils = {
         shuffle: (arr) => arr.sort(() => Math.random() - 0.5)
     };
 
     // ==========================================
-    // 📚 文法全方位資料庫 (Grammar Mega DB)
+    // 📚 英文文法資料庫 (完全對應 curriculum_integrated.js)
     // ==========================================
     const grammarDB = [
         // ----------------------------------------------------
-        // [Topic 1] 基本時態 (Tenses) - 國七/國八
+        // [國七上] Unit 1: Be Verbs (be動詞)
         // ----------------------------------------------------
-        { q: "Listen! The baby _____ in the bedroom.", a: "is crying", o: ["cries","cried","cry"], tag: ["國七","時態"] },
-        { q: "My father _____ newspapers every morning.", a: "reads", o: ["read","reading","is reading"], tag: ["國七","時態"] },
-        { q: "We _____ a movie last night.", a: "watched", o: ["watch","watching","have watched"], tag: ["國七","時態"] },
-        { q: "_____ you going to the party tomorrow?", a: "Are", o: ["Do","Will","Have"], tag: ["國七","時態"] },
-        { q: "They _____ to Japan three times.", a: "have been", o: ["have gone","went","go"], tag: ["國八","時態"] },
-        { q: "I _____ my homework yet.", a: "haven't finished", o: ["didn't finish","don't finish","won't finish"], tag: ["國八","時態"] },
-        { q: "When I arrived, he _____ dinner.", a: "was having", o: ["has","is having","had"], tag: ["國八","時態"] },
-        { q: "She _____ in Taipei since 2010.", a: "has lived", o: ["lives","lived","is living"], tag: ["國八","時態"] },
-        { q: "By the time you come back, I _____ the work.", a: "will have finished", o: ["finish","finished","have finished"], tag: ["高一","時態"] },
-        { q: "The train _____ before we reached the station.", a: "had left", o: ["left","has left","leaves"], tag: ["高一","時態"] },
+        { q: "I _____ a student.", a: "am", o: ["is", "are", "be"], tag: ["國七", "be動詞"] },
+        { q: "They _____ my friends.", a: "are", o: ["is", "am", "be"], tag: ["國七", "be動詞"] },
+        { q: "She _____ happy today.", a: "is", o: ["are", "am", "be"], tag: ["國七", "be動詞"] },
         
         // ----------------------------------------------------
-        // [Topic 2] 被動語態 (Passive Voice) - 國八/國九
+        // [國七上] Unit 2: Nouns (名詞/單複數)
         // ----------------------------------------------------
-        { q: "The window _____ by the boy yesterday.", a: "was broken", o: ["broke","broken","is broken"], tag: ["國八","被動"] },
-        { q: "English _____ in many countries.", a: "is spoken", o: ["speaks","spoke","is speaking"], tag: ["國八","被動"] },
-        { q: "The work must _____ by Friday.", a: "be done", o: ["do","done","doing"], tag: ["國九","被動"] },
-        { q: "The cake _____ right now.", a: "is being made", o: ["is making","makes","made"], tag: ["國九","被動"] },
-        { q: "Has the car _____ yet?", a: "been washed", o: ["washed","washing","wash"], tag: ["國九","被動"] },
-        { q: "We were made _____ the room.", a: "to clean", o: ["clean","cleaning","cleaned"], tag: ["國九","被動"] },
-        { q: "It is _____ that he is a genius.", a: "said", o: ["saying","say","says"], tag: ["高一","被動"] },
+        { q: "I have two _____.", a: "watches", o: ["watch", "watchs", "watching"], tag: ["國七", "名詞", "單複數"] },
+        { q: "These are my _____.", a: "books", o: ["book", "book's", "a book"], tag: ["國七", "名詞", "單複數"] },
+        { q: "That _____ a cat.", a: "is", o: ["are", "am", "be"], tag: ["國七", "名詞"] }, // This/That 搭配 be動詞
 
         // ----------------------------------------------------
-        // [Topic 3] 特殊動詞 (授與/感官/使役) - 國八
+        // [國七上] Unit 3: Imperatives (祈使句)
         // ----------------------------------------------------
-        { q: "My mom made me _____ the floor.", a: "mop", o: ["to mop","mopping","mopped"], tag: ["國八","使役"] },
-        { q: "I saw him _____ the street just now.", a: "cross", o: ["to cross","crossed","to crossing"], tag: ["國八","感官"] },
-        { q: "Please let him _____ in.", a: "come", o: ["to come","coming","came"], tag: ["國八","使役"] },
-        { q: "He gave me _____.", a: "a book", o: ["to a book","for a book","at a book"], tag: ["國八","授與"] },
-        { q: "She bought a bike _____ her son.", a: "for", o: ["to","of","with"], tag: ["國八","授與"] },
-        { q: "I felt the house _____.", a: "shaking", o: ["to shake","shaken","shook"], tag: ["國八","感官"] },
-        { q: "Can you help me _____ the box?", a: "move", o: ["moving","moved","movement"], tag: ["國八","使役"] },
+        { q: "_____ quiet, please.", a: "Be", o: ["Don't", "Do", "Are"], tag: ["國七", "祈使句"] },
+        { q: "_____ run in the classroom.", a: "Don't", o: ["Not", "No", "Be"], tag: ["國七", "祈使句"] },
+        { q: "Let's _____ to the park.", a: "go", o: ["going", "to go", "goes"], tag: ["國七", "祈使句"] },
 
         // ----------------------------------------------------
-        // [Topic 4] 不定詞與動名詞 (Infinitives & Gerunds) - 國九/高一
+        // [國七下] Unit 1: Present Progressive (現在進行式)
         // ----------------------------------------------------
-        { q: "I enjoy _____ music.", a: "listening to", o: ["to listen to","listen to","listened to"], tag: ["國九","動名詞"] },
-        { q: "She wants _____ a doctor.", a: "to be", o: ["being","be","is"], tag: ["國九","不定詞"] },
-        { q: "He quit _____ last year.", a: "smoking", o: ["to smoke","smoke","smoked"], tag: ["國九","動名詞"] },
-        { q: "Remember _____ the door when you leave.", a: "to lock", o: ["locking","lock","locked"], tag: ["國九","不定詞"] },
-        { q: "I remember _____ him somewhere before.", a: "seeing", o: ["to see","see","saw"], tag: ["國九","動名詞"] },
-        { q: "It is excited _____ the game.", a: "to watch", o: ["watching","watch","watched"], tag: ["國九","不定詞"] },
-        { q: "I look forward to _____ you.", a: "seeing", o: ["see","saw","to see"], tag: ["高一","片語"] },
-        { q: "He is used to _____ up early.", a: "getting", o: ["get","got","getting"], tag: ["高一","片語"] },
-        { q: "The boy had difficulty _____ the question.", a: "answering", o: ["to answer","answer","answered"], tag: ["高一","動名詞"] },
+        { q: "Look! He _____ basketball.", a: "is playing", o: ["plays", "play", "played"], tag: ["國七", "現在進行式"] },
+        { q: "What _____ you doing?", a: "are", o: ["do", "can", "will"], tag: ["國七", "現在進行式"] },
+        { q: "The birds _____ singing.", a: "are", o: ["is", "do", "can"], tag: ["國七", "現在進行式"] },
 
         // ----------------------------------------------------
-        // [Topic 5] 關係子句 (Relative Clauses) - 國九/高一
+        // [國七下] Unit 2: Quantifiers (數量詞)
         // ----------------------------------------------------
-        { q: "The girl _____ is crying is my sister.", a: "who", o: ["which","whose","whom"], tag: ["國九","關代"] },
-        { q: "This is the book _____ I bought yesterday.", a: "which", o: ["who","whose","where"], tag: ["國九","關代"] },
-        { q: "The man _____ car was stolen called the police.", a: "whose", o: ["who","which","that"], tag: ["國九","關代"] },
-        { q: "I like the house _____ creates a warm feeling.", a: "that", o: ["who","where","whose"], tag: ["國九","關代"] },
-        { q: "This is the place _____ we first met.", a: "where", o: ["which","that","what"], tag: ["高一","關代"] },
-        { q: "The reason _____ he was late is unknown.", a: "why", o: ["which","where","what"], tag: ["高一","關代"] },
-        { q: "He is the only person _____ knows the secret.", a: "that", o: ["who","which","whose"], tag: ["高一","關代"] },
-        { q: "Those _____ work hard will succeed.", a: "who", o: ["which","whose","whom"], tag: ["高一","關代"] },
+        { q: "How _____ water do you need?", a: "much", o: ["many", "long", "often"], tag: ["國七", "數量詞"] },
+        { q: "There are _____ students in the classroom.", a: "many", o: ["much", "little", "any"], tag: ["國七", "數量詞"] },
+        { q: "Do you have _____ money?", a: "any", o: ["many", "few", "a few"], tag: ["國七", "數量詞"] },
 
         // ----------------------------------------------------
-        // [Topic 6] 連接詞與副詞子句 (Conjunctions) - 國八/九
+        // [國七下] Unit 3: Past Tense (過去式)
         // ----------------------------------------------------
-        { q: "_____ it rained, we still went hiking.", a: "Although", o: ["Because","If","But"], tag: ["國八","連接詞"] },
-        { q: "He is rich _____ unhappy.", a: "but", o: ["so","because","or"], tag: ["國八","連接詞"] },
-        { q: "I will call you _____ I arrive.", a: "as soon as", o: ["so that","although","unless"], tag: ["國九","連接詞"] },
-        { q: "Take an umbrella _____ it rains.", a: "in case", o: ["unless","although","so that"], tag: ["高一","連接詞"] },
-        { q: "He studies hard _____ he can pass the exam.", a: "so that", o: ["because","although","unless"], tag: ["高一","連接詞"] },
-        { q: "_____ you are busy, I won't disturb you.", a: "Since", o: ["Although","Unless","Whether"], tag: ["高一","連接詞"] },
+        { q: "I _____ at home yesterday.", a: "was", o: ["am", "were", "is"], tag: ["國七", "過去式"] },
+        { q: "They _____ busy last night.", a: "were", o: ["are", "was", "is"], tag: ["國七", "過去式"] },
+        { q: "Where _____ you born?", a: "were", o: ["was", "are", "did"], tag: ["國七", "過去式"] },
 
         // ----------------------------------------------------
-        // [Topic 7] 分詞構句 (Participles) - 高一/高二
+        // [國八上] Unit 1: Past Simple (過去式/動詞)
         // ----------------------------------------------------
-        { q: "The girl _____ in red is my cousin.", a: "dressed", o: ["dressing","dress","dresses"], tag: ["高一","分詞"] },
-        { q: "_____ by the dog, the boy cried.", a: "Bitten", o: ["Biting","Bit","To bite"], tag: ["高二","分詞"] },
-        { q: "_____ the door, he found no one inside.", a: "Opening", o: ["Opened","Open","To open"], tag: ["高二","分詞"] },
-        { q: "Generally _____, women live longer than men.", a: "speaking", o: ["spoken","speak","to speak"], tag: ["高二","分詞"] },
-        { q: "The game is _____.", a: "exciting", o: ["excited","excite","excites"], tag: ["國八","分詞"] },
-        { q: "I am _____ in the story.", a: "interested", o: ["interesting","interest","interests"], tag: ["國八","分詞"] },
+        { q: "He _____ to the park yesterday.", a: "went", o: ["go", "goes", "gone"], tag: ["國八", "過去式", "動詞"] },
+        { q: "_____ you watch TV last night?", a: "Did", o: ["Do", "Are", "Were"], tag: ["國八", "過去式", "動詞"] },
+        { q: "She _____ buy the bag.", a: "didn't", o: ["don't", "wasn't", "not"], tag: ["國八", "過去式", "動詞"] },
 
         // ----------------------------------------------------
-        // [Topic 8] 假設語氣 (Subjunctive Mood) - 高二/高三
+        // [國八上] Unit 2: Future Tense (未來式)
         // ----------------------------------------------------
-        { q: "If I _____ you, I would accept the offer.", a: "were", o: ["am","was","be"], tag: ["高二","假設"] },
-        { q: "If it _____ tomorrow, we will cancel the picnic.", a: "rains", o: ["rained","will rain","rain"], tag: ["高一","假設"] },
-        { q: "If I _____ known the truth, I would have told you.", a: "had", o: ["have","has","having"], tag: ["高三","假設"] },
-        { q: "I wish I _____ a bird.", a: "were", o: ["am","was","will be"], tag: ["高二","假設"] },
-        { q: "It is high time that we _____ to bed.", a: "went", o: ["go","have gone","will go"], tag: ["高三","假設"] },
-        { q: "Without water, we _____ survive.", a: "could not", o: ["cannot","will not","are not"], tag: ["高二","假設"] },
+        { q: "I _____ visit my grandma tomorrow.", a: "will", o: ["am", "did", "do"], tag: ["國八", "未來式"] },
+        { q: "She is _____ to study hard.", a: "going", o: ["go", "goes", "will"], tag: ["國八", "未來式"] },
+        { q: "We _____ be late.", a: "won't", o: ["don't", "aren't", "didn't"], tag: ["國八", "未來式"] },
+
+        // ----------------------------------------------------
+        // [國八上] Unit 3: Patterns (句型/授與動詞)
+        // ----------------------------------------------------
+        { q: "My dad bought a bike _____ me.", a: "for", o: ["to", "of", "with"], tag: ["國八", "句型", "授與動詞"] },
+        { q: "He gave the book _____ Mary.", a: "to", o: ["for", "of", "with"], tag: ["國八", "句型", "授與動詞"] },
+        { q: "She sent me _____.", a: "a letter", o: ["to a letter", "for a letter", "at a letter"], tag: ["國八", "句型", "授與動詞"] },
+
+        // ----------------------------------------------------
+        // [國八下] Unit 1: Comparison (比較級)
+        // ----------------------------------------------------
+        { q: "He is _____ than me.", a: "taller", o: ["tall", "tallest", "more tall"], tag: ["國八", "比較級"] },
+        { q: "This flower is _____ beautiful than that one.", a: "more", o: ["much", "very", "most"], tag: ["國八", "比較級"] },
+        { q: "Who is the _____ student in class?", a: "smartest", o: ["smarter", "smart", "most smart"], tag: ["國八", "比較級"] }, // 最高級通常在比較級單元教
+
+        // ----------------------------------------------------
+        // [國八下] Unit 2: Verbs Pattern (動詞句型/不定詞)
+        // ----------------------------------------------------
+        { q: "It took me two hours _____ the work.", a: "to finish", o: ["finishing", "finish", "finished"], tag: ["國八", "動詞句型"] },
+        { q: "I spent 100 dollars _____ the book.", a: "buying", o: ["to buy", "buy", "bought"], tag: ["國八", "動詞句型"] },
+        { q: "He enjoys _____ music.", a: "listening to", o: ["to listen to", "listen to", "listened to"], tag: ["國八", "動詞句型"] },
+
+        // ----------------------------------------------------
+        // [國八下] Unit 3: Conjunctions (連接詞)
+        // ----------------------------------------------------
+        { q: "_____ he was sick, he went to school.", a: "Although", o: ["Because", "So", "If"], tag: ["國八", "連接詞"] },
+        { q: "Wash your hands _____ you eat.", a: "before", o: ["so", "because", "but"], tag: ["國八", "連接詞"] },
+        { q: "I was sleeping _____ the phone rang.", a: "when", o: ["because", "if", "so"], tag: ["國八", "連接詞"] },
+
+        // ----------------------------------------------------
+        // [國九上] Unit 1: Present Perfect (現在完成式)
+        // ----------------------------------------------------
+        { q: "I _____ been to Japan twice.", a: "have", o: ["has", "am", "did"], tag: ["國九", "現在完成式"] },
+        { q: "She _____ lived here since 2010.", a: "has", o: ["have", "is", "was"], tag: ["國九", "現在完成式"] },
+        { q: "Have you _____ finished your homework?", a: "already", o: ["yet", "ever", "never"], tag: ["國九", "現在完成式"] },
+
+        // ----------------------------------------------------
+        // [國九上] Unit 2: Passive Voice (被動語態)
+        // ----------------------------------------------------
+        { q: "The apple _____ by him.", a: "was eaten", o: ["ate", "eaten", "was eating"], tag: ["國九", "被動語態"] },
+        { q: "English _____ in the USA.", a: "is spoken", o: ["speaks", "spoke", "speaking"], tag: ["國九", "被動語態"] },
+        { q: "The work must _____ be done.", a: "be", o: ["is", "was", "been"], tag: ["國九", "被動語態"] },
+
+        // ----------------------------------------------------
+        // [國九上/下] Unit 3/1: Relative Clause (關係子句)
+        // ----------------------------------------------------
+        { q: "The boy _____ is running is Tom.", a: "who", o: ["which", "whose", "whom"], tag: ["國九", "關係子句"] },
+        { q: "This is the car _____ I bought.", a: "which", o: ["who", "whose", "where"], tag: ["國九", "關係子句"] },
+        { q: "The man _____ hair is red is my teacher.", a: "whose", o: ["who", "which", "that"], tag: ["國九", "關係子句"] },
+
+        // ----------------------------------------------------
+        // [國九下] Unit 2: Noun Clauses (名詞子句)
+        // ----------------------------------------------------
+        { q: "I don't know _____ he is.", a: "who", o: ["that", "which", "weather"], tag: ["國九", "名詞子句"] },
+        { q: "Tell me _____ you live.", a: "where", o: ["what", "which", "that"], tag: ["國九", "名詞子句"] },
+        { q: "He said _____ he was hungry.", a: "that", o: ["what", "which", "where"], tag: ["國九", "名詞子句"] },
+
+        // ----------------------------------------------------
+        // [高一上] Unit 1: Sentence Structure (句型)
+        // ----------------------------------------------------
+        { q: "The news made him _____.", a: "happy", o: ["happily", "happiness", "to happy"], tag: ["高一", "句型"] }, // S+V+O+OC
+        { q: "I found the book _____.", a: "interesting", o: ["interest", "interested", "interestingly"], tag: ["高一", "句型"] },
         
         // ----------------------------------------------------
-        // [Topic 9] 倒裝句 (Inversion) - 高三
+        // [高一上] Unit 2: Perfect Tenses (完成式 - 進階)
         // ----------------------------------------------------
-        { q: "Never _____ such a beautiful sight.", a: "have I seen", o: ["I have seen","I saw","did I saw"], tag: ["高三","倒裝"] },
-        { q: "Only by working hard _____ succeed.", a: "can you", o: ["you can","you could","can't you"], tag: ["高三","倒裝"] },
-        { q: "Rarely _____ out at night.", a: "does he go", o: ["he goes","he went","goes he"], tag: ["高三","倒裝"] },
-        { q: "Not only _____ beautiful but she is also smart.", a: "is she", o: ["she is","was she","she was"], tag: ["高三","倒裝"] },
-        { q: "Here _____ the bus!", a: "comes", o: ["is coming","come","coming"], tag: ["高二","倒裝"] },
+        { q: "By next year, I _____ here for ten years.", a: "will have lived", o: ["live", "lived", "have lived"], tag: ["高一", "完成式"] },
+        { q: "The movie _____ when we arrived.", a: "had started", o: ["starts", "started", "has started"], tag: ["高一", "完成式"] },
 
         // ----------------------------------------------------
-        // [Topic 10] 比較級與最高級 (Comparison) - 國八
+        // [高一下] Unit 1: Participles (分詞)
         // ----------------------------------------------------
-        { q: "He is _____ than his brother.", a: "taller", o: ["tall","tallest","the tallest"], tag: ["國八","比較"] },
-        { q: "This is the _____ movie I have ever seen.", a: "best", o: ["good","better","well"], tag: ["國八","比較"] },
-        { q: "She is as _____ as a rose.", a: "beautiful", o: ["more beautiful","most beautiful","beautifuler"], tag: ["國八","比較"] },
-        { q: "The more you learn, the _____ you become.", a: "wiser", o: ["wise","wisest","more wise"], tag: ["高一","比較"] },
-        { q: "Of the two boys, Tom is the _____.", a: "taller", o: ["tallest","tall","talls"], tag: ["高一","比較"] },
+        { q: "The girl _____ in the corner is shy.", a: "standing", o: ["stood", "stands", "stand"], tag: ["高一", "分詞"] },
+        { q: "_____ by the dog, he went to the hospital.", a: "Bitten", o: ["Biting", "Bit", "To bite"], tag: ["高一", "分詞"] },
 
         // ----------------------------------------------------
-        // [Topic 11] 附加問句 (Tag Questions) - 國八
+        // [高一下] Unit 2: Infinitives (不定詞)
         // ----------------------------------------------------
-        { q: "You are a student, _____?", a: "aren't you", o: ["are you","don't you","do you"], tag: ["國八","問句"] },
-        { q: "He didn't go to school, _____?", a: "did he", o: ["didn't he","was he","wasn't he"], tag: ["國八","問句"] },
-        { q: "Let's go for a walk, _____?", a: "shall we", o: ["will we","do we","don't we"], tag: ["國八","問句"] },
-        { q: "Open the door, _____?", a: "will you", o: ["do you","don't you","shall we"], tag: ["國八","問句"] },
-        { q: "There is a dog, _____?", a: "isn't there", o: ["is there","isn't it","is it"], tag: ["國八","問句"] },
+        { q: "It is dangerous _____ swim here.", a: "to", o: ["for", "of", "with"], tag: ["高一", "不定詞"] },
+        { q: "She is too tired _____ walk.", a: "to", o: ["for", "that", "so"], tag: ["高一", "不定詞"] },
 
         // ----------------------------------------------------
-        // [Topic 12] 介系詞與片語 (Prepositions) - 全年級
+        // [高二上] Unit 1: Subjunctive Mood (假設語氣)
         // ----------------------------------------------------
-        { q: "He is interested _____ music.", a: "in", o: ["on","at","of"], tag: ["國八","片語"] },
-        { q: "I am afraid _____ dogs.", a: "of", o: ["in","at","with"], tag: ["國八","片語"] },
-        { q: "The meeting will start _____ 9:00 AM.", a: "at", o: ["in","on","for"], tag: ["國七","介系詞"] },
-        { q: "He was born _____ 1990.", a: "in", o: ["on","at","of"], tag: ["國七","介系詞"] },
-        { q: "The book is _____ the table.", a: "on", o: ["in","at","to"], tag: ["國七","介系詞"] },
-        { q: "We insist _____ your leaving.", a: "on", o: ["in","at","of"], tag: ["高二","片語"] },
-        { q: "He is famous _____ his novels.", a: "for", o: ["as","in","to"], tag: ["國九","片語"] }
+        { q: "If I _____ a bird, I would fly to you.", a: "were", o: ["am", "was", "be"], tag: ["高二", "假設語氣"] },
+        { q: "I wish I _____ richer.", a: "were", o: ["am", "will be", "can be"], tag: ["高二", "假設語氣"] },
+
+        // ----------------------------------------------------
+        // [高二上] Unit 2: Inversion (倒裝句)
+        // ----------------------------------------------------
+        { q: "Never _____ I seen such a big apple.", a: "have", o: ["had", "did", "do"], tag: ["高二", "倒裝句"] },
+        { q: "Only then _____ I realize my mistake.", a: "did", o: ["do", "have", "had"], tag: ["高二", "倒裝句"] },
+
+        // ----------------------------------------------------
+        // [高二下] Unit 2: Compound Adj (複合形容詞)
+        // ----------------------------------------------------
+        { q: "He is a _____ boy.", a: "ten-year-old", o: ["ten-years-old", "ten years old", "ten-year old"], tag: ["高二", "複合形容詞"] },
+        { q: "This is a _____ map.", a: "hand-made", o: ["hand-make", "hand-making", "making-hand"], tag: ["高二", "複合形容詞"] }
     ];
 
-    // ==========================================
-    // 🏭 自動註冊工廠
-    // ==========================================
+    // 4. 自動註冊工廠
     grammarDB.forEach((item, idx) => {
-        // 產生獨立 ID
-        const id = `eng_gram_v9_${idx}`;
+        const id = `eng_aligned_${idx}`;
         
-        // 組合標籤：英文 + 原始標籤 (如: 國七, 時態)
-        const tags = ["english", "英文", "文法", ...item.tag];
+        // ★ 這裡很重要：我們要把 curriculum_integrated.js 裡用到的標籤全部塞進去
+        // 這樣不管系統用哪個標籤來撈，都撈得到。
+        const tags = ["english", "eng", "英文", "文法", ...item.tag];
 
         const generatorFunc = () => {
-            // 隨機排列選項 (答案 + 錯誤選項)
             const allOpts = [item.a, ...item.o];
             const shuffledOpts = Utils.shuffle(allOpts);
 
@@ -164,14 +184,16 @@
                 question: `Complete the sentence: "${item.q}"`,
                 options: shuffledOpts,
                 answer: shuffledOpts.indexOf(item.a),
-                concept: item.tag[1] || "Grammar", // 取出 "時態"、"被動" 等作為概念
-                explanation: [`Correct answer: ${item.a}`],
+                concept: item.tag[1] || "Grammar", 
+                explanation: [`Correct answer: **${item.a}**`, `} example]`],
                 subject: "english",
                 tags: tags
             };
         };
 
-        // 存入避難所
+        generatorFunc.subject = "english";
+        generatorFunc.tags = tags;
+        
         window.__ENGLISH_REPO__[id] = {
             func: generatorFunc,
             tags: tags,
@@ -179,6 +201,6 @@
         };
     });
 
-    console.log(`✅ [English] 已載入 ${grammarDB.length} 題文法題至避難所。`);
+    console.log(`✅ [English] 已成功載入 ${grammarDB.length} 題精準對齊標籤的題目。`);
 
 })(window);
