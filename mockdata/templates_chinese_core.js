@@ -183,7 +183,12 @@
                 // IMPORTANT: Move grade and topic to the START of the tag list
                 // Search engines often prioritize or limit search to the first few tags.
                 // New Order: ["chinese", "國七", "成語", "國文", "語文"]
-                const registerTags = ["chinese", grade, topic, "國文", "語文"];
+                const registerTags = [
+    "chinese", 
+    topic, grade,          // 順序 A: 讓 ['成語', '國七'] 能夠命中
+    grade, topic,          // 順序 B: 讓 ['國七', '成語'] 也能命中
+    "國文", "語文"
+];
 
                 // 模板 A: 定義題 (問Q答A)
                 G.registerTemplate(`chi_def_${grade}_${topic}`, (ctx, rnd) => {
