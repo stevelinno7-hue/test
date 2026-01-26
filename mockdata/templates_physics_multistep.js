@@ -2,6 +2,7 @@
     'use strict';
 
     // 1. 重點：這裡必須是 __PHYSICS_REPO__，對應系統的 subject=physics
+    // 如果這裡用 __SCIENCE_REPO__，系統會找不到
     if (!window.__PHYSICS_REPO__) window.__PHYSICS_REPO__ = {};
     
     console.log("🚀 [Physics Core] 物理科精準對齊版 (含測量/密度/運動學) 啟動...");
@@ -15,7 +16,7 @@
                 // 產生合理的干擾選項
                 let v = ans + Utils.rnd(-5, 5);
                 if(v <= 0) v = 0.5; // 物理量通常不為負
-                opts.add(parseFloat(v.toFixed(2))); // 保持兩位小數避免浮點數誤差
+                opts.add(parseFloat(v.toFixed(2))); // 保持兩位小數
             }
             return Array.from(opts).sort(() => Math.random() - 0.5);
         }
@@ -24,7 +25,7 @@
     const generators = [
         // ==========================================
         // 🎯 對應你的截圖：[單元 1：基本測量]
-        // 標籤需求：理化, 物理, 測量, 密度, 國八
+        // 系統搜尋標籤：理化, 物理, 測量, 密度, 國八
         // ==========================================
         {
             id: "phy_density_basic",
@@ -39,7 +40,8 @@
                 const M = Math.round(D * V * 10) / 10; // 避免精確度問題
 
                 return {
-                    question: `【基本測量】某金屬塊的體積為 ${V} cm3，質量為 ${M} g，請問其密度為多少 g/cm3？`,
+                    // 純文字風格，不使用 LaTeX
+                    question: `【基本測量】某金屬塊的體積為 ${V} cm3 (立方公分)，質量為 ${M} g，請問其密度為多少 g/cm3？`,
                     options: Utils.genOptions(D),
                     correctValue: D,
                     concept: "密度公式",
@@ -71,7 +73,7 @@
             }
         },
         // ==========================================
-        // 🚀 其他物理單元 (運動學、力學)
+        // 🚀 其他物理單元 (運動學、力學) - 為未來準備
         // ==========================================
         {
             id: "phy_motion_v",
@@ -109,7 +111,7 @@
                     return {
                         ...data,
                         answer: ansIndex,
-                        subject: "physics", // ★ 這裡必須是 physics
+                        subject: "physics", // ★ 這裡必須是 physics，才能通過篩選
                         tags: gen.tags
                     };
                 },
