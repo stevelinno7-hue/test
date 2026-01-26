@@ -1,62 +1,67 @@
 (function(global){
     'use strict';
+    console.log("🧪 [Chemistry V9.0] 化學工廠：正在生產 50 道動態試題...");
+    window.__CHEMISTRY_REPO__ = window.__CHEMISTRY_REPO__ || {};
+    const U = { rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min, shuffle: (arr) => arr.sort(() => Math.random() - 0.5) };
 
-    function init() {
-        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-        
-        const { randInt, shuffle, generateNumericOptions } = G.utils;
+    const elements = [{n:'碳',m:12,s:'C'},{n:'氧',m:16,s:'O'},{n:'氮',m:14,s:'N'},{n:'氫',m:1,s:'H'},{n:'鈉',m:23,s:'Na'}];
 
-        // 物理核心題庫
-        const phyDB = [
-            // [國八]
-            { t: "密度測量", q: (m,v)=>`某金屬塊質量 ${m*10} g，體積 ${v} cm³，其密度為何？`, a: (m,v)=>parseFloat((m*10/v).toFixed(1)), u: "g/cm³", tag:["國八","測量"] },
-            { t: "波動學", q: (f,l)=>`一週期波的頻率為 ${f} Hz，波長為 ${l} m，試求其波速。`, a: (f,l)=>f*l, u: "m/s", tag:["國八","波動"] },
-            { t: "熱學", q: (m,t)=>`質量 ${m} kg 的水，溫度上升 ${t}°C，吸收熱量多少？(水比熱 1 kcal/kg°C)`, a: (m,t)=>m*t, u: "kcal", tag:["國八","熱學"] },
-
-            // [國九]
-            { t: "運動學", q: (v,t)=>`一車以速度 ${v} m/s 等速行駛 ${t} 秒，請問位移為多少？`, a: (v,t)=>v*t, u: "m", tag:["國九","運動"] },
-            { t: "牛頓第二定律", q: (m,a)=>`質量 ${m} kg 的物體，受力產生 ${a} m/s² 的加速度，請問合力大小？`, a: (m,a)=>m*a, u: "N", tag:["國九","力學"] },
-            { t: "功與能量", q: (f,d)=>`施水平力 ${f} N 推動木塊移動 ${d} m，請問作功多少？`, a: (f,d)=>f*d, u: "J", tag:["國九","能量"] },
-            { t: "歐姆定律", q: (i,r)=>`一電阻器電阻為 ${r} Ω，通過電流為 ${i} A，兩端電壓為何？`, a: (i,r)=>i*r, u: "V", tag:["國九","電學"] },
-
-            // [高中]
-            { t: "動能", q: (m,v)=>`質量 ${m} kg 的物體以 ${v} m/s 速率運動，其動能為何？`, a: (m,v)=>0.5*m*v*v, u: "J", tag:["高一","能量"] },
-            { t: "重力位能", q: (m,h)=>`質量 ${m} kg 的物體抬高 ${h} m (g=10)，其重力位能增加多少？`, a: (m,h)=>m*10*h, u: "J", tag:["高一","能量"] },
-            { t: "萬有引力", q: (m,g)=>`質量 ${m} kg 的太空人，在重力加速度 g=2 m/s² 的星球表面，重量為何？`, a: (m,g)=>m*2, u: "N", tag:["高二","引力"] }
-        ];
-
-        // 分年級註冊
-        const grades = ["國八", "國九", "高一", "高二", "高三"];
-
-        grades.forEach(grade => {
-            const pool = phyDB.filter(q => q.tag[0] === grade);
-            
-            pool.forEach((p, idx) => {
-                const templateId = `phy_${grade}_${idx}`;
-                
-                G.registerTemplate(templateId, (ctx, rnd) => {
-                    const v1 = randInt(2, 9);
-                    const v2 = randInt(2, 9);
-                    const ans = p.a(v1, v2);
-                    
-                    const isInt = Number.isInteger(ans);
-                    const opts = shuffle(generateNumericOptions(ans, isInt ? 'int' : 'float'));
-
-                    return {
-                        question: `【物理】${p.q(v1, v2)}`,
-                        options: opts,
-                        answer: opts.indexOf(ans),
-                        concept: p.t,
-                        explanation: [`正確答案：${ans} ${p.u}`]
-                    };
-                }, ["physics", "物理", "理化", "自然", grade, p.tag[1]]);
-            });
-        });
-
-        console.log("✅ 物理題庫 (完整修復版) 已載入完成。");
+    // 1. 分子量計算
+    for(let i=0; i<10; i++){
+        const e1 = elements[i%elements.length], e2 = elements[(i+1)%elements.length];
+        const mw = e1.m + e2.m;
+        window.__CHEMISTRY_REPO__[`chem_0_${i}`] = {
+            func: () => {
+                const o = U.shuffle([mw, mw+10, mw*2, Math.abs(e1.m-e2.m)]);
+                return { question: `【分子量】若 ${e1.n}=${e1.m}, ${e2.n}=${e2.m}，則 ${e1.s}${e2.s} 分子量？`, options: o, answer: o.indexOf(mw), explanation: [`${e1.m} + ${e2.m} = ${mw}`], subject: "chemistry", tags:["chemistry","國八"] };
+            }, tags:["chemistry","國八"], subject:"chemistry"
+        };
     }
+    // 2. 濃度計算
+    for(let i=0; i<10; i++){
+        const solute = U.rnd(10,50), solvent = U.rnd(50,150), total = solute+solvent;
+        const p = Math.round((solute/total)*100);
+        window.__CHEMISTRY_REPO__[`chem_1_${i}`] = {
+            func: () => {
+                const o = U.shuffle([`${p}%`, `${p+10}%`, `${p-5}%`, "50%"]);
+                return { question: `【濃度】溶質 ${solute}g 溶於水 ${solvent}g，重量百分濃度約？`, options: o, answer: o.indexOf(`${p}%`), explanation: [`溶質/溶液 total`], subject: "chemistry", tags:["chemistry","國八"] };
+            }, tags:["chemistry","國八"], subject:"chemistry"
+        };
+    }
+    // 3. pH值
+    for(let i=0; i<10; i++){
+        const ph = U.rnd(1,13);
+        const ans = ph<7?"酸性":(ph>7?"鹼性":"中性");
+        window.__CHEMISTRY_REPO__[`chem_2_${i}`] = {
+            func: () => {
+                const o = U.shuffle(["酸性","鹼性","中性","無法判斷"]);
+                return { question: `【酸鹼】pH=${ph} 的溶液性質？`, options: o, answer: o.indexOf(ans), explanation: [`pH<7酸, >7鹼`, `
 
-    init();
-
+[Image of pH scale]
+`], subject: "chemistry", tags:["chemistry","國八"] };
+            }, tags:["chemistry","國八"], subject:"chemistry"
+        };
+    }
+    // 4. 原子結構
+    const parts = [{q:"帶正電",a:"質子"},{q:"不帶電",a:"中子"},{q:"帶負電",a:"電子"},{q:"決定原子序",a:"質子數"}];
+    for(let i=0; i<10; i++){
+        const p = parts[i%4];
+        window.__CHEMISTRY_REPO__[`chem_3_${i}`] = {
+            func: () => {
+                const o = U.shuffle(["質子","中子","電子","夸克"]);
+                return { question: `【原子】原子中${p.q}的粒子是？`, options: o, answer: o.indexOf(p.a), explanation: [`原子核含質子中子`], subject: "chemistry", tags:["chemistry","國八"] };
+            }, tags:["chemistry","國八"], subject:"chemistry"
+        };
+    }
+    // 5. 有機化學
+    const orgs = [{n:"甲烷",f:"CH4"},{n:"乙醇",f:"C2H5OH"},{n:"乙酸",f:"CH3COOH"},{n:"葡萄糖",f:"C6H12O6"}];
+    for(let i=0; i<10; i++){
+        const item = orgs[i%4];
+        window.__CHEMISTRY_REPO__[`chem_4_${i}`] = {
+            func: () => {
+                const o = U.shuffle(orgs.map(x=>x.f));
+                return { question: `【有機】${item.n}的化學式為？`, options: o, answer: o.indexOf(item.f), explanation: [`記憶題`], subject: "chemistry", tags:["chemistry","國八"] };
+            }, tags:["chemistry","國八"], subject:"chemistry"
+        };
+    }
 })(window);
