@@ -42,7 +42,11 @@
             { name: 'physics', repo: window.__PHYSICS_REPO__ },
             { name: 'chemistry', repo: window.__CHEMISTRY_REPO__ },
             { name: 'biology', repo: window.__BIOLOGY_REPO__ },
-            { name: 'history', repo: window.__HISTORY_REPO__ }
+            { name: 'history', repo: window.__HISTORY_REPO__ },
+            { name: 'geography', repo: window.__GEOGRAPHY_REPO__ },
+            { name: 'civics', repo: window.__CIVICS_REPO__ }
+            
+            
         ];
 
         repoMap.forEach(item => {
