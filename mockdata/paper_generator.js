@@ -2,8 +2,8 @@
     'use strict';
 
     // ------------------------------------------------------------------
-    //  Paper Generator V6.5 (Repo Loader)
-    //  支援從 __CHINESE_REPO__ 強制還原資料
+    //  Paper Generator V6.6 (Universal Omni-Loader)
+    //  支援全科目避難所還原：Math, English, Science, Chinese
     // ------------------------------------------------------------------
 
     if (!Array.prototype.shuffle) {
@@ -17,75 +17,101 @@
     }
 
     function generatePaper(config) {
-        // 1. 取得或建立引擎
+        // 1. 取得或建立主引擎
         let G = window.RigorousGenerator || global.RigorousGenerator;
         if (!G) {
-            console.warn("⚠️ 引擎遺失，正在重建...");
-            G = window.RigorousGenerator = { _templates: {}, registerTemplate: function(id, f, t){ this._templates[id] = {func:f, tags:t, subject: f.subject}; } };
+            console.warn("⚠️ [PaperGen] 引擎主體遺失，執行緊急重建...");
+            G = window.RigorousGenerator = { 
+                _templates: {}, 
+                registerTemplate: function(id, f, t){ 
+                    this._templates[id] = {func:f, tags:t, subject: f.subject || 'misc'}; 
+                } 
+            };
         }
-        
-        // 確保 getTemplateIds 存在
         if (!G.getTemplateIds) G.getTemplateIds = () => Object.keys(G._templates || {});
 
         const subject = (config.subject || 'math').toLowerCase();
         
-        // ★★★ V6.5 關鍵：檢查避難所並強制注入 ★★★
-        if (subject === 'chinese' && window.__CHINESE_REPO__) {
-            const currentIds = G.getTemplateIds();
-            const repoIds = Object.keys(window.__CHINESE_REPO__);
-            
-            // 如果引擎裡沒有國文資料，就倒進去
-            const hasChinese = currentIds.some(id => id.includes('chi_'));
-            
-            if (!hasChinese) {
-                console.log(`🚑 [PaperGen] 偵測到引擎缺少國文資料，正在從避難所還原 ${repoIds.length} 筆模板...`);
+        // ============================================================
+        // ★ V6.6 核心升級：通用避難所掃描 (Universal Repo Scan)
+        // ============================================================
+        const repoMap = [
+            { name: 'chinese', repo: window.__CHINESE_REPO__ },
+            { name: 'math',    repo: window.__MATH_REPO__ },
+            { name: 'english', repo: window.__ENGLISH_REPO__ },
+            { name: 'physics', repo: window.__PHYSICS_REPO__ },
+            { name: 'chemistry', repo: window.__CHEMISTRY_REPO__ },
+            { name: 'biology', repo: window.__BIOLOGY_REPO__ },
+            { name: 'history', repo: window.__HISTORY_REPO__ }
+        ];
+
+        repoMap.forEach(item => {
+            if (item.repo) {
+                const repoIds = Object.keys(item.repo);
+                const currentIds = G.getTemplateIds();
+                
+                // 檢查是否需要還原 (簡單檢查：如果引擎裡找不到該科目的 ID)
+                // 這裡採用更積極的策略：只要避難所有，就確保引擎裡也有
+                let restoredCount = 0;
                 repoIds.forEach(id => {
-                    const item = window.__CHINESE_REPO__[id];
-                    // 手動寫入引擎
-                    if (!G._templates) G._templates = {};
-                    G._templates[id] = {
-                        func: item.func,
-                        tags: item.tags,
-                        meta: item.tags,
-                        subject: "chinese"
-                    };
+                    if (!G._templates[id]) {
+                        const data = item.repo[id];
+                        G._templates[id] = {
+                            func: data.func,
+                            tags: data.tags,
+                            meta: data.tags,
+                            subject: data.subject || item.name
+                        };
+                        restoredCount++;
+                    }
                 });
+                
+                if (restoredCount > 0) {
+                    console.log(`🚑 [PaperGen] 已從 ${item.name} 避難所還原 ${restoredCount} 題。`);
+                }
             }
-        }
-        // ★★★ 注入結束 ★★★
+        });
+        // ============================================================
 
         const requestTags = (Array.isArray(config.tags) ? config.tags : [config.tags])
                             .map(t => String(t).toLowerCase());
         const allTemplateIds = G.getTemplateIds();
 
-        console.log(`🔒 [PaperGen V6.5] 請求 -> 科目:[${subject}] | 標籤:[${requestTags}]`);
+        console.log(`🔒 [PaperGen V6.6] 請求 -> 科目:[${subject}] | 標籤:[${requestTags}]`);
         console.log(`📚 引擎內總模板數: ${allTemplateIds.length}`); 
 
-        // ID 關鍵字映射
-        const idMap = { 'chinese': ['chi_', 'chinese', '國文'] };
+        // 搜尋關鍵字對映
+        const idMap = {
+            'chinese': ['chi_', 'chinese', '國文'],
+            'math': ['math', 'alg', 'geo', '數學'],
+            'english': ['eng', 'gram', 'vocab', '英文'],
+            'physics': ['phy', '物理'],
+            'chemistry': ['chem', '化學'],
+            'biology': ['bio', '生物'],
+            'history': ['his', '歷史']
+        };
         const subjectKeywords = idMap[subject] || [subject];
 
-        // 篩選
+        // 篩選邏輯
         let validTemplates = allTemplateIds.filter(tid => {
             const t = G._templates[tid];
-            if (!t) return false; // 防呆
+            if (!t) return false;
 
             const tidLower = tid.toLowerCase();
-            
-            // 屬性讀取
             const rawTags = t.tags || t.meta || (t.func && t.func.tags) || [];
             const injectedSubject = t.subject || (t.func && t.func.subject) || "";
+            
             const metaPool = (Array.isArray(rawTags) ? rawTags : [rawTags])
                              .concat([injectedSubject])
                              .map(x => String(x).toLowerCase());
 
-            // 科目檢查 (ID 或 Meta)
+            // A. 科目匹配 (Meta 或 ID)
             const isSubjectMeta = metaPool.some(tag => tag === subject || tag.includes(subject));
             const isSubjectID = subjectKeywords.some(kw => tidLower.includes(kw));
             
             if (!isSubjectMeta && !isSubjectID) return false;
 
-            // 標籤檢查
+            // B. 標籤匹配
             let score = 0;
             requestTags.forEach(reqTag => {
                 if (metaPool.includes(reqTag)) score++;
@@ -105,17 +131,18 @@
         validTemplates.shuffle();
         let count = 0;
         let attempts = 0;
-        const maxAttempts = total * 3;
+        const maxAttempts = total * 4; // 增加嘗試次數
 
         while(count < total && validTemplates.length > 0 && attempts < maxAttempts) {
             const tid = validTemplates[count % validTemplates.length];
             attempts++;
             try {
-                // 如果沒有 generateQuestion 方法，手動執行
                 let q = null;
+                // 優先使用標準接口
                 if (typeof G.generateQuestion === 'function') {
                     q = G.generateQuestion(tid, { tags: requestTags });
                 } else {
+                    // 降級直接呼叫
                     const tmpl = G._templates[tid];
                     if (tmpl && tmpl.func) q = tmpl.func({}, Math.random);
                 }
@@ -130,6 +157,6 @@
     }
 
     window.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V6.5 (Repo Loader) 已就緒");
+    console.log("✅ Paper Generator V6.6 (Universal Omni-Loader) 已就緒");
 
 })(window);
