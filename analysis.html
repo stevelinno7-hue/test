@@ -281,12 +281,16 @@ function saveToCloud() {
 // ====================================================
 
 function normalizeExamData(data) {
+    // 如果沒有 tabCheat 物件，則根據外層的 tabSwitches 建立它
     if (!data.tabCheat) {
         const switches = data.tabSwitches || 0;
-        let level = (switches > 2) ? 'HIGH' : (switches > 0 ? 'MEDIUM' : 'NORMAL');
+        let level = (switches > 5) ? 'HIGH' : (switches > 2 ? 'MEDIUM' : 'NORMAL');
         data.tabCheat = { level: level, totalSwitch: switches };
     }
-    if (!data.cheat) data.cheat = { cheatLevel: 'NORMAL', fastCount: 0 };
+    // 確保 cheat 物件存在
+    if (!data.cheat) {
+        data.cheat = { cheatLevel: 'NORMAL', fastCount: 0 };
+    }
     return data;
 }
 
@@ -308,60 +312,85 @@ function renderRadarChart(baseScore = 0) {
     const canvas = document.getElementById('radarChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    
+    // 定義維度
     const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
-    const data = labels.map(() => Math.min(100, Math.max(40, baseScore + (Math.floor(Math.random() * 20) - 10))));
+    
+    // 從 localStorage 取得原始資料來分析錯題
+    const resultStr = localStorage.getItem('examResult');
+    const result = JSON.parse(resultStr || "{}");
+    const wrongList = result.wrongList || [];
+    
+    // 初始分數（以總分為基準）
+    let chartData = labels.map(() => Math.max(40, baseScore));
+
+    // 如果有錯題，根據錯題的 concept 扣分
+    wrongList.forEach(q => {
+        const concept = q.concept || "";
+        labels.forEach((label, index) => {
+            if (concept.includes(label)) {
+                chartData[index] -= 10; // 錯一題在該維度扣 10 分
+            }
+        });
+    });
+
+    // 確保分數不低於 40
+    chartData = chartData.map(v => Math.max(40, v));
 
     new Chart(ctx, {
         type: 'radar',
         data: {
             labels: labels,
             datasets: [{
-                label: '本次能力表現',
-                data: data,
+                label: '能力維度',
+                data: chartData,
                 backgroundColor: 'rgba(59, 130, 246, 0.2)',
                 borderColor: '#2563eb',
-                pointBackgroundColor: '#2563eb'
+                pointBackgroundColor: '#2563eb',
+                borderWidth: 2
             }]
         },
         options: { 
             responsive: true, 
             maintainAspectRatio: false,
-            scales: { r: { min: 0, max: 100, ticks: { display: false } } },
+            scales: { 
+                r: { 
+                    min: 0, 
+                    max: 100, 
+                    beginAtZero: true,
+                    ticks: { display: false, stepSize: 20 } 
+                } 
+            },
             plugins: { legend: { display: false } } 
         }
     });
 }
-
 function applyCheatResult(result) {
-    const timeBox = document.getElementById('timeCheatBox');
-    const timeText = document.getElementById('timeCheatText');
-    const tabBox = document.getElementById('tabCheatBox');
-    const tabText = document.getElementById('tabCheatText');
-
+    // ... 前段保持不變 ...
     const cheatData = result.cheat || { cheatLevel: 'NORMAL', fastCount: 0 };
-    const tabData = result.tabCheat;
+    const tabData = result.tabCheat || { level: 'NORMAL', totalSwitch: 0 }; // 增加預設值
 
     const styles = {
         NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '正常'],
         MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '異常'],
-        HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '嚴重']
+        HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '頻繁']
     };
 
+    // 使用可選鏈結或預設陣列避免 styles[undefined]
+    const tStyle = styles[cheatData.cheatLevel] || styles.NORMAL;
     if (timeBox) {
-        const s = styles[cheatData.cheatLevel];
-        timeBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]}`;
-        timeText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
-        timeText.innerHTML = `作答節奏${s[3]} (過快題數：${cheatData.fastCount})`;
+        timeBox.className = `p-5 rounded-xl border ${tStyle[0]} ${tStyle[1]}`;
+        timeText.innerHTML = `作答節奏${tStyle[3]} (過快題數：${cheatData.fastCount})`;
+        timeText.className = `text-sm font-bold ${tStyle[2]} mt-1 pl-11`;
     }
 
+    const bStyle = styles[tabData.level] || styles.NORMAL;
     if (tabBox) {
-        const s = styles[tabData.level];
-        tabBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]}`;
-        tabText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
-        tabText.innerHTML = `分頁切換${s[3]} (切換次數：${tabData.totalSwitch})`;
+        tabBox.className = `p-5 rounded-xl border ${bStyle[0]} ${bStyle[1]}`;
+        tabText.innerHTML = `分頁切換${bStyle[3]} (切換次數：${tabData.totalSwitch})`;
+        tabText.className = `text-sm font-bold ${bStyle[2]} mt-1 pl-11`;
     }
 }
-
 function renderWrongList(wrongList) {
     const listContainer = document.getElementById('wrongList');
     if (!listContainer) return;
