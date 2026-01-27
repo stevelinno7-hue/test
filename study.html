@@ -110,46 +110,75 @@
         </div>
 
     </main>
+<script>
+        // 1. 定義全域變數
+        let currentSubject = 'math';
+        let userStage = 'high_school'; // 預設值
 
-    <script>
+        // ★★★ 修正點：將所有初始化動作整合在唯一的 window.onload ★★★
         window.onload = function() {
+            // --- A. 處理網址參數 ---
+            const urlParams = new URLSearchParams(window.location.search);
+            currentSubject = urlParams.get('filter') || 'math';
+            
+            const subjectSelect = document.getElementById('subjectSelect');
+            if(subjectSelect) subjectSelect.value = currentSubject;
+
+            // --- B. 處理使用者登入狀態 (原本被覆蓋導致失效的部分) ---
             const user = Auth.getCurrentUser();
+            
             if(user) {
-                document.getElementById('sideUserName').textContent = user.name;
-                document.getElementById('sideUserRole').textContent = user.grade;
-                if(user.grade && user.grade.includes('國')) setStage('junior_high');
-                else setStage('high_school');
+                // 更新左側顯示
+                const nameEl = document.getElementById('sideUserName');
+                const roleEl = document.getElementById('sideUserRole');
+                
+                if(nameEl) nameEl.textContent = user.name;
+                if(roleEl) roleEl.textContent = user.grade;
+
+                // 判斷學制邏輯
+                if(user.grade && user.grade.includes('國')) {
+                    userStage = 'junior_high';
+                } else {
+                    userStage = 'high_school';
+                }
             } else {
-                setStage('high_school');
+                // 未登入預設
+                userStage = 'high_school';
             }
-        };
-        // 初始化
-        const urlParams = new URLSearchParams(window.location.search);
-        let currentSubject = urlParams.get('filter') || 'math';
-        document.getElementById('subjectSelect').value = currentSubject;
 
-        const user = Auth.getCurrentUser();
-        // 判斷學制：簡單邏輯，國小國中為 junior，高中為 senior
-        const userStage = (user && user.grade && user.grade.includes('高')) ? 'high_school' : 'junior_high';
+            // 設定給題庫引擎 (如果有此函式)
+            if(typeof setStage === 'function') {
+                setStage(userStage);
+            }
 
-        window.onload = function() {
+            // --- C. 載入資料庫與選單 ---
             setTimeout(() => {
                 if(window.initCurriculumData) window.initCurriculumData(); // 確保資料載入
                 loadBookMenu();
             }, 300);
         };
 
+        // 2. 載入左側選單
         function loadBookMenu() {
-            currentSubject = document.getElementById('subjectSelect').value;
+            // 重新確認選擇的科目
+            const subjectSelect = document.getElementById('subjectSelect');
+            if(subjectSelect) currentSubject = subjectSelect.value;
+            
             const menu = document.getElementById('unitMenu');
             menu.innerHTML = '';
 
+            // 防呆：確保資料庫存在
+            if (!window.CurriculumLibrary || !window.CurriculumLibrary.data) {
+                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">資料庫載入中...</div>`;
+                return;
+            }
+
             const allBooks = window.CurriculumLibrary.data[currentSubject] || [];
-            // 篩選學制
+            // 根據使用者的學制 (userStage) 篩選書本
             const books = allBooks.filter(b => b.stage === userStage);
 
             if (books.length === 0) {
-                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">此科目尚無資料</div>`;
+                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">此科目尚無對應學制的資料</div>`;
                 return;
             }
 
@@ -159,10 +188,10 @@
                 let unitsHtml = '';
                 
                 book.units.forEach((unit, uIdx) => {
-                    // 將 tags 存入 data 屬性
+                    // 將 tags 存入 data 屬性 (編碼以避免引號問題)
                     const tagsStr = encodeURIComponent(JSON.stringify(unit.tags || []));
                     unitsHtml += `
-                        <div class="unit-item px-4 py-3 text-sm text-slate-600 rounded-lg mb-1 flex items-center gap-2" 
+                        <div class="unit-item px-4 py-3 text-sm text-slate-600 rounded-lg mb-1 flex items-center gap-2 cursor-pointer hover:bg-slate-100" 
                              onclick="loadUnitContent('${unit.name}', '${tagsStr}', this)">
                             <i class="fas fa-circle text-[6px] text-slate-300"></i>
                             ${unit.name}
@@ -184,23 +213,26 @@
             });
         }
 
-        // ★★★ 核心：根據單元標籤生成內容 ★★★
+        // 3. 核心：根據單元標籤生成重點內容
         function loadUnitContent(unitName, tagsStr, el) {
-            // UI 更新
-            document.querySelectorAll('.unit-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
+            // UI 更新 (Highlight 目前選擇的單元)
+            document.querySelectorAll('.unit-item').forEach(i => i.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'font-bold'));
+            el.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-bold'); // 增加 Tailwind 樣式讓選取更明顯
+            
             document.getElementById('currentUnitTitle').textContent = unitName;
             document.getElementById('currentUnitSub').textContent = `科目：${currentSubject} | 來源：智慧題庫`;
 
-            // 讀取資料
+            // 解析標籤
             const tags = JSON.parse(decodeURIComponent(tagsStr));
             const container = document.getElementById('notesContainer');
+            
+            // 顯示載入動畫
             container.innerHTML = '<div class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin"></i> AI 正在整理重點...</div>';
 
             setTimeout(() => {
                 let questions = [];
+                // 呼叫題庫生成器 (generatePaper)
                 if (window.generatePaper) {
-                    // 使用題庫生成器，限制 tags，抓取 5~8 題作為重點範例
                     questions = window.generatePaper({ subject: currentSubject, total: 8, tags: tags });
                 }
 
@@ -214,7 +246,7 @@
                     return;
                 }
 
-                // 渲染卡片
+                // 渲染卡片內容
                 let contentHtml = '';
                 questions.forEach((q, idx) => {
                     const concept = q.concept || unitName.split(' ')[1] || '核心觀念';
@@ -250,6 +282,7 @@
                 });
 
                 container.innerHTML = contentHtml;
+                // 重新渲染數學公式
                 if(window.MathJax) MathJax.typesetPromise();
 
             }, 300); // 模擬載入感
