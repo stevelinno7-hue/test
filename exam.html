@@ -21,12 +21,14 @@
         .q-dot.active { background-color: #2563eb; color: white; transform: scale(1.1); box-shadow: 0 0 10px rgba(37, 99, 235, 0.4); }
         .q-dot.answered { background-color: #dbeafe; color: #2563eb; border: 1px solid #bfdbfe; }
         .q-dot.normal { background-color: #f1f5f9; color: #94a3b8; }
-        .modal-enter { animation: modalIn 0.2s ease-out forwards; }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-enter { animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
     </style>
 
     <script src="mockdata/users.js"></script>
-    <script src="assets/js/auth.js"></script> <script src="mockdata/paper_generator.js"></script>
+    <script src="assets/js/auth.js"></script> 
+    <script src="assets/js/generator_engine.js"></script> <script src="mockdata/generator_engine_polyfill.js"></script>
+    <script src="mockdata/paper_generator.js"></script>
     <script src="mockdata/curriculum_integrated.js"></script>
 
     <script src="mockdata/templates_math_algebra_geometry.js"></script>
@@ -59,6 +61,9 @@
                     <i class="far fa-clock mr-2 text-slate-400"></i>
                     <span id="timer">00:00</span>
                 </div>
+                <button onclick="showSetupModal()" class="text-slate-400 hover:text-blue-600 font-bold px-3 py-2 transition text-sm" title="重新設定">
+                    <i class="fas fa-cog"></i>
+                </button>
                 <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 transition transform hover:-translate-y-0.5">
                     交卷
                 </button>
@@ -83,7 +88,7 @@
                             <span class="text-slate-300 text-4xl font-black font-mono select-none opacity-20">Q<span id="currentQNumDisplay">1</span></span>
                         </div>
                         <div class="mb-8">
-                            <h2 id="questionText" class="text-xl md:text-2xl font-bold text-slate-800 leading-relaxed">題目載入中...</h2>
+                            <h2 id="questionText" class="text-xl md:text-2xl font-bold text-slate-800 leading-relaxed">請先完成測驗設定...</h2>
                         </div>
                         <div id="optionsContainer" class="space-y-3"></div>
                     </div>
@@ -114,6 +119,34 @@
         </aside>
     </main>
 
+    <div id="setupModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 mx-4 modal-enter border-4 border-slate-100">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <h3 class="text-2xl font-black text-slate-800">測驗設定</h3>
+                <p class="text-slate-500 mt-2">請選擇您想要挑戰的題目數量</p>
+            </div>
+            
+            <div class="space-y-4 mb-8">
+                <label class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">題目數量</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="selectCount(5)" class="count-btn py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition" data-val="5">5 題</button>
+                    <button onclick="selectCount(10)" class="count-btn py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition bg-blue-50 border-blue-500 text-blue-600" data-val="10">10 題</button>
+                    <button onclick="selectCount(15)" class="count-btn py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition" data-val="15">15 題</button>
+                    <button onclick="selectCount(20)" class="count-btn py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition" data-val="20">20 題</button>
+                    <button onclick="selectCount(25)" class="count-btn py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition" data-val="25">25 題</button>
+                    <button onclick="selectCount(30)" class="count-btn py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition" data-val="30">30 題</button>
+                </div>
+            </div>
+
+            <button onclick="confirmSetup()" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-2">
+                開始測驗 <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
     <div id="submitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 mx-4 modal-enter">
             <div class="text-center mb-6">
@@ -140,115 +173,99 @@
     </div>
 
     <script>
-        // ==========================================
-        // ⚠️ 請在此填入你的 GAS 網址
-        // ==========================================
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
-        // ==========================================
 
         let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval, examInfo = {};
-        // 增加詳細紀錄
         let timeLog = [], tabLog = [], tabLeaveStart = null, questionStartTime = 0;
-        let retryCount = 0;
+        let selectedCount = 10; // 預設題數
 
         window.onload = function() {
-            // 檢查登入 (假設 auth.js 有提供此功能)
             if (window.Auth && !Auth.requireLogin()) return;
-            
-            // 初始化監聽器 (Tab 切換偵測)
             initVisibilityListener();
-
-            setTimeout(prepareExam, 500); 
+            
+            // 頁面載入後，直接顯示設定視窗，不自動開始
+            showSetupModal();
         };
 
-        // 1. 初始化與題目生成邏輯
-        // 1. 初始化與題目生成邏輯 (修正版)
-        function prepareExam() {
+        // --- 測驗設定邏輯 ---
+        function showSetupModal() {
+            // 暫停計時器 (如果正在跑)
+            if(timerInterval) clearInterval(timerInterval);
+            document.getElementById('setupModal').classList.remove('hidden');
+        }
+
+        function selectCount(val) {
+            selectedCount = val;
+            document.querySelectorAll('.count-btn').forEach(btn => {
+                if(parseInt(btn.dataset.val) === val) {
+                    btn.classList.add('bg-blue-50', 'border-blue-500', 'text-blue-600');
+                } else {
+                    btn.classList.remove('bg-blue-50', 'border-blue-500', 'text-blue-600');
+                }
+            });
+        }
+
+        function confirmSetup() {
+            document.getElementById('setupModal').classList.add('hidden');
+            // 使用選擇的題數開始準備
+            prepareExam(selectedCount);
+        }
+
+        // --- 核心流程 ---
+        function prepareExam(count) {
             const urlParams = new URLSearchParams(window.location.search);
             let subject = urlParams.get('subject') || 'math';
-            const count = parseInt(urlParams.get('count')) || 10;
             const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
             const title = rawTitle.trim();
             const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
-
-            // 診斷 Log：確認網址有沒有傳對 (按 F12 看 Console)
-            console.log("🔍 [Exam Debug] 網址參數 grade =", urlGrade);
 
             // 科目名稱正規化
             if (subject === 'earth_science') subject = 'earth';
             if (subject === 'social') subject = 'history';
 
-            // ------------------------------------------------
-            // 🛠️ 關鍵修正 1：標籤鎖定邏輯
-            // ------------------------------------------------
             let targetTags = [];
-
             if (urlGrade && urlGrade !== 'undefined' && urlGrade !== 'null' && urlGrade.trim() !== '') {
-                // 如果有指定單元，就「只」用單元去搜，不要加 subject
-                // 這樣可以避免 'math' 標籤干擾搜尋結果
                 targetTags = urlGrade.split(',').filter(t => t.trim() !== '');
             } else {
-                // 只有在完全沒指定單元時，才用科目全範圍搜尋
                 targetTags = [subject];
             }
             
-            console.log("🎯 [Exam Debug] 最終搜尋標籤 targetTags =", targetTags);
-            // ------------------------------------------------
-
-            examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: count * 60 };
-            timeLeft = examInfo.timeLimit;
-
-            document.getElementById('examTitle').textContent = examInfo.title;
+            // 設定標題與標籤
+            document.getElementById('examTitle').textContent = title;
             document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
 
-            // 生成題目
+            // 生成題目 (使用使用者選擇的 count)
             if (window.generatePaper) {
-                // 呼叫生成器
                 mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
-                
-                // ------------------------------------------------
-                // 🛠️ 關鍵修正 2：停用「自動全科搜尋」
-                // ------------------------------------------------
-                // 原本這裡寫：如果找不到就 window.generatePaper({ subject: subject... })
-                // 請【註解掉】或【刪除】該備用機制，這樣如果標籤錯了，系統會老實告訴你「0 題」，而不是亂出。
-                
-                /* ❌ 兇手就是這段，把它關掉！
-                if (!mockQuestions || mockQuestions.length === 0) {
-                     console.warn("⚠️ 找不到特定單元題目，改為全科搜尋");
-                     mockQuestions = window.generatePaper({ subject: subject, total: count });
-                }
-                */
-               
-                console.log(`📊 [Exam Debug] 最終找到 ${mockQuestions ? mockQuestions.length : 0} 題`);
             } else {
-                console.error("❌ 找不到 generatePaper 函式，請確認 JS 檔案是否載入");
                 alert("系統錯誤：題庫引擎未載入");
                 return;
             }
 
             if (!mockQuestions || mockQuestions.length === 0) {
-                // 這裡會跳出警告，告訴您標籤可能沒對上
-                alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！\n請檢查 course_hub.html 的標籤設定是否正確。`);
-                // window.history.back(); // 先不要回上一頁，方便您看 Console
+                alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！`);
                 return;
             }
 
+            // 設定考試時間 (每題 1 分鐘)
+            examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: count * 60 };
+            timeLeft = examInfo.timeLimit;
+
             initGame();
         }
-        // 2. 遊戲初始化
+
         function initGame() {
+            currentQIndex = 0;
             userAnswers = new Array(mockQuestions.length).fill(null);
-            timeLog = new Array(mockQuestions.length).fill(0); // 初始化時間紀錄
+            timeLog = new Array(mockQuestions.length).fill(0);
             renderQuestion();
             updatePalette();
             startTimer();
         }
 
-        // 3. 渲染題目
         function renderQuestion() {
-            // 紀錄上一題的時間
             recordTime(); 
-            questionStartTime = Date.now(); // 開始計時新的一題
+            questionStartTime = Date.now();
 
             const q = mockQuestions[currentQIndex];
             
@@ -257,7 +274,6 @@
             document.getElementById('totalQCount').textContent = mockQuestions.length;
             document.getElementById('conceptBadge').textContent = q.concept || "綜合";
             
-            // 支援 MathJax 重新渲染
             const qText = q.question.replace(/\n/g, '<br>');
             document.getElementById('questionText').innerHTML = qText;
             
@@ -276,12 +292,11 @@
                 `;
                 optDiv.onclick = () => { 
                     userAnswers[currentQIndex] = idx; 
-                    renderQuestion(); // 重新渲染以更新樣式
+                    renderQuestion(); 
                 };
                 container.appendChild(optDiv);
             });
 
-            // 觸發 MathJax 渲染公式
             if (window.MathJax) {
                 MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
             }
@@ -290,7 +305,6 @@
             updatePalette();
         }
 
-        // 4. 更新按鈕狀態
         function updateNavButtons() {
             const nextBtn = document.getElementById('nextBtn');
             const prevBtn = document.getElementById('prevBtn');
@@ -301,7 +315,6 @@
                 : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-200 transition cursor-pointer";
             prevBtn.onclick = () => { if (currentQIndex > 0) { currentQIndex--; renderQuestion(); } };
 
-            // 如果是最後一題，顯示交卷
             if (currentQIndex === mockQuestions.length - 1) {
                 nextBtn.innerHTML = `交卷 <i class="fas fa-check-circle ml-2"></i>`;
                 nextBtn.className = "bg-slate-800 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition flex items-center gap-2";
@@ -313,7 +326,6 @@
             }
         }
 
-        // 5. 更新側邊欄題號
         function updatePalette() {
             const p = document.getElementById('questionPalette');
             p.innerHTML = '';
@@ -327,11 +339,10 @@
             });
         }
 
-        // 6. 時間紀錄邏輯
         function recordTime() {
             if (questionStartTime === 0) return;
             const now = Date.now();
-            const duration = (now - questionStartTime) / 1000; // 秒
+            const duration = (now - questionStartTime) / 1000;
             timeLog[currentQIndex] = (timeLog[currentQIndex] || 0) + duration;
         }
 
@@ -351,42 +362,26 @@
             }, 1000);
         }
 
-        // 7. 防作弊/分心偵測 (Tab Visibility API)
         function initVisibilityListener() {
             document.addEventListener("visibilitychange", () => {
                 if (document.hidden) {
-                    // 使用者切換出去了
                     tabLeaveStart = Date.now();
-                    console.log("👀 使用者離開頁面...");
                 } else {
-                    // 使用者回來了
                     if (tabLeaveStart) {
                         const duration = (Date.now() - tabLeaveStart) / 1000;
-                        console.log(`👀 使用者回來了，離開了 ${duration} 秒`);
-                        
-                        // 紀錄這次的違規/分心
                         tabLog.push({
                             time: new Date().toLocaleString(),
                             qIndex: currentQIndex + 1,
                             duration: duration.toFixed(1)
                         });
-                        
                         tabLeaveStart = null;
-                        
-                        // 可選：如果離開太久，跳出警告
-                        if (duration > 10) {
-                            alert("⚠️ 系統偵測到您長時間離開測驗頁面，請專注作答！");
-                        }
                     }
                 }
             });
         }
 
-        
-
-       // 8. 交卷流程
         function trySubmit() {
-            recordTime(); // 紀錄最後一題的時間
+            recordTime();
             const answeredCount = userAnswers.filter(a => a !== null).length;
             document.getElementById('modalAnswered').textContent = answeredCount;
             document.getElementById('modalUnanswered').textContent = mockQuestions.length - answeredCount;
@@ -397,17 +392,11 @@
             document.getElementById('submitModal').classList.add('hidden'); 
         }
 
-        /**
-         * 核心交卷邏輯
-         */
         async function finalSubmit() {
             if (timerInterval) clearInterval(timerInterval);
             document.getElementById('submitModal').classList.add('hidden');
-            
-            // 顯示載入畫面
             document.getElementById('loadingOverlay').classList.remove('hidden');
 
-            // 1. 計算成績與分析資料
             let correctCount = 0;
             let wrongList = [];
             let fastCount = 0; 
@@ -415,7 +404,6 @@
             mockQuestions.forEach((q, idx) => {
                 const userAns = userAnswers[idx];
                 const timeSpent = timeLog[idx] || 0;
-                
                 if (timeSpent < 3) fastCount++;
 
                 if (userAns === q.answer) {
@@ -435,7 +423,6 @@
             const finalScore = Math.round((correctCount / mockQuestions.length) * 100);
             const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
 
-            // 2. 準備詳細結果物件
             const resultData = {
                 id: Date.now(),
                 date: new Date().toLocaleString(),
@@ -459,7 +446,6 @@
                 }
             };
 
-            // 3. 儲存到 LocalStorage
             localStorage.setItem('examResult', JSON.stringify(resultData));
             const historyKey = `history_${user.username}`;
             try {
@@ -468,10 +454,8 @@
                 localStorage.setItem(historyKey, JSON.stringify(history));
             } catch (e) { console.error("History save failed", e); }
 
-            // 4. 雲端備份 (僅限登入者)
             if (user.username !== 'guest') {
                 try {
-                    // 使用 await 確保發送，但設定逾時避免卡死
                     await Promise.race([
                         uploadToCloud(user.username, examInfo.title, finalScore, resultData),
                         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
@@ -481,16 +465,11 @@
                 }
             }
 
-            // 5. 跳轉到分析頁
-            // 延遲一秒讓使用者看到「上傳中」的狀態
             setTimeout(() => {
                 window.location.href = "analysis.html?mode=new";
             }, 1000);
         }
 
-        /**
-         * 上傳到 GAS 的函式
-         */
         async function uploadToCloud(username, activityName, score, fullData) {
             const payload = {
                 action: "save_record",
@@ -505,7 +484,6 @@
                 })
             };
 
-            // GAS 通常不支援標準 CORS，使用 no-cors 模式發送
             return fetch(GAS_URL, {
                 method: "POST",
                 mode: 'no-cors', 
