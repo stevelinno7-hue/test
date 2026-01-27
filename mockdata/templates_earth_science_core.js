@@ -164,22 +164,30 @@
   { q:"地震資料與地質調查結合可用於什麼應用？", a:"地震危險圖與土地利用規劃", o:["改變海洋鹽度","提高空氣品質","增加人口密度"], t:["地震應用","高三"] }
 ];
 
-
-
+// ==========================================
+    // 🚀 修正後的生成邏輯 (解決年級混亂問題)
+    // ==========================================
 
     // 生成一般題
     earthDB.forEach((item, idx) => {
         const id = `earth_core_${idx}`;
-        const tags = ["earth_science", "地科", item.t, "國九"];
+        
+        // ❌ 舊的錯誤寫法： const tags = ["earth_science", "地科", item.t, "國九"];
+        // ✅ 修正寫法：使用 ...item.t 自動抓取題目設定的年級 (國九/高一/高二)
+        const tags = ["earth_science", "地科", ...item.t]; 
         
         const func = () => {
             const opts = Utils.shuffle([item.a, ...item.o]);
             return {
-                question: `【${item.t}】${item.q}`,
+                question: `【${item.t[0]}】${item.q}`, // 顯示分類 (如：天文)
                 options: opts,
                 answer: opts.indexOf(item.a),
-                explanation: [`正確答案：${item.a}`, ``],
-                subject: "earth_science", tags: tags
+                explanation: [
+                    `✅ 正確答案：${item.a}`, 
+                    `🏷️ 範圍：${item.t.join(" / ")}` // 顯示年級以便確認
+                ],
+                subject: "earth_science", 
+                tags: tags
             };
         };
         window.__EARTH_SCI_REPO__[id] = { func, tags, subject: "earth_science" };
@@ -188,19 +196,28 @@
     // 生成圖表判斷題 (模擬)
     earthDB.forEach((item, idx) => {
         const id = `earth_fig_${idx}`;
-        const tags = ["earth_science", "地科", item.t, "國九"];
+        
+        // ✅ 修正寫法：同樣自動抓取年級，不強制加國九
+        const tags = ["earth_science", "地科", ...item.t, "圖表題"]; 
+
         window.__EARTH_SCI_REPO__[id] = {
             func: () => {
                 const opts = Utils.shuffle([item.a, ...item.o]);
                 return {
-                    question: `【${item.t}】 根據附圖，請問此現象或構造為？`,
+                    question: `【${item.t[0]}】 [圖表題] 根據附圖，請問此現象或構造為？`,
                     options: opts,
                     answer: opts.indexOf(item.a),
-                    explanation: [`圖示為 ${item.a} 的特徵。`],
-                    subject: "earth_science", tags: tags
+                    explanation: [`🔍 圖示解析：此為 **${item.a}** 的典型特徵。`],
+                    subject: "earth_science", 
+                    tags: tags
                 };
-            }, tags, subject: "earth_science"
+            }, 
+            tags, 
+            subject: "earth_science"
         };
     });
+
+    console.log(`✅ 地科題庫載入完成！共 ${Object.keys(window.__EARTH_SCI_REPO__).length} 題。`);
+    console.log("👉 修正：已區分 國九 / 高一 / 高二 / 高三，不再混雜。");
 
 })(window);
