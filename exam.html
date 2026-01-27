@@ -162,6 +162,7 @@
         };
 
         // 1. 初始化與題目生成邏輯
+        // 1. 初始化與題目生成邏輯 (修正版)
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
             let subject = urlParams.get('subject') || 'math';
@@ -170,15 +171,30 @@
             const title = rawTitle.trim();
             const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
 
+            // 診斷 Log：確認網址有沒有傳對 (按 F12 看 Console)
+            console.log("🔍 [Exam Debug] 網址參數 grade =", urlGrade);
+
             // 科目名稱正規化
             if (subject === 'earth_science') subject = 'earth';
             if (subject === 'social') subject = 'history';
 
-            // 嘗試解析題目 (這裡簡化，直接使用 generatePaper)
-            let targetTags = [subject];
-            if (urlGrade) targetTags.push(urlGrade);
+            // ------------------------------------------------
+            // 🛠️ 關鍵修正 1：標籤鎖定邏輯
+            // ------------------------------------------------
+            let targetTags = [];
 
-            // 這裡保留你原本的「搜尋單元」邏輯，為節省篇幅，我直接模擬生成
+            if (urlGrade && urlGrade !== 'undefined' && urlGrade !== 'null' && urlGrade.trim() !== '') {
+                // 如果有指定單元，就「只」用單元去搜，不要加 subject
+                // 這樣可以避免 'math' 標籤干擾搜尋結果
+                targetTags = urlGrade.split(',').filter(t => t.trim() !== '');
+            } else {
+                // 只有在完全沒指定單元時，才用科目全範圍搜尋
+                targetTags = [subject];
+            }
+            
+            console.log("🎯 [Exam Debug] 最終搜尋標籤 targetTags =", targetTags);
+            // ------------------------------------------------
+
             examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: count * 60 };
             timeLeft = examInfo.timeLimit;
 
@@ -187,14 +203,23 @@
 
             // 生成題目
             if (window.generatePaper) {
-                // 這裡盡量寬鬆搜尋，避免找不到題目
+                // 呼叫生成器
                 mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
                 
-                // 如果找不到，嘗試只用科目搜尋
+                // ------------------------------------------------
+                // 🛠️ 關鍵修正 2：停用「自動全科搜尋」
+                // ------------------------------------------------
+                // 原本這裡寫：如果找不到就 window.generatePaper({ subject: subject... })
+                // 請【註解掉】或【刪除】該備用機制，這樣如果標籤錯了，系統會老實告訴你「0 題」，而不是亂出。
+                
+                /* ❌ 兇手就是這段，把它關掉！
                 if (!mockQuestions || mockQuestions.length === 0) {
                      console.warn("⚠️ 找不到特定單元題目，改為全科搜尋");
                      mockQuestions = window.generatePaper({ subject: subject, total: count });
                 }
+                */
+               
+                console.log(`📊 [Exam Debug] 最終找到 ${mockQuestions ? mockQuestions.length : 0} 題`);
             } else {
                 console.error("❌ 找不到 generatePaper 函式，請確認 JS 檔案是否載入");
                 alert("系統錯誤：題庫引擎未載入");
@@ -202,14 +227,14 @@
             }
 
             if (!mockQuestions || mockQuestions.length === 0) {
-                alert("⚠️ 目前題庫中沒有相關題目，請稍後再試。");
-                window.history.back();
+                // 這裡會跳出警告，告訴您標籤可能沒對上
+                alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！\n請檢查 course_hub.html 的標籤設定是否正確。`);
+                // window.history.back(); // 先不要回上一頁，方便您看 Console
                 return;
             }
 
             initGame();
         }
-
         // 2. 遊戲初始化
         function initGame() {
             userAnswers = new Array(mockQuestions.length).fill(null);
