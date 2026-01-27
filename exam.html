@@ -371,48 +371,87 @@
         }
 
         async function finalSubmit() {
-            clearInterval(timerInterval);
-            document.getElementById('submitModal').classList.add('hidden');
-            
-            // 顯示載入畫面
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+    clearInterval(timerInterval);
+    document.getElementById('submitModal').classList.add('hidden');
+    
+    // 顯示載入畫面
+    document.getElementById('loadingOverlay').classList.remove('hidden');
 
-            // 計算成績
-            let correctCount = 0;
-            let wrongList = [];
-            // 如果單題作答時間小於 3 秒且答對，視為猜測或作弊
-            let fastCount = 0; 
+    // 計算成績
+    let correctCount = 0;
+    let wrongList = [];
+    let fastCount = 0; 
 
-            // --- 修改開始：計算成績與違規偵測 ---
-            // ------------------------------------------------
-            //  修改位置：exam.html 的 finalSubmit 函式內
-            // ------------------------------------------------
+    // 1. 先跑完所有題目的計算
+    mockQuestions.forEach((q, idx) => {
+        const userAns = userAnswers[idx];
+        const timeSpent = timeLog[idx] || 0;
 
-            mockQuestions.forEach((q, idx) => {
-                const userAns = userAnswers[idx];
-                const timeSpent = timeLog[idx] || 0;
+        // 速度檢查
+        if (timeSpent < 3) {
+            fastCount++;
+        }
 
-                // ==========================================
-                // ★ 修正重點：把速度檢查移到最前面 ★
-                // 不管答對還是答錯，只要時間 < 3秒，就視為秒猜
-                // ==========================================
-                if (timeSpent < 3) {
-                    fastCount++;
-                }
-                // ==========================================
-
-                // 接著才是判斷對錯
-                if (userAns === q.answer) {
-                    correctCount++;
-                    // 原本這裡可能有 if(timeSpent < 3) 的舊程式碼，請刪除或確保已移到上面
-                } else {
-                    wrongList.push({ 
-                        ...q, 
-                        yourAns: userAns, 
-                        yourTime: timeSpent.toFixed(1)
-                    });
-                }
+        // 判斷對錯
+        if (userAns === q.answer) {
+            correctCount++;
+        } else {
+            wrongList.push({ 
+                ...q, 
+                yourAns: userAns, 
+                yourTime: timeSpent.toFixed(1)
             });
+        }
+    });
+
+    // 2. 迴圈結束後，計算最終結果
+    const finalScore = Math.round((correctCount / mockQuestions.length) * 100);
+    const user = Auth.getCurrentUser() || { username: 'guest', name: '訪客' };
+
+    const resultData = {
+        id: Date.now(),
+        date: new Date().toLocaleString(),
+        subject: examInfo.subject,
+        title: examInfo.title,
+        score: finalScore,
+        correctCount,
+        totalCount: mockQuestions.length,
+        wrongList,
+        tabSwitches: tabLog.length, 
+        cheat: {
+            cheatLevel: (fastCount > 3) ? 'HIGH' : ((fastCount > 0) ? 'MEDIUM' : 'NORMAL'),
+            fastCount: fastCount
+        },
+        analysis: { 
+            cheatLevel: (fastCount > 5 || tabLog.length > 5) ? 'HIGH' : 'NORMAL', 
+            fastCount, 
+            tabSwitchCount: tabLog.length, 
+            tabLogDetails: tabLog, 
+            timeLog 
+        }
+    };
+
+    // 3. 儲存到本地紀錄 (給複習用)
+    localStorage.setItem('examResult', JSON.stringify(resultData));
+    const historyKey = `history_${user.username}`;
+    let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+    history.push(resultData);
+    localStorage.setItem(historyKey, JSON.stringify(history));
+
+    // 4. 如果是登入使用者，立即嘗試雲端備份
+    if (user.username !== 'guest') {
+        try {
+            await uploadToCloud(user.username, examInfo.title, finalScore, resultData);
+        } catch (e) {
+            console.error("雲端預上傳失敗", e);
+            // 這裡失敗沒關係，因為分析頁還會再試一次自動同步
+        }
+    }
+
+    // 5. ★ 最後一步：才執行跳轉 ★
+    // 這樣 analysis.html 才能讀到 ?mode=new 並觸發自動同步與按鈕鎖定
+    window.location.href = "analysis.html?mode=new";
+}
             // --- 修改結束 ---
             const finalScore = Math.round((correctCount / mockQuestions.length) * 100);
             const user = Auth.getCurrentUser() || { username: 'guest', name: '訪客' };
