@@ -92,24 +92,63 @@
             renderCourses();
         }
 
-        function renderCourses() {
+       function renderCourses() {
             const stage = document.getElementById('currentStage').value;
             const container = document.getElementById('courseContainer');
             container.innerHTML = '';
 
-            const subjects = [
-                // ★★★ 這裡補上了國文 ★★★
-                { id: 'chinese', name: '國文', icon: 'fa-book-open', color: 'red' }, 
+            // 定義基礎科目 (國高中都有)
+            let subjects = [
+                { id: 'chinese', name: '國文', icon: 'fa-book-open', color: 'red' },
                 { id: 'math', name: '數學', icon: 'fa-calculator', color: 'blue' },
                 { id: 'english', name: '英文', icon: 'fa-language', color: 'purple' },
-                { id: 'physics', name: '物理', icon: 'fa-atom', color: 'indigo' },
-                { id: 'chemistry', name: '化學', icon: 'fa-flask', color: 'pink' },
-                { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' },
-                { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' },
+            ];
+
+            // ★★★ 依據階段加入不同自然科 ★★★
+            if (stage === 'junior_high') {
+                // 國中：加入「生物」與「理化」
+                subjects.push(
+                    { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' }, // 國七
+                    { id: 'science', name: '理化', icon: 'fa-flask', color: 'indigo' }, // 國八、九 (物理+化學)
+                    { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' }    // 國九
+                );
+            } else {
+                // 高中：物理、化學、生物、地科 分開
+                subjects.push(
+                    { id: 'physics', name: '物理', icon: 'fa-atom', color: 'indigo' },
+                    { id: 'chemistry', name: '化學', icon: 'fa-vial', color: 'pink' },
+                    { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' },
+                    { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' }
+                );
+            }
+
+            // 加入社會科 (國高中都有，但內容深度不同)
+            subjects.push(
                 { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
                 { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
                 { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
-            ];
+            );
+
+            subjects.forEach((sub, idx) => {
+                const linkHref = `course_hub.html?subject=${sub.id}&stage=${stage}&title=${encodeURIComponent(sub.name)}`;
+                
+                const html = `
+                    <a href="${linkHref}" class="course-card bg-white rounded-xl p-6 flex flex-col items-center text-center hover:bg-${sub.color}-50 group fade-in" style="animation-delay: ${idx * 0.05}s">
+                        <div class="w-16 h-16 rounded-2xl bg-${sub.color}-100 text-${sub.color}-600 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
+                            <i class="fas ${sub.icon}"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${sub.name}</h3>
+                        <p class="text-xs text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border">
+                            ${stage === 'high_school' ? '高中全冊' : '國中全冊'}
+                        </p>
+                        <div class="mt-4 w-full pt-4 border-t border-gray-100 flex justify-center text-${sub.color}-600 font-bold text-sm">
+                            進入課程 <i class="fas fa-arrow-right ml-2 mt-1"></i>
+                        </div>
+                    </a>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
 
             subjects.forEach((sub, idx) => {
                 // 傳遞 subject 和 stage 參數給 course_hub.html
