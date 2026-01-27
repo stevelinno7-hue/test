@@ -193,29 +193,7 @@
         window.__EARTH_SCI_REPO__[id] = { func, tags, subject: "earth_science" };
     });
 
-    // 生成圖表判斷題 (模擬)
-    earthDB.forEach((item, idx) => {
-        const id = `earth_fig_${idx}`;
-        
-        // ✅ 修正寫法：同樣自動抓取年級，不強制加國九
-        const tags = ["earth_science", "地科", ...item.t, "圖表題"]; 
-
-        window.__EARTH_SCI_REPO__[id] = {
-            func: () => {
-                const opts = Utils.shuffle([item.a, ...item.o]);
-                return {
-                    question: `【${item.t[0]}】 [圖表題] 根據附圖，請問此現象或構造為？`,
-                    options: opts,
-                    answer: opts.indexOf(item.a),
-                    explanation: [`🔍 圖示解析：此為 **${item.a}** 的典型特徵。`],
-                    subject: "earth_science", 
-                    tags: tags
-                };
-            }, 
-            tags, 
-            subject: "earth_science"
-        };
-    });
+   
 
     console.log(`✅ 地科題庫載入完成！共 ${Object.keys(window.__EARTH_SCI_REPO__).length} 題。`);
     console.log("👉 修正：已區分 國九 / 高一 / 高二 / 高三，不再混雜。");
