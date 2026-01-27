@@ -10,13 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
-        /* 側邊欄樣式 */
         .unit-item { cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
         .unit-item:hover { background-color: #f1f5f9; }
         .unit-item.active { background-color: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: bold; }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        /* 隱藏捲軸 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 
@@ -28,6 +26,7 @@
     <script src="mockdata/auto_fission_bootstrap.js"></script>
     <script src="mockdata/paper_generator.js"></script>
     <script src="mockdata/curriculum_integrated.js"></script>
+    
     <script src="mockdata/templates_math_algebra_geometry.js"></script>
     <script src="mockdata/templates_physics_multistep.js"></script>
     <script src="mockdata/templates_chemistry_core.js"></script>
@@ -68,23 +67,23 @@
             <div class="p-4 border-b border-slate-200 bg-white">
                 <label class="text-xs font-bold text-gray-400 uppercase">科目選擇</label>
                 <select id="subjectSelect" onchange="loadBookMenu()" class="w-full mt-1 p-2 border border-slate-200 rounded-lg font-bold text-slate-700 focus:outline-none focus:border-blue-500">
-    <optgroup label="主要學科">
-        <option value="math">📐 數學</option>
-        <option value="english">🔤 英文</option>
-        <option value="chinese">🀄 國文</option>
-    </optgroup>
-    <optgroup label="自然科學">
-        <option value="physics">🧲 物理 (理化)</option>
-        <option value="chemistry">⚗️ 化學 (理化)</option>
-        <option value="biology">🧬 生物</option>
-        <option value="earth">🌍 地球科學</option>
-    </optgroup>
-    <optgroup label="社會人文">
-        <option value="history">📜 歷史</option>
-        <option value="geography">🗺️ 地理</option>
-        <option value="civics">⚖️ 公民</option>
-    </optgroup>
-</select>
+                    <optgroup label="主要學科">
+                        <option value="math">📐 數學</option>
+                        <option value="english">🔤 英文</option>
+                        <option value="chinese">🀄 國文</option>
+                    </optgroup>
+                    <optgroup label="自然科學 (理化)">
+                        <option value="physics">🧲 物理 / 理化(上)</option>
+                        <option value="chemistry">⚗️ 化學 / 理化(下)</option>
+                        <option value="biology">🧬 生物</option>
+                        <option value="earth">🌍 地球科學</option>
+                    </optgroup>
+                    <optgroup label="社會人文">
+                        <option value="history">📜 歷史</option>
+                        <option value="geography">🗺️ 地理</option>
+                        <option value="civics">⚖️ 公民</option>
+                    </optgroup>
+                </select>
             </div>
             <div class="flex-grow overflow-y-auto p-2 space-y-4 no-scrollbar" id="unitMenu">
                 <div class="text-center py-10 text-gray-400 text-sm"><i class="fas fa-spinner fa-spin"></i> 載入中...</div>
@@ -106,89 +105,121 @@
                         <p>請從左側選擇一個單元開始複習</p>
                     </div>
                 </div>
-                <div class="h-20"></div> </div>
+                <div class="h-20"></div> 
+            </div>
         </div>
 
     </main>
-<script>
+
+    <script>
         // 1. 定義全域變數
         let currentSubject = 'math';
         let userStage = 'high_school'; // 預設值
 
-        // ★★★ 修正點：將所有初始化動作整合在唯一的 window.onload ★★★
         window.onload = function() {
-            // --- A. 處理網址參數 ---
-            const urlParams = new URLSearchParams(window.location.search);
-            currentSubject = urlParams.get('filter') || 'math';
-            
-            const subjectSelect = document.getElementById('subjectSelect');
-            if(subjectSelect) subjectSelect.value = currentSubject;
-
-            // --- B. 處理使用者登入狀態 (原本被覆蓋導致失效的部分) ---
+            // --- A. 處理使用者登入與學制判斷 ---
             const user = Auth.getCurrentUser();
-            
             if(user) {
-                // 更新左側顯示
-                const nameEl = document.getElementById('sideUserName');
-                const roleEl = document.getElementById('sideUserRole');
-                
-                if(nameEl) nameEl.textContent = user.name;
-                if(roleEl) roleEl.textContent = user.grade;
-
-                // 判斷學制邏輯
+                document.getElementById('sideUserName').textContent = user.name;
+                document.getElementById('sideUserRole').textContent = user.grade;
                 if(user.grade && user.grade.includes('國')) {
                     userStage = 'junior_high';
                 } else {
                     userStage = 'high_school';
                 }
-            } else {
-                // 未登入預設
-                userStage = 'high_school';
             }
+            if(typeof setStage === 'function') setStage(userStage);
 
-            // 設定給題庫引擎 (如果有此函式)
-            if(typeof setStage === 'function') {
-                setStage(userStage);
-            }
+            // --- B. 處理網址參數 ---
+            const urlParams = new URLSearchParams(window.location.search);
+            currentSubject = urlParams.get('filter') || 'math';
+            const subjectSelect = document.getElementById('subjectSelect');
+            if(subjectSelect) subjectSelect.value = currentSubject;
 
-            // --- C. 載入資料庫與選單 ---
+            // --- C. 初始化資料庫並修復理化缺漏 ---
             setTimeout(() => {
-                if(window.initCurriculumData) window.initCurriculumData(); // 確保資料載入
+                if(window.initCurriculumData) window.initCurriculumData(); 
+                patchScienceData(userStage); // ★ 執行理化資料補丁
                 loadBookMenu();
             }, 300);
         };
 
-        // 2. 載入左側選單
+        // ★★★ 新增：理化資料補丁函數 ★★★
+        // 用途：如果系統發現是國中階段，但找不到「物理/化學」的國中對應書本，自動補上「國中理化」資料
+        function patchScienceData(stage) {
+            if (!window.CurriculumLibrary || !window.CurriculumLibrary.data) return;
+
+            // 1. 補丁：國中物理 (歸類在 physics)
+            if (!window.CurriculumLibrary.data['physics']) window.CurriculumLibrary.data['physics'] = [];
+            const hasJuniorPhysics = window.CurriculumLibrary.data['physics'].some(b => b.stage === 'junior_high');
+            
+            if (!hasJuniorPhysics && stage === 'junior_high') {
+                window.CurriculumLibrary.data['physics'].push({
+                    book: "國中理化 (物理篇)",
+                    stage: "junior_high",
+                    units: [
+                        { name: "基本測量與密度", tags: ["測量", "密度"] },
+                        { name: "力與運動", tags: ["牛頓運動定律", "力"] },
+                        { name: "功與能", tags: ["功", "能量"] },
+                        { name: "溫度與熱", tags: ["熱學", "比熱"] },
+                        { name: "波動與聲音", tags: ["波動", "聲音"] },
+                        { name: "光與折射", tags: ["光學", "折射"] },
+                        { name: "電與磁", tags: ["電學", "磁場"] }
+                    ]
+                });
+            }
+
+            // 2. 補丁：國中化學 (歸類在 chemistry)
+            if (!window.CurriculumLibrary.data['chemistry']) window.CurriculumLibrary.data['chemistry'] = [];
+            const hasJuniorChem = window.CurriculumLibrary.data['chemistry'].some(b => b.stage === 'junior_high');
+
+            if (!hasJuniorChem && stage === 'junior_high') {
+                window.CurriculumLibrary.data['chemistry'].push({
+                    book: "國中理化 (化學篇)",
+                    stage: "junior_high",
+                    units: [
+                        { name: "物質的分類與變化", tags: ["物質", "化學變化"] },
+                        { name: "原子結構與元素週期表", tags: ["原子", "週期表"] },
+                        { name: "化學反應與計量", tags: ["化學反應", "莫耳"] },
+                        { name: "氧化還原", tags: ["氧化還原"] },
+                        { name: "酸鹼鹽", tags: ["酸鹼", "pH值"] },
+                        { name: "有機化合物", tags: ["有機化學", "碳氫化合物"] }
+                    ]
+                });
+            }
+        }
+
+        // 2. 載入左側選單 (維持不變，但現在能讀到補丁後的資料了)
         function loadBookMenu() {
-            // 重新確認選擇的科目
             const subjectSelect = document.getElementById('subjectSelect');
             if(subjectSelect) currentSubject = subjectSelect.value;
             
             const menu = document.getElementById('unitMenu');
             menu.innerHTML = '';
 
-            // 防呆：確保資料庫存在
             if (!window.CurriculumLibrary || !window.CurriculumLibrary.data) {
                 menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">資料庫載入中...</div>`;
                 return;
             }
 
             const allBooks = window.CurriculumLibrary.data[currentSubject] || [];
-            // 根據使用者的學制 (userStage) 篩選書本
+            // 根據使用者的學制篩選書本
             const books = allBooks.filter(b => b.stage === userStage);
 
             if (books.length === 0) {
-                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">此科目尚無對應學制的資料</div>`;
+                let msg = "此科目尚無對應學制的資料";
+                if(currentSubject === 'physics' || currentSubject === 'chemistry') {
+                    if(userStage === 'junior_high') msg = "找不到國中理化資料";
+                }
+                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400 bg-slate-100 m-2 rounded">${msg}</div>`;
                 return;
             }
 
-            // 依冊次生成目錄
             books.forEach((book, bIdx) => {
-                const detailsOpen = bIdx === 0 ? 'open' : ''; // 預設展開第一冊
+                const detailsOpen = bIdx === 0 ? 'open' : '';
                 let unitsHtml = '';
                 
                 book.units.forEach((unit, uIdx) => {
-                    // 將 tags 存入 data 屬性 (編碼以避免引號問題)
                     const tagsStr = encodeURIComponent(JSON.stringify(unit.tags || []));
                     unitsHtml += `
                         <div class="unit-item px-4 py-3 text-sm text-slate-600 rounded-lg mb-1 flex items-center gap-2 cursor-pointer hover:bg-slate-100" 
@@ -215,25 +246,22 @@
 
         // 3. 核心：根據單元標籤生成重點內容
         function loadUnitContent(unitName, tagsStr, el) {
-            // UI 更新 (Highlight 目前選擇的單元)
             document.querySelectorAll('.unit-item').forEach(i => i.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'font-bold'));
-            el.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-bold'); // 增加 Tailwind 樣式讓選取更明顯
+            el.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-bold');
             
             document.getElementById('currentUnitTitle').textContent = unitName;
             document.getElementById('currentUnitSub').textContent = `科目：${currentSubject} | 來源：智慧題庫`;
 
-            // 解析標籤
             const tags = JSON.parse(decodeURIComponent(tagsStr));
             const container = document.getElementById('notesContainer');
             
-            // 顯示載入動畫
             container.innerHTML = '<div class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin"></i> AI 正在整理重點...</div>';
 
             setTimeout(() => {
                 let questions = [];
-                // 呼叫題庫生成器 (generatePaper)
                 if (window.generatePaper) {
-                    questions = window.generatePaper({ subject: currentSubject, total: 8, tags: tags });
+                    // 如果是理化，標籤可能需要合併處理，但這裡先傳原始tags
+                    questions = window.generatePaper({ subject: currentSubject, total: 6, tags: tags });
                 }
 
                 if (!questions || questions.length === 0) {
@@ -241,17 +269,22 @@
                         <div class="bg-yellow-50 border border-yellow-100 p-8 rounded-xl text-center">
                             <i class="fas fa-exclamation-circle text-yellow-500 text-3xl mb-3"></i>
                             <p class="text-yellow-700 font-bold">本單元目前尚無重點資料</p>
-                            <p class="text-xs text-yellow-600 mt-1">請嘗試其他單元或聯繫管理員更新題庫。</p>
+                            <p class="text-xs text-yellow-600 mt-1">AI 題庫正在生成中，請稍後再試。</p>
                         </div>`;
                     return;
                 }
 
-                // 渲染卡片內容
                 let contentHtml = '';
                 questions.forEach((q, idx) => {
-                    const concept = q.concept || unitName.split(' ')[1] || '核心觀念';
+                    const concept = q.concept || unitName.split(' ')[0] || '核心觀念';
                     const explain = (q.explanation && q.explanation.length > 0) ? q.explanation.join('<br>') : "觀念應用題";
                     
+                    // Logic to add a relevant diagram if it's a science subject
+                    let imageTag = '';
+                    if (['physics', 'chemistry', 'biology', 'earth'].includes(currentSubject)) {
+                        imageTag = `<div class="mb-4 text-center"></div>`;
+                    }
+
                     contentHtml += `
                         <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm fade-in hover:shadow-md transition" style="animation-delay: ${idx * 0.1}s">
                             <div class="flex items-center gap-2 mb-4">
@@ -269,8 +302,9 @@
                             <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                 <div class="flex gap-3">
                                     <div class="mt-0.5"><i class="fas fa-lightbulb text-yellow-500"></i></div>
-                                    <div>
+                                    <div class="w-full">
                                         <div class="text-xs font-bold text-slate-500 mb-1">觀念解析</div>
+                                        ${imageTag}
                                         <div class="text-sm text-slate-600 leading-relaxed">
                                             ${explain}
                                         </div>
@@ -282,10 +316,9 @@
                 });
 
                 container.innerHTML = contentHtml;
-                // 重新渲染數學公式
                 if(window.MathJax) MathJax.typesetPromise();
 
-            }, 300); // 模擬載入感
+            }, 300);
         }
     </script>
 </body>
