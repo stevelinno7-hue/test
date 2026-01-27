@@ -27,7 +27,8 @@
 
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script> 
-    <script src="assets/js/generator_engine.js"></script> <script src="mockdata/generator_engine_polyfill.js"></script>
+    <script src="assets/js/generator_engine.js"></script>
+    <script src="mockdata/generator_engine_polyfill.js"></script>
     <script src="mockdata/paper_generator.js"></script>
     <script src="mockdata/curriculum_integrated.js"></script>
 
@@ -177,19 +178,41 @@
 
         let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval, examInfo = {};
         let timeLog = [], tabLog = [], tabLeaveStart = null, questionStartTime = 0;
-        let selectedCount = 10; // 預設題數
+        let selectedCount = 10;
+        
+        // ★★★ 防呆機制變數 ★★★
+        let isSubmitting = false; // 用來標記是否正在交卷，若是，則允許跳轉
 
         window.onload = function() {
             if (window.Auth && !Auth.requireLogin()) return;
             initVisibilityListener();
-            
-            // 頁面載入後，直接顯示設定視窗，不自動開始
+            setupRefreshProtection(); // 啟動防重整保護
             showSetupModal();
         };
 
-        // --- 測驗設定邏輯 ---
+        // ★★★ 核心：防重整保護邏輯 ★★★
+        function setupRefreshProtection() {
+            // 1. 攔截 beforeunload 事件 (當用戶按瀏覽器重整或關閉分頁時觸發)
+            window.addEventListener('beforeunload', function (e) {
+                if (!isSubmitting) {
+                    // 標準瀏覽器防護：設定 returnValue 會觸發瀏覽器的「確定要離開嗎？」對話框
+                    e.preventDefault();
+                    e.returnValue = ''; 
+                }
+            });
+
+            // 2. 攔截鍵盤快速鍵 (F5, Ctrl+R, Command+R)
+            document.addEventListener('keydown', function(e) {
+                // F5 code is 116. Ctrl+R or Cmd+R is 82.
+                if ((e.which || e.keyCode) === 116 || 
+                    ((e.ctrlKey || e.metaKey) && (e.which || e.keyCode) === 82)) {
+                    e.preventDefault();
+                    alert("⚠️ 測驗進行中，禁止重新整理頁面！\n這會導致您的作答進度全部遺失。");
+                }
+            });
+        }
+
         function showSetupModal() {
-            // 暫停計時器 (如果正在跑)
             if(timerInterval) clearInterval(timerInterval);
             document.getElementById('setupModal').classList.remove('hidden');
         }
@@ -207,11 +230,9 @@
 
         function confirmSetup() {
             document.getElementById('setupModal').classList.add('hidden');
-            // 使用選擇的題數開始準備
             prepareExam(selectedCount);
         }
 
-        // --- 核心流程 ---
         function prepareExam(count) {
             const urlParams = new URLSearchParams(window.location.search);
             let subject = urlParams.get('subject') || 'math';
@@ -219,7 +240,6 @@
             const title = rawTitle.trim();
             const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
 
-            // 科目名稱正規化
             if (subject === 'earth_science') subject = 'earth';
             if (subject === 'social') subject = 'history';
 
@@ -230,11 +250,9 @@
                 targetTags = [subject];
             }
             
-            // 設定標題與標籤
             document.getElementById('examTitle').textContent = title;
             document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
 
-            // 生成題目 (使用使用者選擇的 count)
             if (window.generatePaper) {
                 mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
             } else {
@@ -247,7 +265,6 @@
                 return;
             }
 
-            // 設定考試時間 (每題 1 分鐘)
             examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: count * 60 };
             timeLeft = examInfo.timeLimit;
 
@@ -394,6 +411,10 @@
 
         async function finalSubmit() {
             if (timerInterval) clearInterval(timerInterval);
+            
+            // ★ 重要：設定為正在交卷狀態，解除頁面鎖定
+            isSubmitting = true;
+
             document.getElementById('submitModal').classList.add('hidden');
             document.getElementById('loadingOverlay').classList.remove('hidden');
 
