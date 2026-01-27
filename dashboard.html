@@ -64,15 +64,21 @@
 
     <input type="hidden" id="currentStage" value="high_school">
 
-    <script>
+   <script>
         window.onload = function() {
-            const user = Auth.getCurrentUser();
-            if(user) {
-                document.getElementById('sideUserName').textContent = user.name;
-                document.getElementById('sideUserRole').textContent = user.grade;
-                if(user.grade && user.grade.includes('國')) setStage('junior_high');
-                else setStage('high_school');
+            // 確保 Auth 物件存在，避免報錯 (如果只測試前端 UI，可以註解掉這塊)
+            if (typeof Auth !== 'undefined') {
+                const user = Auth.getCurrentUser();
+                if(user) {
+                    document.getElementById('sideUserName').textContent = user.name;
+                    document.getElementById('sideUserRole').textContent = user.grade;
+                    if(user.grade && user.grade.includes('國')) setStage('junior_high');
+                    else setStage('high_school');
+                } else {
+                    setStage('high_school');
+                }
             } else {
+                console.warn('Auth module not loaded, defaulting to high school.');
                 setStage('high_school');
             }
         };
@@ -92,7 +98,7 @@
             renderCourses();
         }
 
-       function renderCourses() {
+        function renderCourses() {
             const stage = document.getElementById('currentStage').value;
             const container = document.getElementById('courseContainer');
             container.innerHTML = '';
@@ -104,7 +110,7 @@
                 { id: 'english', name: '英文', icon: 'fa-language', color: 'purple' },
             ];
 
-            // ★★★ 依據階段加入不同自然科 ★★★
+            // 依據階段加入不同自然科
             if (stage === 'junior_high') {
                 // 國中：加入「生物」與「理化」
                 subjects.push(
@@ -122,7 +128,7 @@
                 );
             }
 
-            // 加入社會科 (國高中都有，但內容深度不同)
+            // 加入社會科 (國高中都有)
             subjects.push(
                 { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
                 { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
@@ -132,28 +138,8 @@
             subjects.forEach((sub, idx) => {
                 const linkHref = `course_hub.html?subject=${sub.id}&stage=${stage}&title=${encodeURIComponent(sub.name)}`;
                 
-                const html = `
-                    <a href="${linkHref}" class="course-card bg-white rounded-xl p-6 flex flex-col items-center text-center hover:bg-${sub.color}-50 group fade-in" style="animation-delay: ${idx * 0.05}s">
-                        <div class="w-16 h-16 rounded-2xl bg-${sub.color}-100 text-${sub.color}-600 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
-                            <i class="fas ${sub.icon}"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">${sub.name}</h3>
-                        <p class="text-xs text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border">
-                            ${stage === 'high_school' ? '高中全冊' : '國中全冊'}
-                        </p>
-                        <div class="mt-4 w-full pt-4 border-t border-gray-100 flex justify-center text-${sub.color}-600 font-bold text-sm">
-                            進入課程 <i class="fas fa-arrow-right ml-2 mt-1"></i>
-                        </div>
-                    </a>
-                `;
-                container.insertAdjacentHTML('beforeend', html);
-            });
-        }
-
-            subjects.forEach((sub, idx) => {
-                // 傳遞 subject 和 stage 參數給 course_hub.html
-                const linkHref = `course_hub.html?subject=${sub.id}&stage=${stage}&title=${encodeURIComponent(sub.name)}`;
-                
+                // 動態生成 HTML
+                // 注意：style="animation-delay" 搭配上方新增的 CSS @keyframes fadeIn 使用
                 const html = `
                     <a href="${linkHref}" class="course-card bg-white rounded-xl p-6 flex flex-col items-center text-center hover:bg-${sub.color}-50 group fade-in" style="animation-delay: ${idx * 0.05}s">
                         <div class="w-16 h-16 rounded-2xl bg-${sub.color}-100 text-${sub.color}-600 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
