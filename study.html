@@ -38,26 +38,28 @@
     <script src="mockdata/templates_geography_core.js"></script>
     <script src="mockdata/templates_civics_core.js"></script>
 </head>
-<body class="h-screen flex overflow-hidden">
-    <aside class="w-16 md:w-64 bg-white border-r border-slate-100 flex-shrink-0 flex flex-col z-20">
-        <div class="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-50">
-            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold">學</div>
-            <span class="text-lg font-bold text-slate-800 ml-2 hidden md:block">雲端學院</span>
+<<body class="h-screen flex overflow-hidden">
+    <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
+        <div class="h-16 flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
-        <nav class="flex-grow px-2 md:px-3 py-6 space-y-1">
-            <a href="dashboard.html" class="flex items-center gap-3 px-2 md:px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition">
-                <i class="fas fa-th-large w-5 text-center"></i> <span class="hidden md:block">課程總覽</span>
-            </a>
-            <a href="#" class="flex items-center gap-3 px-2 md:px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm">
-                <i class="fas fa-highlighter w-5 text-center"></i> <span class="hidden md:block">重點複習</span>
-            </a>
-            <a href="arcade.html" class="flex items-center gap-3 px-2 md:px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition">
-                <i class="fas fa-gamepad w-5 text-center"></i> <span class="hidden md:block">遊戲場</span>
-            </a>
-            <a href="remedial.html" class="flex items-center gap-3 px-2 md:px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition">
-                <i class="fas fa-book-medical w-5 text-center"></i> <span class="hidden md:block">錯題補救</span>
-            </a>
+        <div class="px-4 py-6">
+            <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
+                <h3 class="font-bold text-slate-800" id="sideUserName">訪客</h3>
+                <div class="text-[11px] text-slate-400 mt-1 mb-3" id="sideUserRole">學生</div>
+            </div>
+        </div>
+        <nav class="flex-grow px-3 space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-book-medical w-5 text-center"></i> 課程總覽</a>
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-book-medical w-5 text-center"></i> 錯題補救</a>
+            <a href="study.html"class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm"><i class="fas fa-th-large w-5 text-center"></i> 重點複習</a>
+            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-gamepad w-5 text-center"></i> 解題論壇</a>
         </nav>
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
     </aside>
 
     <main class="flex-grow flex h-full relative overflow-hidden">
