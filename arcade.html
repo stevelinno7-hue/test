@@ -4,26 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>學習遊戲場 - 雲端學院</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
-        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* 翻牌特效 */
+        
+        /* === 翻牌特效 (修正版) === */
         .perspective { perspective: 1000px; }
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
         .card-inner.is-flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .card-front { background: white; color: #334155; border: 2px solid #e2e8f0; }
-        .card-back { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; transform: rotateY(180deg); }
-        /* 配對成功 */
-        .matched .card-back { background: #10b981 !important; } 
+        
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        
+        /* 內容面 (Content)：初始旋轉 180 度 (背面狀態) */
+        .card-front { background: white; color: #334155; border: 2px solid #e2e8f0; transform: rotateY(180deg); }
+        
+        /* 封面面 (Pattern)：初始 0 度 (正面狀態) */
+        .card-back { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; transform: rotateY(0deg); }
+        
+        .matched .card-inner { opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+        
+        /* 遊戲區塊切換動畫 */
         .game-section { display: none; }
         .game-section.active { display: block; animation: fadeIn 0.3s ease-out; }
+        
+        /* 特效動畫 */
+        .shake-animation { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -34,10 +47,11 @@
     <script src="mockdata/auto_fission_bootstrap.js"></script>
     <script src="mockdata/paper_generator.js"></script>
     <script src="mockdata/curriculum_integrated.js"></script>
+    
     <script src="mockdata/templates_math_algebra_geometry.js"></script>
     <script src="mockdata/templates_physics_multistep.js"></script>
     <script src="mockdata/templates_chemistry_core.js"></script>
-    <script src="mockdata/templates_biology_core.js"></script> 
+    <script src="mockdata/templates_biology_core.js"></script>
     <script src="mockdata/templates_english_core.js"></script>
     <script src="mockdata/templates_chinese_core.js"></script>
     <script src="mockdata/templates_history_core.js"></script>
@@ -45,6 +59,7 @@
     <script src="mockdata/templates_civics_core.js"></script>
 </head>
 <body class="h-screen flex overflow-hidden">
+
     <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
         <div class="h-16 flex items-center px-6 border-b border-slate-50">
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
@@ -67,664 +82,580 @@
             <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
         </div>
     </aside>
-  <main class="flex-grow flex flex-col h-full relative overflow-hidden">
-    <div class="p-6 md:p-8 overflow-y-auto h-full scroll-smooth">
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
-                    <i class="fas fa-rocket text-indigo-500"></i> 學習遊戲場
-                </h1>
-                <p class="text-slate-500 mt-1">使用您的專屬題庫，邊玩邊學！</p>
-            </div>
-            <div class="flex gap-2">
-                <span class="px-4 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold flex items-center gap-2">
-                    <i class="fas fa-coins"></i> 金幣: <span id="coinCount">0</span>
-                </span>
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="gameMenu">
-    
-    <div onclick="startGame('flashcard')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
-        <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-clone"></i></div>
-        <h3 class="text-xl font-bold text-slate-800 mb-2">智能閃示卡</h3>
-        <p class="text-sm text-slate-500">翻牌記憶，複習觀念的最佳利器。</p>
-    </div>
-
-    <div onclick="startGame('math_rush')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
-        <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-stopwatch"></i></div>
-        <h3 class="text-xl font-bold text-slate-800 mb-2">極速挑戰賽</h3>
-        <p class="text-sm text-slate-500">限時搶答！挑戰你的反應速度。</p>
-    </div>
-
-    <div onclick="startGame('memory_match')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
-        <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-brain"></i></div>
-        <h3 class="text-xl font-bold text-slate-800 mb-2">腦力配對</h3>
-        <p class="text-sm text-slate-500">找出隱藏的關聯卡片！</p>
-    </div>
-
-    <div onclick="startGame('rpg_battle')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
-        <div class="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-khanda"></i></div>
-        <h3 class="text-xl font-bold text-slate-800 mb-2">勇者鬥惡龍</h3>
-        <p class="text-sm text-slate-500">答題攻擊！擊敗怪獸守護城堡。</p>
-    </div>
-
-    <div onclick="startGame('defuse_bomb')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
-        <div class="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-bomb"></i></div>
-        <h3 class="text-xl font-bold text-slate-800 mb-2">拆彈專家</h3>
-        <p class="text-sm text-slate-500">答錯即爆！連續答對來解除危機。</p>
-    </div>
-
-    <div onclick="startGame('lucky_wheel')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
-        <div class="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-dharmachakra"></i></div>
-        <h3 class="text-xl font-bold text-slate-800 mb-2">幸運轉盤</h3>
-        <p class="text-sm text-slate-500">轉出高分倍率，挑戰運氣與實力。</p>
-    </div>
-</div>
-        <div id="game-flashcard" class="game-section max-w-2xl mx-auto hidden">
-            <div class="flex justify-between items-center mb-6">
-                <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
-                <span class="text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-lg">科目：<span id="fcSubject">數學</span></span>
-            </div>
-            <div class="perspective h-96 w-full cursor-pointer" onclick="flipCard(this)">
-                <div class="card-inner relative w-full h-full" id="flashCardInner">
-                    <div class="card-face card-front flex-col p-8">
-                        <span class="text-xs text-slate-400 font-bold mb-4 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">Question</span>
-                        <div class="flex-grow flex items-center justify-center w-full"><h2 class="text-2xl font-bold text-slate-800 text-center leading-relaxed" id="fcQuestion">...</h2></div>
-                        <p class="mt-4 text-slate-400 text-xs">點擊翻面</p>
-                    </div>
-                    <div class="card-face card-back flex-col p-8">
-                        <span class="text-xs text-blue-200 font-bold mb-4 uppercase tracking-widest bg-white/20 px-2 py-1 rounded">Answer</span>
-                        <div class="flex-grow flex flex-col items-center justify-center w-full"><h2 class="text-3xl font-extrabold text-white text-center mb-4" id="fcAnswer">...</h2></div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex justify-center mt-8"><button onclick="nextFlashcard()" class="px-8 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50">下一題</button></div>
-        </div>
-
-        <div id="game-math_rush" class="game-section max-w-xl mx-auto hidden">
-            <div class="flex justify-between items-center mb-6">
-                <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>放棄</button>
-                <div class="flex items-center gap-3">
-                    <div class="bg-red-50 text-red-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="far fa-clock mr-2"></i><span id="mrTimer">--</span></div>
-                    <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="fas fa-star mr-2"></i><span id="mrScore">0</span></div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-[2rem] shadow-xl p-8 text-center relative overflow-hidden min-h-[400px] flex flex-col justify-center">
-                
-                <div id="mrTimeSelector" class="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center p-6">
-                    <div class="w-20 h-20 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center text-4xl mb-6 animate-bounce">
-                        <i class="fas fa-bolt"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-slate-800 mb-2">準備好了嗎？</h2>
-                    <p class="text-slate-500 mb-8">請選擇挑戰時間</p>
-                    
-                    <div class="grid grid-cols-1 gap-3 w-full max-w-xs">
-                        <button onclick="startSpeedGame(30)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">
-                            ⚡ 30 秒 <span class="text-xs font-normal text-slate-400 group-hover:text-blue-400 ml-2">(閃電戰)</span>
-                        </button>
-                        <button onclick="startSpeedGame(60)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">
-                            ⏱️ 60 秒 <span class="text-xs font-normal text-slate-400 group-hover:text-blue-400 ml-2">(標準)</span>
-                        </button>
-                        <button onclick="startSpeedGame(120)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">
-                            🐢 120 秒 <span class="text-xs font-normal text-slate-400 group-hover:text-blue-400 ml-2">(耐力戰)</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="mrGameArea" class="hidden">
-                    <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-8 mt-2 leading-relaxed" id="mrQuestion">...</h2>
-                    <div class="grid grid-cols-1 gap-3" id="mrOptions"></div>
-                </div>
-
-                <div id="mrGameOver" class="hidden text-center py-10">
-                    <h3 class="text-3xl font-bold text-slate-800 mb-2">時間到！</h3>
-                    <p class="text-slate-500 mb-4">本次得分</p>
-                    <div class="text-6xl font-black text-blue-600 mb-8" id="mrFinalScore">0</div>
-                    <button onclick="initMathRush()" class="px-10 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-700 transition shadow-lg transform hover:-translate-y-1">
-                        再玩一次
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div id="game-memory_match" class="game-section max-w-4xl mx-auto hidden">
-            <div class="flex justify-between items-center mb-6">
-                <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
-                <div class="flex items-center gap-3">
-                    <div class="bg-purple-50 text-purple-600 px-4 py-2 rounded-xl font-bold text-xl">
-                        <i class="fas fa-check-double mr-2"></i><span id="mmMatches">0</span>/6
-                    </div>
-                    <div class="bg-slate-100 text-slate-500 px-4 py-2 rounded-xl font-bold">
-                        <i class="far fa-hand-pointer mr-2"></i><span id="mmMoves">0</span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="mmGrid" class="grid grid-cols-3 md:grid-cols-4 gap-4 w-full perspective-container">
-            </div>
-
-            <div id="mmGameOver" class="hidden text-center py-12 bg-white rounded-3xl shadow-lg mt-4">
-                <div class="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-5xl mx-auto mb-6 animate-bounce">
-                    <i class="fas fa-trophy"></i>
-                </div>
-                <h3 class="text-3xl font-bold text-slate-800 mb-2">配對完成！</h3>
-                <p class="text-slate-500 mb-6">你的記憶力真不錯！</p>
-                <button onclick="initMemoryMatch()" class="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">
-                    再玩一次
-                </button>
-            </div>
-        </div>
-        <div id="game-rpg_battle" class="game-section max-w-2xl mx-auto hidden">
-    <div class="flex justify-between items-center mb-4">
-        <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>逃跑</button>
-        <div class="bg-red-50 text-red-600 px-3 py-1 rounded-lg font-bold">❤️ HP: <span id="heroHp">100</span></div>
-    </div>
-    
-    <div class="bg-slate-800 rounded-2xl p-6 text-white text-center mb-4 relative overflow-hidden h-64 flex flex-col justify-end items-center">
-        <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]"></div>
-        
-        <div id="rpgMonster" class="mb-4 transition-transform duration-200">
-            <i class="fas fa-dragon text-8xl text-red-400 drop-shadow-lg"></i>
-            <div class="mt-2 font-bold text-red-200">知識惡龍</div>
-            <div class="w-48 h-3 bg-slate-700 rounded-full mx-auto mt-2 border border-slate-600 overflow-hidden">
-                <div id="monsterHpBar" class="h-full bg-red-500 transition-all duration-300" style="width: 100%"></div>
-            </div>
-        </div>
-
-        <div id="rpgEffect" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden">
-            <div class="text-6xl font-black text-yellow-400 animate-ping">BANG!</div>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-        <h3 class="text-lg font-bold text-slate-800 mb-4" id="rpgQuestion">...</h3>
-        <div class="grid grid-cols-1 gap-3" id="rpgOptions"></div>
-    </div>
-</div>
-
-<div id="game-defuse_bomb" class="game-section max-w-xl mx-auto hidden">
-    <div class="flex justify-between items-center mb-6">
-        <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>放棄</button>
-        <div class="text-slate-400 font-bold">需連續答對 <span class="text-blue-600" id="bombStreakTarget">5</span> 題</div>
-    </div>
-
-    <div class="bg-slate-900 rounded-3xl p-8 text-center text-white relative shadow-2xl border-4 border-slate-700">
-        <div class="w-full bg-black/50 rounded-xl p-4 mb-6 border border-slate-600">
-            <div class="font-mono text-6xl text-red-500 font-black tracking-widest animate-pulse" id="bombTimer">10</div>
-        </div>
-        
-        <div class="flex justify-center gap-2 mb-8" id="bombWires">
-            </div>
-
-        <h3 class="text-xl font-bold mb-6 min-h-[3rem] flex items-center justify-center" id="bombQuestion">準備拆彈...</h3>
-        
-        <div class="grid grid-cols-2 gap-4" id="bombOptions">
-            </div>
-
-        <div id="bombExplosion" class="absolute inset-0 bg-red-600 z-50 rounded-2xl flex flex-col items-center justify-center hidden">
-            <i class="fas fa-bomb text-9xl text-black mb-4 animate-bounce"></i>
-            <h2 class="text-4xl font-black text-white">BOOM!</h2>
-            <button onclick="initDefuseBomb()" class="mt-8 px-6 py-2 bg-white text-red-600 rounded-full font-bold">重試</button>
-        </div>
-        
-        <div id="bombSuccess" class="absolute inset-0 bg-green-500 z-50 rounded-2xl flex flex-col items-center justify-center hidden">
-            <i class="fas fa-check-circle text-9xl text-white mb-4"></i>
-            <h2 class="text-3xl font-black text-white">拆彈成功!</h2>
-            <button onclick="initDefuseBomb()" class="mt-8 px-6 py-2 bg-white text-green-600 rounded-full font-bold">下一顆</button>
-        </div>
-    </div>
-</div>
-
-<div id="game-lucky_wheel" class="game-section max-w-2xl mx-auto hidden">
-    <div class="flex justify-between items-center mb-6">
-        <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
-        <div class="bg-yellow-50 text-yellow-700 px-4 py-1 rounded-full font-bold">總分: <span id="wheelScore">0</span></div>
-    </div>
-
-    <div class="flex flex-col md:flex-row gap-8 items-center">
-        <div class="relative w-64 h-64 shrink-0">
-            <div id="wheelCircle" class="w-full h-full rounded-full border-8 border-yellow-300 bg-white flex items-center justify-center shadow-xl transition-transform duration-[3s] ease-out relative overflow-hidden" style="background: conic-gradient(#ff9999 0deg 60deg, #66b3ff 60deg 120deg, #99ff99 120deg 180deg, #ffcc99 180deg 240deg, #c2c2f0 240deg 300deg, #ffb3e6 300deg 360deg);">
-                </div>
-            <div class="absolute -top-4 left-1/2 -translate-x-1/2 text-4xl text-slate-700 z-10"><i class="fas fa-caret-down"></i></div>
-            <button onclick="spinWheel()" id="spinBtn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full font-bold text-slate-700 shadow-lg border-4 border-yellow-100 hover:scale-105 transition flex items-center justify-center z-20">GO</button>
-        </div>
-
-        <div class="flex-grow bg-white p-6 rounded-2xl shadow-sm border border-slate-200 opacity-50 pointer-events-none transition-opacity" id="wheelQuizArea">
-            <div class="mb-2 text-xs font-bold text-slate-400 uppercase">本次倍率</div>
-            <div class="text-3xl font-black text-yellow-500 mb-4" id="wheelMultiplier">x?</div>
-            <h3 class="text-lg font-bold text-slate-800 mb-4" id="wheelQuestion">請先轉動轉盤...</h3>
-            <div class="grid grid-cols-1 gap-2" id="wheelOptions"></div>
-        </div>
-    </div>
-</div>
-    </div>
-</main>
-<script>
-    // ==========================================
-    // 🌐 全域變數與初始化
-    // ==========================================
-    window.onload = function() {
-        const user = Auth.getCurrentUser();
-        if(user) {
-            document.getElementById('sideUserName').textContent = user.name;
-            document.getElementById('sideUserRole').textContent = user.grade;
-            if(user.grade && user.grade.includes('國')) setStage('junior_high');
-            else setStage('high_school');
-            document.getElementById('coinCount').textContent = user.coins || 0;
-        } else {
-            setStage('high_school');
-        }
-    };
-
-    // 解析網址
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentSubject = urlParams.get('subject') || 'math';
-    const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
-    let targetTags = [];
-    if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
-        targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
-    }
-
-    // 題目生成器
-    function generateGameQuestions(subj, count) {
-        if (window.generatePaper) {
-            return window.generatePaper({ 
-                subject: subj, 
-                total: count, 
-                tags: targetTags.length > 0 ? targetTags : [subj] 
-            }).filter(i => i && i.question);
-        }
-        return [];
-    }
-
-    // 遊戲路由控制
-    function startGame(id) {
-        document.getElementById('gameMenu').classList.add('hidden');
-        document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
-        document.getElementById(`game-${id}`).classList.remove('hidden');
-        
-        if(id === 'flashcard') initFlashcard();
-        if(id === 'math_rush') initMathRush();
-        if(id === 'memory_match') initMemoryMatch();
-        if(id === 'rpg_battle') initRPG();
-        if(id === 'defuse_bomb') initDefuseBomb();
-        if(id === 'lucky_wheel') initLuckyWheel();
-    }
-
-    function backToMenu() {
-        document.getElementById('gameMenu').classList.remove('hidden');
-        document.querySelectorAll('.game-section').forEach(e => e.classList.add('hidden'));
-        clearInterval(timerInterval); // 清除所有計時器
-    }
-
-    // ==========================================
-    // 🃏 遊戲 1: 智能閃示卡 (Flashcard)
-    // ==========================================
-    let gameQuestions = [], currentQIdx = 0;
-    
-    function initFlashcard() {
-        gameQuestions = generateGameQuestions(currentSubject, 10);
-        if(!gameQuestions.length) { alert("⚠️ 無題目"); backToMenu(); return; }
-        currentQIdx = 0; renderFlashcard();
-    }
-    function renderFlashcard() {
-        const q = gameQuestions[currentQIdx % gameQuestions.length];
-        document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
-        let ans = resolveAnswerText(q);
-        document.getElementById('fcAnswer').innerHTML = ans;
-        document.getElementById('flashCardInner').classList.remove('is-flipped');
-        if(window.MathJax) MathJax.typesetPromise();
-    }
-    function flipCard(el) { el.querySelector('.card-inner').classList.toggle('is-flipped'); }
-    function nextFlashcard() { currentQIdx++; renderFlashcard(); }
-
-    // ==========================================
-    // ⏱️ 遊戲 2: 極速挑戰 (Math Rush)
-    // ==========================================
-    let score = 0, timer = 60, timerInterval;
-
-    function initMathRush() {
-        document.getElementById('mrGameOver').classList.add('hidden');
-        document.getElementById('mrGameArea').classList.add('hidden');
-        document.getElementById('mrTimeSelector').classList.remove('hidden');
-        document.getElementById('mrScore').textContent = 0;
-    }
-
-    function startSpeedGame(selectedTime) {
-        gameQuestions = generateGameQuestions(currentSubject, 50);
-        if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
-        score = 0; timer = selectedTime; currentQIdx = 0;
-        
-        document.getElementById('mrTimeSelector').classList.add('hidden');
-        document.getElementById('mrGameArea').classList.remove('hidden');
-        document.getElementById('mrTimer').textContent = timer;
-        
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            timer--; document.getElementById('mrTimer').textContent = timer;
-            if(timer<=0) endMathRush();
-        }, 1000);
-        renderMathQuestion();
-    }
-
-    function renderMathQuestion() {
-        const q = gameQuestions[currentQIdx % gameQuestions.length];
-        document.getElementById('mrQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
-        const con = document.getElementById('mrOptions'); con.innerHTML = '';
-        
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.className = "w-full py-3 text-lg font-bold bg-slate-50 border-2 border-slate-100 rounded-xl hover:bg-blue-50 transition active:scale-95";
-            btn.innerHTML = opt;
-            btn.onclick = () => {
-                let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
-                if(isCorrect) { score += 100; currentQIdx++; renderMathQuestion(); }
-                else { score = Math.max(0, score-50); btn.classList.add('bg-red-100', 'text-red-600'); }
-                document.getElementById('mrScore').textContent = score;
-            };
-            con.appendChild(btn);
-        });
-        if(window.MathJax) MathJax.typesetPromise();
-    }
-    function endMathRush() {
-        clearInterval(timerInterval);
-        document.getElementById('mrGameArea').classList.add('hidden');
-        document.getElementById('mrGameOver').classList.remove('hidden');
-        document.getElementById('mrFinalScore').textContent = score;
-    }
-
-    // ==========================================
-    // 🧠 遊戲 3: 腦力配對 (Memory Match) - 已修復
-    // ==========================================
-    let mmCards = [], mmFlipped = [], mmLocked = false, mmMatches = 0;
-
-    function initMemoryMatch() {
-        // 1. 產生題目
-        const rawQuestions = generateGameQuestions(currentSubject, 6);
-        if (!rawQuestions || rawQuestions.length === 0) { 
-            alert("⚠️ 題目不足，無法進行配對遊戲！"); backToMenu(); return; 
-        }
-        
-        // 2. 重置
-        mmFlipped = []; mmLocked = false; mmMatches = 0;
-        document.getElementById('mmMatches').textContent = 0;
-        document.getElementById('mmGameOver').classList.add('hidden');
-        document.getElementById('mmGrid').classList.remove('hidden');
-
-        // 3. 建立卡片 (修正空值問題)
-        mmCards = [];
-        rawQuestions.forEach((q, index) => {
-            // 安全取得答案文字
-            let ansText = resolveAnswerText(q);
-
-            // 題目卡
-            mmCards.push({ id: index, type: 'Q', content: q.question, display: 'text-sm' });
-            // 答案卡
-            mmCards.push({ id: index, type: 'A', content: ansText, display: 'text-xl font-bold text-blue-600' });
-        });
-
-        // 4. 洗牌
-        mmCards.sort(() => Math.random() - 0.5);
-        
-        // 5. 渲染
-        const grid = document.getElementById('mmGrid');
-        grid.innerHTML = '';
-        mmCards.forEach((card, idx) => {
-            const div = document.createElement('div');
-            div.className = "relative h-32 cursor-pointer perspective group";
-            div.innerHTML = `
-                <div class="card-inner w-full h-full transition-transform duration-500 transform-style-3d relative rounded-2xl shadow-sm border border-slate-200">
-                    <div class="card-back absolute inset-0 bg-purple-500 rounded-2xl flex items-center justify-center backface-hidden z-10">
-                        <i class="fas fa-question text-white/50 text-3xl"></i>
-                    </div>
-                    <div class="card-front absolute inset-0 bg-white rounded-2xl flex items-center justify-center p-2 text-center transform rotate-y-180 backface-hidden overflow-hidden">
-                        <div class="${card.display} text-slate-800">${card.content}</div>
-                    </div>
-                </div>`;
-            div.onclick = () => handleMMClick(div, card);
-            grid.appendChild(div);
-        });
-        if(window.MathJax) MathJax.typesetPromise();
-    }
-
-    function handleMMClick(el, card) {
-        if(mmLocked || el.classList.contains('flipped') || el.classList.contains('matched')) return;
-        
-        el.classList.add('flipped');
-        el.querySelector('.card-inner').style.transform = 'rotateY(180deg)';
-        mmFlipped.push({ el, card });
-
-        if(mmFlipped.length === 2) {
-            mmLocked = true;
-            const [first, second] = mmFlipped;
-            if(first.card.id === second.card.id) {
-                // 配對成功
-                setTimeout(() => {
-                    first.el.classList.add('matched', 'opacity-50');
-                    second.el.classList.add('matched', 'opacity-50');
-                    mmFlipped = []; mmLocked = false;
-                    document.getElementById('mmMatches').textContent = ++mmMatches;
-                    if(mmMatches === mmCards.length/2) document.getElementById('mmGameOver').classList.remove('hidden');
-                }, 500);
-            } else {
-                // 配對失敗
-                setTimeout(() => {
-                    first.el.classList.remove('flipped'); first.el.querySelector('.card-inner').style.transform = '';
-                    second.el.classList.remove('flipped'); second.el.querySelector('.card-inner').style.transform = '';
-                    mmFlipped = []; mmLocked = false;
-                }, 1000);
-            }
-        }
-    }
-
-    // ==========================================
-    // ⚔️ 遊戲 4: 勇者鬥惡龍 (RPG Battle)
-    // ==========================================
-    let rpgHp = 100, monsterHp = 100;
-    
-    function initRPG() {
-        gameQuestions = generateGameQuestions(currentSubject, 20);
-        if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
-        rpgHp = 100; monsterHp = 100; currentQIdx = 0;
-        document.getElementById('heroHp').textContent = rpgHp;
-        updateMonsterHp(100);
-        renderRPGQuestion();
-    }
-
-    function updateMonsterHp(val) {
-        monsterHp = Math.max(0, val);
-        document.getElementById('monsterHpBar').style.width = monsterHp + '%';
-        if(monsterHp === 0) { alert("🎉 恭喜！你擊敗了惡龍！"); backToMenu(); }
-    }
-
-    function renderRPGQuestion() {
-        const q = gameQuestions[currentQIdx % gameQuestions.length];
-        document.getElementById('rpgQuestion').innerHTML = q.question;
-        const con = document.getElementById('rpgOptions'); con.innerHTML = '';
-        
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.className = "w-full py-3 bg-slate-50 border rounded-lg hover:bg-green-50 text-left px-4 font-bold text-slate-600";
-            btn.innerHTML = opt;
-            btn.onclick = () => {
-                let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
-                if(isCorrect) {
-                    // 攻擊特效
-                    const effect = document.getElementById('rpgEffect');
-                    effect.classList.remove('hidden');
-                    setTimeout(() => effect.classList.add('hidden'), 500);
-                    updateMonsterHp(monsterHp - 20);
-                    currentQIdx++; 
-                    setTimeout(renderRPGQuestion, 600);
-                } else {
-                    // 受傷
-                    rpgHp -= 20;
-                    document.getElementById('heroHp').textContent = rpgHp;
-                    btn.classList.add('bg-red-100');
-                    if(rpgHp <= 0) { alert("💀 勇者倒下了..."); backToMenu(); }
-                }
-            };
-            con.appendChild(btn);
-        });
-        if(window.MathJax) MathJax.typesetPromise();
-    }
-
-    // ==========================================
-    // 💣 遊戲 5: 拆彈專家 (Defuse Bomb)
-    // ==========================================
-    let bombStreak = 0, bombTarget = 5;
-
-    function initDefuseBomb() {
-        gameQuestions = generateGameQuestions(currentSubject, 20);
-        if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
-        bombStreak = 0; timer = 10; currentQIdx = 0;
-        
-        document.getElementById('bombExplosion').classList.add('hidden');
-        document.getElementById('bombSuccess').classList.add('hidden');
-        updateBombWires();
-        startBombTimer();
-        renderBombQuestion();
-    }
-
-    function startBombTimer() {
-        if(timerInterval) clearInterval(timerInterval);
-        timer = 10; // 每題 10 秒
-        document.getElementById('bombTimer').textContent = timer;
-        timerInterval = setInterval(() => {
-            timer--;
-            document.getElementById('bombTimer').textContent = timer;
-            if(timer <= 0) { clearInterval(timerInterval); document.getElementById('bombExplosion').classList.remove('hidden'); }
-        }, 1000);
-    }
-
-    function updateBombWires() {
-        const wires = document.getElementById('bombWires');
-        wires.innerHTML = '';
-        for(let i=0; i<bombTarget; i++) {
-            const w = document.createElement('div');
-            w.className = `w-8 h-2 rounded-full ${i < bombStreak ? 'bg-green-500' : 'bg-slate-600'}`;
-            wires.appendChild(w);
-        }
-    }
-
-    function renderBombQuestion() {
-        const q = gameQuestions[currentQIdx % gameQuestions.length];
-        document.getElementById('bombQuestion').innerHTML = q.question;
-        const con = document.getElementById('bombOptions'); con.innerHTML = '';
-        
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.className = "py-4 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600";
-            btn.innerHTML = opt;
-            btn.onclick = () => {
-                let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
-                if(isCorrect) {
-                    bombStreak++;
-                    updateBombWires();
-                    if(bombStreak >= bombTarget) {
-                        clearInterval(timerInterval);
-                        document.getElementById('bombSuccess').classList.remove('hidden');
-                    } else {
-                        currentQIdx++;
-                        startBombTimer();
-                        renderBombQuestion();
-                    }
-                } else {
-                    clearInterval(timerInterval);
-                    document.getElementById('bombExplosion').classList.remove('hidden');
-                }
-            };
-            con.appendChild(btn);
-        });
-        if(window.MathJax) MathJax.typesetPromise();
-    }
-
-    // ==========================================
-    // 🎯 遊戲 6: 幸運轉盤 (Lucky Wheel)
-    // ==========================================
-    let wheelScore = 0, currentMultiplier = 1;
-    
-    function initLuckyWheel() {
-        gameQuestions = generateGameQuestions(currentSubject, 15);
-        if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
-        wheelScore = 0; currentQIdx = 0;
-        document.getElementById('wheelScore').textContent = 0;
-        document.getElementById('wheelQuizArea').style.opacity = '0.5';
-        document.getElementById('wheelQuizArea').style.pointerEvents = 'none';
-        document.getElementById('spinBtn').disabled = false;
-    }
-
-    function spinWheel() {
-        const wheel = document.getElementById('wheelCircle');
-        const deg = 1800 + Math.random() * 360; // 轉 5 圈以上
-        wheel.style.transform = `rotate(${deg}deg)`;
-        document.getElementById('spinBtn').disabled = true;
-        
-        setTimeout(() => {
-            // 隨機倍率 (1x ~ 5x)
-            currentMultiplier = Math.floor(Math.random() * 5) + 1;
-            document.getElementById('wheelMultiplier').textContent = `x${currentMultiplier}`;
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden">
+        <div class="p-6 md:p-8 overflow-y-auto h-full scroll-smooth">
             
-            // 啟用題目區
-            document.getElementById('wheelQuizArea').style.opacity = '1';
-            document.getElementById('wheelQuizArea').style.pointerEvents = 'auto';
-            renderWheelQuestion();
-        }, 3000);
-    }
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
+                        <i class="fas fa-rocket text-indigo-500"></i> 學習遊戲場
+                    </h1>
+                    <p class="text-slate-500 mt-1">使用您的專屬題庫，邊玩邊學！</p>
+                </div>
+                <div class="flex gap-2">
+                    <span class="px-4 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold flex items-center gap-2">
+                        <i class="fas fa-coins"></i> 金幣: <span id="coinCount">0</span>
+                    </span>
+                </div>
+            </div>
 
-    function renderWheelQuestion() {
-        const q = gameQuestions[currentQIdx % gameQuestions.length];
-        document.getElementById('wheelQuestion').innerHTML = q.question;
-        const con = document.getElementById('wheelOptions'); con.innerHTML = '';
-        
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.className = "w-full py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-slate-700 font-bold hover:bg-yellow-100";
-            btn.innerHTML = opt;
-            btn.onclick = () => {
-                let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
-                if(isCorrect) {
-                    wheelScore += (100 * currentMultiplier);
-                    document.getElementById('wheelScore').textContent = wheelScore;
-                    alert(`🎉 答對！獲得 ${100 * currentMultiplier} 分`);
-                } else {
-                    alert("💥 答錯了...無法獲得分數");
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="gameMenu">
+                
+                <div onclick="startGame('flashcard')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-clone"></i></div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">智能閃示卡</h3>
+                    <p class="text-sm text-slate-500">翻牌記憶，複習觀念的最佳利器。</p>
+                </div>
+
+                <div onclick="startGame('math_rush')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-stopwatch"></i></div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">極速挑戰賽</h3>
+                    <p class="text-sm text-slate-500">限時搶答！挑戰你的反應速度。</p>
+                </div>
+
+                <div onclick="startGame('memory_match')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-brain"></i></div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">腦力配對</h3>
+                    <p class="text-sm text-slate-500">找出隱藏的關聯卡片！</p>
+                </div>
+
+                <div onclick="startGame('rpg_battle')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-khanda"></i></div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">勇者鬥惡龍</h3>
+                    <p class="text-sm text-slate-500">答題攻擊！擊敗怪獸守護城堡。</p>
+                </div>
+
+                <div onclick="startGame('defuse_bomb')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-bomb"></i></div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">拆彈專家</h3>
+                    <p class="text-sm text-slate-500">答錯即爆！連續答對來解除危機。</p>
+                </div>
+
+                <div onclick="startGame('lucky_wheel')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-dharmachakra"></i></div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">幸運轉盤</h3>
+                    <p class="text-sm text-slate-500">轉出高分倍率，挑戰運氣與實力。</p>
+                </div>
+
+            </div>
+            <div id="game-flashcard" class="game-section max-w-2xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
+                    <span class="text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-lg">科目：<span id="fcSubject">數學</span></span>
+                </div>
+                <div class="perspective h-96 w-full cursor-pointer" onclick="flipCard(this)">
+                    <div class="card-inner relative w-full h-full" id="flashCardInner">
+                        <div class="card-face card-front flex-col p-8">
+                            <span class="text-xs text-slate-400 font-bold mb-4 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">Answer</span>
+                            <div class="flex-grow flex flex-col items-center justify-center w-full">
+                                <h2 class="text-3xl font-extrabold text-blue-600 text-center mb-4" id="fcAnswer">...</h2>
+                            </div>
+                        </div>
+                        <div class="card-face card-back flex-col p-8 text-center bg-white">
+                            <span class="text-xs text-white/80 font-bold mb-4 uppercase tracking-widest bg-white/20 px-2 py-1 rounded">Question</span>
+                            <div class="flex-grow flex items-center justify-center w-full">
+                                <h2 class="text-2xl font-bold text-white leading-relaxed" id="fcQuestion">...</h2>
+                            </div>
+                            <p class="mt-4 text-white/60 text-xs">點擊翻面查看答案</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-center mt-8"><button onclick="nextFlashcard()" class="px-8 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50">下一題</button></div>
+            </div>
+
+            <div id="game-math_rush" class="game-section max-w-xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>放棄</button>
+                    <div class="flex items-center gap-3">
+                        <div class="bg-red-50 text-red-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="far fa-clock mr-2"></i><span id="mrTimer">--</span></div>
+                        <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="fas fa-star mr-2"></i><span id="mrScore">0</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[2rem] shadow-xl p-8 text-center relative overflow-hidden min-h-[400px] flex flex-col justify-center">
+                    <div id="mrTimeSelector" class="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center p-6">
+                        <div class="w-20 h-20 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center text-4xl mb-6 animate-bounce">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-2">準備好了嗎？</h2>
+                        <p class="text-slate-500 mb-8">請選擇挑戰時間</p>
+                        <div class="grid grid-cols-1 gap-3 w-full max-w-xs">
+                            <button onclick="startSpeedGame(30)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">⚡ 30 秒</button>
+                            <button onclick="startSpeedGame(60)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">⏱️ 60 秒</button>
+                            <button onclick="startSpeedGame(120)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">🐢 120 秒</button>
+                        </div>
+                    </div>
+                    <div id="mrGameArea" class="hidden">
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-8 mt-2 leading-relaxed" id="mrQuestion">...</h2>
+                        <div class="grid grid-cols-1 gap-3" id="mrOptions"></div>
+                    </div>
+                    <div id="mrGameOver" class="hidden text-center py-10">
+                        <h3 class="text-3xl font-bold text-slate-800 mb-2">時間到！</h3>
+                        <p class="text-slate-500 mb-4">本次得分</p>
+                        <div class="text-6xl font-black text-blue-600 mb-8" id="mrFinalScore">0</div>
+                        <button onclick="initMathRush()" class="px-10 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-700 transition shadow-lg transform hover:-translate-y-1">再玩一次</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="game-memory_match" class="game-section max-w-4xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
+                    <div class="flex items-center gap-3">
+                        <div class="bg-purple-50 text-purple-600 px-4 py-2 rounded-xl font-bold text-xl">
+                            <i class="fas fa-check-double mr-2"></i><span id="mmMatches">0</span>/6
+                        </div>
+                    </div>
+                </div>
+                <div id="mmGrid" class="grid grid-cols-3 md:grid-cols-4 gap-4 w-full perspective-container"></div>
+                <div id="mmGameOver" class="hidden text-center py-12 bg-white rounded-3xl shadow-lg mt-4">
+                    <div class="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-5xl mx-auto mb-6 animate-bounce"><i class="fas fa-trophy"></i></div>
+                    <h3 class="text-3xl font-bold text-slate-800 mb-2">配對完成！</h3>
+                    <button onclick="initMemoryMatch()" class="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">再玩一次</button>
+                </div>
+            </div>
+
+            <div id="game-rpg_battle" class="game-section max-w-2xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>逃跑</button>
+                    <div class="bg-red-50 text-red-600 px-3 py-1 rounded-lg font-bold">❤️ HP: <span id="heroHp">100</span></div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-6 text-white text-center mb-4 relative overflow-hidden h-64 flex flex-col justify-end items-center">
+                    <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]"></div>
+                    <div id="rpgMonster" class="mb-4 transition-transform duration-200">
+                        <i class="fas fa-dragon text-8xl text-red-400 drop-shadow-lg"></i>
+                        <div class="mt-2 font-bold text-red-200">知識惡龍</div>
+                        <div class="w-48 h-3 bg-slate-700 rounded-full mx-auto mt-2 border border-slate-600 overflow-hidden">
+                            <div id="monsterHpBar" class="h-full bg-red-500 transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div id="rpgEffect" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden">
+                        <div class="text-6xl font-black text-yellow-400 animate-ping">BANG!</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4" id="rpgQuestion">...</h3>
+                    <div class="grid grid-cols-1 gap-3" id="rpgOptions"></div>
+                </div>
+            </div>
+
+            <div id="game-defuse_bomb" class="game-section max-w-xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>放棄</button>
+                    <div class="text-slate-400 font-bold">需連續答對 <span class="text-blue-600" id="bombStreakTarget">5</span> 題</div>
+                </div>
+                <div class="bg-slate-900 rounded-3xl p-8 text-center text-white relative shadow-2xl border-4 border-slate-700">
+                    <div class="w-full bg-black/50 rounded-xl p-4 mb-6 border border-slate-600">
+                        <div class="font-mono text-6xl text-red-500 font-black tracking-widest animate-pulse" id="bombTimer">10</div>
+                    </div>
+                    <div class="flex justify-center gap-2 mb-8" id="bombWires"></div>
+                    <h3 class="text-xl font-bold mb-6 min-h-[3rem] flex items-center justify-center" id="bombQuestion">準備拆彈...</h3>
+                    <div class="grid grid-cols-2 gap-4" id="bombOptions"></div>
+                    <div id="bombExplosion" class="absolute inset-0 bg-red-600 z-50 rounded-2xl flex flex-col items-center justify-center hidden">
+                        <i class="fas fa-bomb text-9xl text-black mb-4 animate-bounce"></i>
+                        <h2 class="text-4xl font-black text-white">BOOM!</h2>
+                        <button onclick="initDefuseBomb()" class="mt-8 px-6 py-2 bg-white text-red-600 rounded-full font-bold">重試</button>
+                    </div>
+                    <div id="bombSuccess" class="absolute inset-0 bg-green-500 z-50 rounded-2xl flex flex-col items-center justify-center hidden">
+                        <i class="fas fa-check-circle text-9xl text-white mb-4"></i>
+                        <h2 class="text-3xl font-black text-white">拆彈成功!</h2>
+                        <button onclick="initDefuseBomb()" class="mt-8 px-6 py-2 bg-white text-green-600 rounded-full font-bold">下一顆</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="game-lucky_wheel" class="game-section max-w-2xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
+                    <div class="bg-yellow-50 text-yellow-700 px-4 py-1 rounded-full font-bold">總分: <span id="wheelScore">0</span></div>
+                </div>
+                <div class="flex flex-col md:flex-row gap-8 items-center">
+                    <div class="relative w-64 h-64 shrink-0">
+                        <div id="wheelCircle" class="w-full h-full rounded-full border-8 border-yellow-300 bg-white flex items-center justify-center shadow-xl transition-transform duration-[3s] ease-out relative overflow-hidden" style="background: conic-gradient(#ff9999 0deg 60deg, #66b3ff 60deg 120deg, #99ff99 120deg 180deg, #ffcc99 180deg 240deg, #c2c2f0 240deg 300deg, #ffb3e6 300deg 360deg);"></div>
+                        <div class="absolute -top-4 left-1/2 -translate-x-1/2 text-4xl text-slate-700 z-10"><i class="fas fa-caret-down"></i></div>
+                        <button onclick="spinWheel()" id="spinBtn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full font-bold text-slate-700 shadow-lg border-4 border-yellow-100 hover:scale-105 transition flex items-center justify-center z-20">GO</button>
+                    </div>
+                    <div class="flex-grow bg-white p-6 rounded-2xl shadow-sm border border-slate-200 opacity-50 pointer-events-none transition-opacity" id="wheelQuizArea">
+                        <div class="mb-2 text-xs font-bold text-slate-400 uppercase">本次倍率</div>
+                        <div class="text-3xl font-black text-yellow-500 mb-4" id="wheelMultiplier">x?</div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-4" id="wheelQuestion">請先轉動轉盤...</h3>
+                        <div class="grid grid-cols-1 gap-2" id="wheelOptions"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // ==========================================
+        // 🌐 全域變數與初始化
+        // ==========================================
+        window.onload = function() {
+            const user = Auth.getCurrentUser();
+            if(user) {
+                document.getElementById('sideUserName').textContent = user.name;
+                document.getElementById('sideUserRole').textContent = user.grade;
+                if(user.grade && user.grade.includes('國')) setStage('junior_high');
+                else setStage('high_school');
+                document.getElementById('coinCount').textContent = user.coins || 0;
+            } else {
+                setStage('high_school');
+            }
+        };
+
+        // 解析網址
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentSubject = urlParams.get('subject') || 'math';
+        const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
+        let targetTags = [];
+        if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
+            targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
+        }
+        if(document.getElementById('fcSubject')) document.getElementById('fcSubject').textContent = currentSubject;
+
+        // 題目生成器
+        function generateGameQuestions(subj, count) {
+            if (window.generatePaper) {
+                let q = window.generatePaper({ 
+                    subject: subj, 
+                    total: count, 
+                    tags: targetTags.length > 0 ? targetTags : [subj] 
+                }).filter(i => i && i.question);
+                
+                // 補齊題目防止當機
+                if (q.length < count) {
+                    const backup = window.generatePaper({ subject: subj, total: count - q.length });
+                    q = q.concat(backup);
                 }
-                // 重置轉盤
-                currentQIdx++;
-                document.getElementById('wheelQuizArea').style.opacity = '0.5';
-                document.getElementById('wheelQuizArea').style.pointerEvents = 'none';
-                document.getElementById('spinBtn').disabled = false;
-                document.getElementById('wheelCircle').style.transform = 'rotate(0deg)';
-                document.getElementById('wheelMultiplier').textContent = 'x?';
-                document.getElementById('wheelQuestion').textContent = '請先轉動轉盤...';
-                con.innerHTML = '';
-            };
-            con.appendChild(btn);
-        });
-        if(window.MathJax) MathJax.typesetPromise();
-    }
+                return q;
+            }
+            return [];
+        }
 
-    // 工具函式：安全解析答案文字
-    function resolveAnswerText(q) {
-        if (!q) return "???";
-        if (typeof q.answer === 'string') {
-            // 如果答案就是字串，且在選項中，直接回傳
-            // 但有時候 answer 是 "3" 代表 index 3 (字串型態)
-            // 所以先嘗試轉數字看看
-            if (!isNaN(q.answer) && q.options && q.options[q.answer]) {
+        // 答案解析器 (重要修復：將索引轉文字)
+        function resolveAnswerText(q) {
+            if (!q) return "???";
+            if (typeof q.answer === 'number' && q.options && q.options[q.answer]) {
                 return q.options[q.answer];
             }
             return q.answer;
         }
-        if (typeof q.answer === 'number' && q.options && q.options[q.answer]) {
-            return q.options[q.answer];
-        }
-        return "選項錯誤";
-    }
 
-</script>
+        function startGame(id) {
+            document.getElementById('gameMenu').classList.add('hidden');
+            document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`game-${id}`).classList.remove('hidden');
+            document.getElementById(`game-${id}`).classList.add('active');
+            
+            if(id === 'flashcard') initFlashcard();
+            if(id === 'math_rush') initMathRush();
+            if(id === 'memory_match') initMemoryMatch();
+            if(id === 'rpg_battle') initRPG();
+            if(id === 'defuse_bomb') initDefuseBomb();
+            if(id === 'lucky_wheel') initLuckyWheel();
+        }
+
+        function backToMenu() {
+            document.getElementById('gameMenu').classList.remove('hidden');
+            document.querySelectorAll('.game-section').forEach(e => {
+                e.classList.remove('active');
+                e.classList.add('hidden');
+            });
+            clearInterval(timerInterval);
+        }
+
+        // ==========================================
+        // 🃏 遊戲 1: 智能閃示卡
+        // ==========================================
+        let gameQuestions = [], currentQIdx = 0;
+        function initFlashcard() {
+            gameQuestions = generateGameQuestions(currentSubject, 10);
+            if(!gameQuestions.length) { alert("⚠️ 無題目"); backToMenu(); return; }
+            currentQIdx = 0; renderFlashcard();
+        }
+        function renderFlashcard() {
+            const q = gameQuestions[currentQIdx % gameQuestions.length];
+            // 背面顯示題目
+            document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
+            // 正面顯示答案
+            let ans = resolveAnswerText(q);
+            if(q.options && typeof q.answer === 'number') {
+                ans = `<span class="text-4xl font-bold block mb-2 text-blue-300">${String.fromCharCode(65+q.answer)}</span><span class="text-xl">${ans}</span>`;
+            }
+            document.getElementById('fcAnswer').innerHTML = ans;
+            document.getElementById('flashCardInner').classList.remove('is-flipped');
+            if(window.MathJax) MathJax.typesetPromise();
+        }
+        function flipCard(el) { el.querySelector('.card-inner').classList.toggle('is-flipped'); }
+        function nextFlashcard() { currentQIdx++; renderFlashcard(); }
+
+        // ==========================================
+        // ⏱️ 遊戲 2: 極速挑戰
+        // ==========================================
+        let score = 0, timer = 60, timerInterval;
+        function initMathRush() {
+            document.getElementById('mrGameOver').classList.add('hidden');
+            document.getElementById('mrGameArea').classList.add('hidden');
+            document.getElementById('mrTimeSelector').classList.remove('hidden');
+            document.getElementById('mrScore').textContent = 0;
+        }
+        function startSpeedGame(selectedTime) {
+            gameQuestions = generateGameQuestions(currentSubject, 50);
+            if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
+            score = 0; timer = selectedTime; currentQIdx = 0;
+            document.getElementById('mrTimeSelector').classList.add('hidden');
+            document.getElementById('mrGameArea').classList.remove('hidden');
+            document.getElementById('mrTimer').textContent = timer;
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timer--; document.getElementById('mrTimer').textContent = timer;
+                if(timer<=0) endMathRush();
+            }, 1000);
+            renderMathQuestion();
+        }
+        function renderMathQuestion() {
+            const q = gameQuestions[currentQIdx % gameQuestions.length];
+            document.getElementById('mrQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
+            const con = document.getElementById('mrOptions'); con.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full py-3 text-lg font-bold bg-slate-50 border-2 border-slate-100 rounded-xl hover:bg-blue-50 transition active:scale-95";
+                btn.innerHTML = opt;
+                btn.onclick = () => {
+                    let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
+                    if(isCorrect) { score += 100; currentQIdx++; renderMathQuestion(); }
+                    else { score = Math.max(0, score-50); btn.classList.add('bg-red-100', 'text-red-600'); }
+                    document.getElementById('mrScore').textContent = score;
+                };
+                con.appendChild(btn);
+            });
+            if(window.MathJax) MathJax.typesetPromise();
+        }
+        function endMathRush() {
+            clearInterval(timerInterval);
+            document.getElementById('mrGameArea').classList.add('hidden');
+            document.getElementById('mrGameOver').classList.remove('hidden');
+            document.getElementById('mrFinalScore').textContent = score;
+        }
+
+        // ==========================================
+        // 🧠 遊戲 3: 腦力配對 (已修復)
+        // ==========================================
+        let mmCards = [], mmFlipped = [], mmLocked = false, mmMatches = 0;
+        function initMemoryMatch() {
+            const rawQuestions = generateGameQuestions(currentSubject, 6);
+            if (!rawQuestions.length) { alert("⚠️ 題目不足"); backToMenu(); return; }
+            
+            mmFlipped = []; mmLocked = false; mmMatches = 0;
+            document.getElementById('mmGameOver').classList.add('hidden');
+            document.getElementById('mmGrid').classList.remove('hidden');
+
+            mmCards = [];
+            rawQuestions.forEach((q, index) => {
+                let ansText = resolveAnswerText(q);
+                // 卡片結構：type Q = 題目, type A = 答案
+                mmCards.push({ id: index, type: 'Q', content: q.question, display: 'text-sm' });
+                mmCards.push({ id: index, type: 'A', content: ansText, display: 'text-xl font-bold text-blue-600' });
+            });
+            mmCards.sort(() => Math.random() - 0.5);
+            
+            const grid = document.getElementById('mmGrid');
+            grid.innerHTML = '';
+            mmCards.forEach((card) => {
+                const div = document.createElement('div');
+                div.className = "relative h-32 cursor-pointer perspective group";
+                // card-back 是封面(紫色)，card-front 是內容(白色)
+                // 這裡 CSS 已經設定 card-back 預設顯示，card-front 預設翻轉隱藏
+                div.innerHTML = `
+                    <div class="card-inner w-full h-full transition-transform duration-500 transform-style-3d relative rounded-2xl shadow-sm border border-slate-200">
+                        <div class="card-back absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center backface-hidden z-10">
+                            <i class="fas fa-question text-white/50 text-3xl"></i>
+                        </div>
+                        <div class="card-front absolute inset-0 bg-white rounded-2xl flex items-center justify-center p-2 text-center backface-hidden overflow-hidden z-0">
+                            <div class="${card.display} text-slate-800">${card.content}</div>
+                        </div>
+                    </div>`;
+                div.onclick = () => handleMMClick(div, card);
+                grid.appendChild(div);
+            });
+            if(window.MathJax) MathJax.typesetPromise();
+        }
+        function handleMMClick(el, card) {
+            if(mmLocked || el.querySelector('.card-inner').classList.contains('is-flipped') || el.classList.contains('matched')) return;
+            
+            el.querySelector('.card-inner').classList.add('is-flipped');
+            mmFlipped.push({ el, card });
+
+            if(mmFlipped.length === 2) {
+                mmLocked = true;
+                const [first, second] = mmFlipped;
+                if(first.card.id === second.card.id && first.card.type !== second.card.type) {
+                    setTimeout(() => {
+                        first.el.classList.add('matched', 'opacity-50');
+                        second.el.classList.add('matched', 'opacity-50');
+                        mmFlipped = []; mmLocked = false;
+                        document.getElementById('mmMatches').textContent = ++mmMatches;
+                        if(mmMatches === mmCards.length/2) document.getElementById('mmGameOver').classList.remove('hidden');
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        first.el.querySelector('.card-inner').classList.remove('is-flipped');
+                        second.el.querySelector('.card-inner').classList.remove('is-flipped');
+                        mmFlipped = []; mmLocked = false;
+                    }, 1000);
+                }
+            }
+        }
+
+        // ==========================================
+        // ⚔️ 遊戲 4: 勇者鬥惡龍
+        // ==========================================
+        let rpgHp = 100, monsterHp = 100;
+        function initRPG() {
+            gameQuestions = generateGameQuestions(currentSubject, 20);
+            if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
+            rpgHp = 100; monsterHp = 100; currentQIdx = 0;
+            document.getElementById('heroHp').textContent = rpgHp;
+            updateMonsterHp(100);
+            renderRPGQuestion();
+        }
+        function updateMonsterHp(val) {
+            monsterHp = Math.max(0, val);
+            document.getElementById('monsterHpBar').style.width = monsterHp + '%';
+            if(monsterHp === 0) { alert("🎉 恭喜！你擊敗了惡龍！"); backToMenu(); }
+        }
+        function renderRPGQuestion() {
+            const q = gameQuestions[currentQIdx % gameQuestions.length];
+            document.getElementById('rpgQuestion').innerHTML = q.question;
+            const con = document.getElementById('rpgOptions'); con.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full py-3 bg-slate-50 border rounded-lg hover:bg-green-50 text-left px-4 font-bold text-slate-600";
+                btn.innerHTML = opt;
+                btn.onclick = () => {
+                    let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
+                    if(isCorrect) {
+                        document.getElementById('rpgEffect').classList.remove('hidden');
+                        setTimeout(() => document.getElementById('rpgEffect').classList.add('hidden'), 500);
+                        updateMonsterHp(monsterHp - 20);
+                        currentQIdx++; setTimeout(renderRPGQuestion, 600);
+                    } else {
+                        rpgHp -= 20; document.getElementById('heroHp').textContent = rpgHp;
+                        btn.classList.add('bg-red-100');
+                        if(rpgHp <= 0) { alert("💀 勇者倒下了..."); backToMenu(); }
+                    }
+                };
+                con.appendChild(btn);
+            });
+            if(window.MathJax) MathJax.typesetPromise();
+        }
+
+        // ==========================================
+        // 💣 遊戲 5: 拆彈專家
+        // ==========================================
+        let bombStreak = 0, bombTarget = 5;
+        function initDefuseBomb() {
+            gameQuestions = generateGameQuestions(currentSubject, 20);
+            if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
+            bombStreak = 0; timer = 10; currentQIdx = 0;
+            document.getElementById('bombExplosion').classList.add('hidden');
+            document.getElementById('bombSuccess').classList.add('hidden');
+            updateBombWires(); startBombTimer(); renderBombQuestion();
+        }
+        function startBombTimer() {
+            if(timerInterval) clearInterval(timerInterval);
+            timer = 10; document.getElementById('bombTimer').textContent = timer;
+            timerInterval = setInterval(() => {
+                timer--; document.getElementById('bombTimer').textContent = timer;
+                if(timer <= 0) { clearInterval(timerInterval); document.getElementById('bombExplosion').classList.remove('hidden'); }
+            }, 1000);
+        }
+        function updateBombWires() {
+            const wires = document.getElementById('bombWires');
+            wires.innerHTML = '';
+            for(let i=0; i<bombTarget; i++) {
+                const w = document.createElement('div');
+                w.className = `w-8 h-2 rounded-full ${i < bombStreak ? 'bg-green-500' : 'bg-slate-600'}`;
+                wires.appendChild(w);
+            }
+        }
+        function renderBombQuestion() {
+            const q = gameQuestions[currentQIdx % gameQuestions.length];
+            document.getElementById('bombQuestion').innerHTML = q.question;
+            const con = document.getElementById('bombOptions'); con.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "py-4 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600";
+                btn.innerHTML = opt;
+                btn.onclick = () => {
+                    let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
+                    if(isCorrect) {
+                        bombStreak++; updateBombWires();
+                        if(bombStreak >= bombTarget) { clearInterval(timerInterval); document.getElementById('bombSuccess').classList.remove('hidden'); }
+                        else { currentQIdx++; startBombTimer(); renderBombQuestion(); }
+                    } else { clearInterval(timerInterval); document.getElementById('bombExplosion').classList.remove('hidden'); }
+                };
+                con.appendChild(btn);
+            });
+            if(window.MathJax) MathJax.typesetPromise();
+        }
+
+        // ==========================================
+        // 🎯 遊戲 6: 幸運轉盤
+        // ==========================================
+        let wheelScore = 0, currentMultiplier = 1;
+        function initLuckyWheel() {
+            gameQuestions = generateGameQuestions(currentSubject, 15);
+            if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
+            wheelScore = 0; currentQIdx = 0;
+            document.getElementById('wheelScore').textContent = 0;
+            document.getElementById('wheelQuizArea').style.opacity = '0.5';
+            document.getElementById('wheelQuizArea').style.pointerEvents = 'none';
+            document.getElementById('spinBtn').disabled = false;
+        }
+        function spinWheel() {
+            const wheel = document.getElementById('wheelCircle');
+            const deg = 1800 + Math.random() * 360;
+            wheel.style.transform = `rotate(${deg}deg)`;
+            document.getElementById('spinBtn').disabled = true;
+            setTimeout(() => {
+                currentMultiplier = Math.floor(Math.random() * 5) + 1;
+                document.getElementById('wheelMultiplier').textContent = `x${currentMultiplier}`;
+                document.getElementById('wheelQuizArea').style.opacity = '1';
+                document.getElementById('wheelQuizArea').style.pointerEvents = 'auto';
+                renderWheelQuestion();
+            }, 3000);
+        }
+        function renderWheelQuestion() {
+            const q = gameQuestions[currentQIdx % gameQuestions.length];
+            document.getElementById('wheelQuestion').innerHTML = q.question;
+            const con = document.getElementById('wheelOptions'); con.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-slate-700 font-bold hover:bg-yellow-100";
+                btn.innerHTML = opt;
+                btn.onclick = () => {
+                    let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
+                    if(isCorrect) {
+                        wheelScore += (100 * currentMultiplier);
+                        document.getElementById('wheelScore').textContent = wheelScore;
+                        alert(`🎉 答對！獲得 ${100 * currentMultiplier} 分`);
+                    } else { alert("💥 答錯了..."); }
+                    currentQIdx++;
+                    document.getElementById('wheelQuizArea').style.opacity = '0.5';
+                    document.getElementById('wheelQuizArea').style.pointerEvents = 'none';
+                    document.getElementById('spinBtn').disabled = false;
+                    document.getElementById('wheelCircle').style.transform = 'rotate(0deg)';
+                    document.getElementById('wheelMultiplier').textContent = 'x?';
+                    document.getElementById('wheelQuestion').textContent = '請先轉動轉盤...';
+                    con.innerHTML = '';
+                };
+                con.appendChild(btn);
+            });
+            if(window.MathJax) MathJax.typesetPromise();
+        }
+    </script>
 </body>
 </html>
