@@ -462,33 +462,30 @@ function applyCheatResult(result) {
     // 4. 雲端存檔功能 (請填入你的 GAS 網址)
     // ============================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
-// 在 script 標籤內最上方定義一個變數作為狀態鎖
-let isUploading = false;
+// 1. 定義全域狀態鎖，防止重複執行
+let isSyncing = false;
 
 function saveToCloud() {
-    // 如果正在上傳中，直接跳出，不執行任何動作
-    if (isUploading) return;
+    // 如果正在同步中，或是按鈕已經是完成狀態，就直接跳出
+    const btn = document.getElementById('btnSave');
+    if (isSyncing || (btn && btn.getAttribute('data-status') === 'done')) return;
 
     const user = Auth.getCurrentUser();
-    if (!user || user.username === 'guest') {
-        alert("訪客模式無法儲存雲端紀錄");
-        return;
-    }
+    if (!user || user.username === 'guest') return;
 
     const resultStr = localStorage.getItem('examResult');
     if (!resultStr) return;
-
-    // --- 開始執行上傳 ---
-    isUploading = true; // 開鎖
-    const btn = document.getElementById('btnSave');
     
-    if(btn) {
-        btn.disabled = true; // 關鍵：讓 HTML 按鈕無法再被點擊
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
-        btn.classList.add('opacity-50', 'cursor-not-allowed'); // 改變外觀讓使用者知道不能按
+    const examResult = JSON.parse(resultStr);
+
+    // --- 開始鎖定邏輯 ---
+    isSyncing = true;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> 同步中...';
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
     }
 
-    const examResult = JSON.parse(resultStr);
     const recordData = {
         action: "save_record",
         username: user.username,
@@ -499,7 +496,8 @@ function saveToCloud() {
             correctCount: examResult.correctCount,
             wrongList: examResult.wrongList || [],
             cheat: examResult.cheat,
-            tabCheat: examResult.tabCheat
+            tabCheat: examResult.tabCheat,
+            syncTime: new Date().toISOString() // 加入時間戳記作為區分
         })
     };
 
@@ -509,22 +507,52 @@ function saveToCloud() {
     })
     .then(res => res.json())
     .then(data => {
-        if(btn) {
+        console.log("雲端同步成功:", data);
+        if (btn) {
+            btn.setAttribute('data-status', 'done'); // 標記已完成
             btn.className = "flex items-center gap-2 text-white bg-green-500 font-bold px-4 py-2 rounded-lg cursor-default shadow-none";
-            btn.innerHTML = '<i class="fas fa-check"></i> 同步完成';
-            // 這裡不解開 isUploading，所以該頁面生命週期內此按鈕宣告永久失效
+            btn.innerHTML = '<i class="fas fa-check-double"></i> 雲端已同步';
         }
+        // 同步成功後，紀錄在 sessionStorage，這讓「這次開啟網頁」期間不會再刷第二次
+        sessionStorage.setItem('lastSyncId', examResult.id || 'current');
     })
     .catch(err => {
-        console.error("上傳失敗:", err);
-        if(btn) {
-            btn.disabled = false; // 只有失敗時才解開按鈕，讓使用者重試
-            isUploading = false;
-            btn.innerHTML = '<i class="fas fa-redo"></i> 重試上傳';
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            btn.classList.replace('bg-green-500', 'bg-red-500');
+        console.error("同步失敗:", err);
+        isSyncing = false; // 失敗才解鎖，讓使用者可以點「重試」
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo"></i> 同步失敗，請重試';
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            btn.classList.replace('bg-blue-600', 'bg-red-500');
         }
     });
+}
+
+// 2. 修改 loadExamResult，讓它在載入資料後「自動執行」一次 saveToCloud
+function loadExamResult() {
+    const resultStr = localStorage.getItem('examResult');
+    // ... 前方的資料檢查邏輯保持不變 ...
+
+    try {
+        let rawResult = JSON.parse(resultStr);
+        const result = normalizeExamData(rawResult);
+
+        // UI 渲染
+        updateScoreBoard(result);
+        renderRadarChart(result.score);
+        applyCheatResult(result);
+        renderWrongList(result.wrongList);
+
+        // ★ 自動同步觸發 ★
+        // 如果是剛考完（或是剛點進複習頁），自動跑一次 saveToCloud
+        // 我們判斷如果這一秒還沒同步過，就執行
+        if (!sessionStorage.getItem('lastSyncId')) {
+            saveToCloud();
+        }
+
+    } catch (error) {
+        console.error("載入失敗:", error);
+    }
 }
 </script>
 </body>
