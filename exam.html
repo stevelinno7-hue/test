@@ -383,13 +383,22 @@
             // 如果單題作答時間小於 3 秒且答對，視為猜測或作弊
             let fastCount = 0; 
 
+            // --- 修改開始：計算成績與違規偵測 ---
             mockQuestions.forEach((q, idx) => {
                 const userAns = userAnswers[idx];
                 const timeSpent = timeLog[idx] || 0;
                 
+                // ==========================================
+                // ★ 關鍵修改：把速度檢查移到最前面 ★
+                // 這樣不管你答對還是答錯，只要小於 3 秒都算違規
+                // ==========================================
+                if (timeSpent < 3) {
+                    fastCount++;
+                }
+                
+                // 接著才判斷對錯
                 if (userAns === q.answer) {
                     correctCount++;
-                    if (timeSpent < 3) fastCount++;
                 } else {
                     wrongList.push({ 
                         ...q, 
@@ -398,7 +407,7 @@
                     });
                 }
             });
-
+            // --- 修改結束 ---
             const finalScore = Math.round((correctCount / mockQuestions.length) * 100);
             const user = Auth.getCurrentUser() || { username: 'guest', name: '訪客' };
 
