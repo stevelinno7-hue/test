@@ -2,8 +2,8 @@
     'use strict';
 
     // ------------------------------------------------------------------
-    //  Paper Generator V9.9.1 (Science Merge Fix)
-    //  修正：物件合併語法 + 理化科目判定邏輯
+    //  Paper Generator V9.9.2 (Science Logic Fix)
+    //  修正：理化(Science) 請求時，自動放行 physics 與 chemistry 題目
     // ------------------------------------------------------------------
 
     if (!Array.prototype.shuffle) {
@@ -40,7 +40,7 @@
             { name: 'physics',   repo: window.__PHYSICS_REPO__ },
             { name: 'chemistry', repo: window.__CHEMISTRY_REPO__ },
             
-            // ★★★ 修正 1：必須使用 {} 來合併物件，而非 [] ★★★
+            // ★★★ 修正 1：合併物理與化學為理化 (使用物件展開 {...}) ★★★
             { 
                 name: 'science', 
                 repo: { 
@@ -72,8 +72,10 @@
                         restored++;
                     }
                 });
-                // 只有非 science 才顯示 log，避免重複刷屏
-                if(restored > 0 && item.name !== 'science') console.log(`🚑 [Gen V9.9] 從 ${item.name} 還原 ${restored} 題`);
+                // 為了避免 console 洗版，science 合併時不顯示還原訊息
+                if(restored > 0 && item.name !== 'science') {
+                    console.log(`🚑 [Gen V9.9] 從 ${item.name} 還原 ${restored} 題`);
+                }
             }
         });
 
@@ -86,6 +88,7 @@
             'english':   ['eng', 'gram', 'vocab', '英文'],
             'physics':   ['phy', '物理', '理化'],
             'chemistry': ['chem', '化學', '理化'],
+            'science':   ['phy', 'chem', '理化', '物理', '化學'], // 新增 science 關鍵字
             'biology':   ['bio', '生物'],
             'earth':     ['earth', '地科'],
             'history':   ['his', 'hist', '歷史'],
@@ -124,10 +127,11 @@
             let score = 0;
 
             // ★★★ 修正 2：科目絕對過濾 (Subject Guard) - 增加理化例外 ★★★
-            // 如果請求是 science，則允許 physics 和 chemistry 通過
+            // 這是之前導致 0 題的關鍵原因
             let isSubjectAllowed = false;
 
             if (subject === 'science') {
+                // 如果要找理化，允許 物理、化學、理化 通過
                 if (tSubject === 'physics' || tSubject === 'chemistry' || tSubject === 'science') {
                     isSubjectAllowed = true;
                 }
@@ -142,7 +146,7 @@
                 }
             }
 
-            // 如果科目不符，直接跳過 (return)
+            // 如果科目不符，直接跳過
             if (!isSubjectAllowed) return;
 
 
@@ -157,7 +161,7 @@
                 }
             });
 
-            // 加入候選
+            // 加入候選 (只要科目對了，就算 0 分也先加入，因為後面可能是保底)
             if (score > 0 || isSubjectAllowed) {
                 candidates.push({ tid: tid, score: score });
             }
@@ -176,7 +180,10 @@
                 
                 // ★★★ 修正 3：保底機制也要加入理化判斷 ★★★
                 let isMatch = (tSub === subject);
-                if (subject === 'science' && (tSub === 'physics' || tSub === 'chemistry')) isMatch = true;
+                
+                if (subject === 'science') {
+                    if (tSub === 'physics' || tSub === 'chemistry') isMatch = true;
+                }
                 if (subject === 'earth' && tSub === 'earth_science') isMatch = true;
 
                 if (isMatch) {
@@ -215,6 +222,6 @@
     }
 
     window.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V9.9.1 (Logic Corrected) 已修復題庫合併與篩選邏輯");
+    console.log("✅ Paper Generator V9.9.2 (Science Fixed) 已解決理化科目 0 題問題");
 
 })(window);
