@@ -366,29 +366,38 @@ function renderRadarChart(baseScore = 0) {
     });
 }
 function applyCheatResult(result) {
-    // ... 前段保持不變 ...
-    const cheatData = result.cheat || { cheatLevel: 'NORMAL', fastCount: 0 };
-    const tabData = result.tabCheat || { level: 'NORMAL', totalSwitch: 0 }; // 增加預設值
+    const timeBox = document.getElementById('timeCheatBox');
+    const timeText = document.getElementById('timeCheatText');
+    const tabBox = document.getElementById('tabCheatBox');
+    const tabText = document.getElementById('tabCheatText');
 
+    // 1. 確保數據存在，若無則給予預設值
+    const cheatData = result.cheat || { cheatLevel: 'NORMAL', fastCount: 0 };
+    const tabData = result.tabCheat || { level: 'NORMAL', totalSwitch: 0 };
+
+    // 2. 定義樣式對照表
     const styles = {
-        NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '正常'],
-        MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '異常'],
-        HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '頻繁']
+        'NORMAL': ['border-green-200', 'bg-green-50', 'text-green-700', '正常'],
+        'MEDIUM': ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '異常'],
+        'HIGH':   ['border-red-200', 'bg-red-50', 'text-red-700', '嚴重']
     };
 
-    // 使用可選鏈結或預設陣列避免 styles[undefined]
-    const tStyle = styles[cheatData.cheatLevel] || styles.NORMAL;
-    if (timeBox) {
-        timeBox.className = `p-5 rounded-xl border ${tStyle[0]} ${tStyle[1]}`;
-        timeText.innerHTML = `作答節奏${tStyle[3]} (過快題數：${cheatData.fastCount})`;
-        timeText.className = `text-sm font-bold ${tStyle[2]} mt-1 pl-11`;
+    // 3. 處理作答節奏 (Time)
+    if (timeBox && timeText) {
+        // 使用安全抓取，若 cheatLevel 找不到則回傳 NORMAL
+        const s = styles[cheatData.cheatLevel] || styles['NORMAL'];
+        timeBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]}`;
+        timeText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
+        timeText.innerHTML = `作答節奏${s[3]} (過快題數：${cheatData.fastCount || 0})`;
     }
 
-    const bStyle = styles[tabData.level] || styles.NORMAL;
-    if (tabBox) {
-        tabBox.className = `p-5 rounded-xl border ${bStyle[0]} ${bStyle[1]}`;
-        tabText.innerHTML = `分頁切換${bStyle[3]} (切換次數：${tabData.totalSwitch})`;
-        tabText.className = `text-sm font-bold ${bStyle[2]} mt-1 pl-11`;
+    // 4. 處理分頁切換 (Tab)
+    if (tabBox && tabText) {
+        // 使用安全抓取，若 level 找不到則回傳 NORMAL
+        const s = styles[tabData.level] || styles['NORMAL'];
+        tabBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]}`;
+        tabText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
+        tabText.innerHTML = `分頁切換${s[3]} (切換次數：${tabData.totalSwitch || 0})`;
     }
 }
 function renderWrongList(wrongList) {
