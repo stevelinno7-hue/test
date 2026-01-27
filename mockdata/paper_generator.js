@@ -40,11 +40,21 @@
             { name: 'english',   repo: window.__ENGLISH_REPO__ },
             { name: 'physics',   repo: window.__PHYSICS_REPO__ },
             { name: 'chemistry', repo: window.__CHEMISTRY_REPO__ },
+        
+            // ★★★ 新增這一段：自動將 物理+化學 合併為 理化(science) ★★★
+            { 
+                name: 'science', 
+                repo: [
+                    ...(window.__PHYSICS_REPO__ || []), 
+                    ...(window.__CHEMISTRY_REPO__ || [])
+                ] 
+            },
+        
             { name: 'biology',   repo: window.__BIOLOGY_REPO__ },
             { name: 'history',   repo: window.__HISTORY_REPO__ },
-            { name: 'geography', repo: window.__GEOGRAPHY_REPO__ }, // 這裡有讀到
-            { name: 'earth',     repo: window.__EARTH_SCI_REPO__ }, // 修正：Earth Science
-            { name: 'civics',    repo: window.__CIVICS_REPO__ }     // 這裡有讀到
+            { name: 'geography', repo: window.__GEOGRAPHY_REPO__ },
+            { name: 'earth',     repo: window.__EARTH_SCI_REPO__ },
+            { name: 'civics',    repo: window.__CIVICS_REPO__ }
         ];
 
         repoMap.forEach(item => {
