@@ -94,7 +94,13 @@
                     <h3 class="text-2xl font-bold text-slate-800 mb-2">極速挑戰賽</h3>
                     <p class="text-slate-500">限時搶答！挑戰你的反應速度與正確率。</p>
                 </div>
-
+                <div onclick="startGame('memory_match')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+    <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
+        <i class="fas fa-brain"></i>
+    </div>
+    <h3 class="text-2xl font-bold text-slate-800 mb-2">腦力配對</h3>
+    <p class="text-slate-500">翻牌記憶大考驗，找出隱藏的關聯卡片！</p>
+</div>
             <div id="game-flashcard" class="game-section max-w-2xl mx-auto hidden">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
@@ -162,6 +168,33 @@
         </div>
     </div>
 </div>
+                <div id="game-memory_match" class="game-section max-w-4xl mx-auto hidden">
+    <div class="flex justify-between items-center mb-6">
+        <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
+        <div class="flex items-center gap-3">
+            <div class="bg-purple-50 text-purple-600 px-4 py-2 rounded-xl font-bold text-xl">
+                <i class="fas fa-check-double mr-2"></i><span id="mmMatches">0</span>/6
+            </div>
+            <div class="bg-slate-100 text-slate-500 px-4 py-2 rounded-xl font-bold">
+                <i class="far fa-hand-pointer mr-2"></i><span id="mmMoves">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="mmGrid" class="grid grid-cols-3 md:grid-cols-4 gap-4 w-full perspective-container">
+        </div>
+
+    <div id="mmGameOver" class="hidden text-center py-12 bg-white rounded-3xl shadow-lg mt-4">
+        <div class="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-5xl mx-auto mb-6 animate-bounce">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <h3 class="text-3xl font-bold text-slate-800 mb-2">配對完成！</h3>
+        <p class="text-slate-500 mb-6">你的記憶力真不錯！</p>
+        <button onclick="initMemoryMatch()" class="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">
+            再玩一次
+        </button>
+    </div>
+</div>
         </div>
     </main>
 
@@ -216,6 +249,7 @@
         document.getElementById(`game-${id}`).classList.add('active');
         if(id === 'flashcard') initFlashcard();
         if(id === 'math_rush') initMathRush();
+        if(id === 'memory_match') initMemoryMatch();
     }
 
     function backToMenu() {
@@ -351,6 +385,182 @@
         });
 
         if(window.MathJax) MathJax.typesetPromise();
+    }
+    // ==========================================
+    // 🧠 腦力配對 (Memory Match) 遊戲邏輯
+    // ==========================================
+    
+    let mmCards = [];       // 存放目前的卡片數據
+    let mmFlipped = [];     // 目前翻開的兩張牌
+    let mmLocked = false;   // 鎖定狀態 (防止一次翻三張)
+    let mmMatchCount = 0;   // 已配對組數
+    let mmMoves = 0;        // 步數
+
+    function initMemoryMatch() {
+        // 1. 準備題目 (只要 6 題，產生 12 張卡)
+        const rawQuestions = generateGameQuestions(currentSubject, 6);
+        
+        if (!rawQuestions || rawQuestions.length < 6) {
+            // 如果題目不夠 (例如該單元只有 3 題)，就用重複的題目補滿
+            if (rawQuestions.length === 0) {
+                alert("⚠️ 題目不足，無法進行配對遊戲！"); 
+                backToMenu(); 
+                return;
+            }
+        }
+
+        // 2. 重置狀態
+        mmFlipped = [];
+        mmLocked = false;
+        mmMatchCount = 0;
+        mmMoves = 0;
+        document.getElementById('mmMatches').textContent = 0;
+        document.getElementById('mmMoves').textContent = 0;
+        document.getElementById('mmGrid').classList.remove('hidden');
+        document.getElementById('mmGameOver').classList.add('hidden');
+
+        // 3. 製作卡片數據 (題目卡 + 答案卡)
+        mmCards = [];
+        rawQuestions.forEach((q, index) => {
+            // 處理答案顯示文字
+            let ansText = q.answer;
+            if (typeof q.answer === 'number' && q.options) ansText = q.options[q.answer];
+            
+            // 題目卡 (Type Q)
+            mmCards.push({ 
+                id: index, 
+                type: 'Q', 
+                content: q.question, 
+                display: q.question.length > 20 ? 'text-sm' : 'text-lg' // 字太長縮小
+            });
+            
+            // 答案卡 (Type A)
+            mmCards.push({ 
+                id: index, 
+                type: 'A', 
+                content: ansText, 
+                display: 'text-xl font-bold text-blue-600'
+            });
+        });
+
+        // 4. 洗牌 (Fisher-Yates Shuffle)
+        for (let i = mmCards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [mmCards[i], mmCards[j]] = [mmCards[j], mmCards[i]];
+        }
+
+        // 5. 渲染卡片 HTML
+        renderMemoryGrid();
+    }
+
+    function renderMemoryGrid() {
+        const grid = document.getElementById('mmGrid');
+        grid.innerHTML = '';
+
+        mmCards.forEach((card, index) => {
+            const cardEl = document.createElement('div');
+            // Tailwind CSS 卡片樣式
+            cardEl.className = `relative h-32 md:h-40 cursor-pointer group perspective`;
+            cardEl.dataset.index = index; // 綁定索引
+            cardEl.dataset.pairId = card.id; // 綁定配對 ID
+
+            // 卡片 HTML 結構 (正面 + 背面)
+            cardEl.innerHTML = `
+                <div class="card-inner w-full h-full transition-transform duration-500 transform-style-3d relative shadow-sm hover:shadow-md rounded-2xl">
+                    <div class="card-back absolute w-full h-full bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl backface-hidden flex items-center justify-center z-10">
+                        <i class="fas fa-question text-white text-3xl opacity-50"></i>
+                    </div>
+                    <div class="card-front absolute w-full h-full bg-white border-2 border-purple-100 rounded-2xl backface-hidden flex items-center justify-center p-4 text-center transform rotate-y-180 z-0 overflow-hidden">
+                        <div class="${card.display} text-slate-700 leading-tight select-none">
+                            ${card.content}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 點擊事件
+            cardEl.onclick = () => handleCardClick(cardEl, index);
+            grid.appendChild(cardEl);
+        });
+
+        // 渲染數學公式
+        if (window.MathJax) MathJax.typesetPromise();
+    }
+
+    function handleCardClick(el, index) {
+        // 如果鎖定中、已經配對成功、或是點擊同一張牌，則無效
+        if (mmLocked || el.classList.contains('matched') || el.classList.contains('flipped')) return;
+
+        // 翻牌特效
+        el.classList.add('flipped');
+        el.querySelector('.card-inner').style.transform = 'rotateY(180deg)';
+        
+        // 加入翻牌陣列
+        mmFlipped.push(el);
+
+        // 如果翻了兩張
+        if (mmFlipped.length === 2) {
+            mmMoves++;
+            document.getElementById('mmMoves').textContent = mmMoves;
+            checkForMatch();
+        }
+    }
+
+    function checkForMatch() {
+        mmLocked = true; // 鎖定，不讓玩家翻第三張
+
+        const [card1, card2] = mmFlipped;
+        const isMatch = card1.dataset.pairId === card2.dataset.pairId;
+
+        if (isMatch) {
+            // ✅ 配對成功
+            setTimeout(() => {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                
+                // 視覺回饋：變綠色並隱藏
+                card1.querySelector('.card-front').classList.add('bg-green-50', 'border-green-200');
+                card2.querySelector('.card-front').classList.add('bg-green-50', 'border-green-200');
+                
+                // 稍微淡出，讓玩家知道這組已經完成了
+                card1.style.opacity = '0.5';
+                card2.style.opacity = '0.5';
+
+                resetBoard(true);
+            }, 500);
+        } else {
+            // ❌ 配對失敗，翻回去
+            setTimeout(() => {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+                card1.querySelector('.card-inner').style.transform = 'rotateY(0deg)';
+                card2.querySelector('.card-inner').style.transform = 'rotateY(0deg)';
+                resetBoard(false);
+            }, 1000);
+        }
+    }
+
+    function resetBoard(matchFound) {
+        mmFlipped = [];
+        mmLocked = false;
+        if (matchFound) {
+            mmMatchCount++;
+            document.getElementById('mmMatches').textContent = mmMatchCount;
+            // 檢查是否全破
+            if (mmMatchCount === 6) {
+                setTimeout(() => {
+                    document.getElementById('mmGrid').classList.add('hidden');
+                    document.getElementById('mmGameOver').classList.remove('hidden');
+                    // 獎勵金幣
+                    const user = Auth.getCurrentUser();
+                    if(user) {
+                        // 簡單的獎勵邏輯 (可選)
+                        // user.coins = (user.coins || 0) + 50;
+                        // Auth.updateUser(user);
+                    }
+                }, 800);
+            }
+        }
     }
 </script>
 </body>
