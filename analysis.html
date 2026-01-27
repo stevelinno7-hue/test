@@ -165,36 +165,42 @@
 
     // ====================================================
     // 2. 核心邏輯：讀取與處理資料
-    // ====================================================
-    function loadExamResult() {
-        const resultStr = localStorage.getItem('examResult');
-        const reportContent = document.getElementById('reportContent');
-        const noDataMessage = document.getElementById('noDataMessage');
+   function loadExamResult() {
+    const resultStr = localStorage.getItem('examResult');
+    const reportContent = document.getElementById('reportContent');
+    const noDataMessage = document.getElementById('noDataMessage');
 
-        if (!resultStr) {
-            reportContent?.classList.add('hidden');
-            noDataMessage?.classList.remove('hidden');
-            updateMetaInfo("無資料");
-            return;
-        }
-
-        try {
-            let rawResult = JSON.parse(resultStr);
-            
-            // ★ 關鍵修正：將資料正規化 (自動修復舊格式數據) ★
-            const result = normalizeExamData(rawResult);
-
-            // 更新 UI
-            updateScoreBoard(result);
-            renderRadarChart(result.score);
-            applyCheatResult(result);
-            renderWrongList(result.wrongList);
-
-        } catch (error) {
-            console.error("資料解析錯誤:", error);
-            alert("測驗數據格式異常，無法正確顯示。");
-        }
+    if (!resultStr) {
+        reportContent?.classList.add('hidden');
+        noDataMessage?.classList.remove('hidden');
+        updateMetaInfo("無資料");
+        return;
     }
+
+    try {
+        let rawResult = JSON.parse(resultStr);
+        const result = normalizeExamData(rawResult);
+
+        // 1. 更新 UI 介面
+        updateScoreBoard(result);
+        renderRadarChart(result.score);
+        applyCheatResult(result);
+        renderWrongList(result.wrongList);
+
+        // 2. ★ 核心修正：自動觸發雲端儲存 ★
+        // 為了避免重複上傳（例如重新整理頁面），可以檢查一個 flag
+        const hasUploaded = sessionStorage.getItem('autoUploaded');
+        if (!hasUploaded && result.score !== undefined) {
+            console.log("偵測到新測驗結果，準備自動同步...");
+            saveToCloud();
+            // 標記本次會話已上傳過，防止重新整理網頁時反覆寫入資料庫
+            sessionStorage.setItem('autoUploaded', 'true');
+        }
+
+    } catch (error) {
+        console.error("資料解析錯誤:", error);
+    }
+}
 
     // ★ 資料正規化輔助函式 (相容性處理) ★
     function normalizeExamData(data) {
@@ -456,70 +462,53 @@ function applyCheatResult(result) {
     // 4. 雲端存檔功能 (請填入你的 GAS 網址)
     // ============================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+function saveToCloud() {
+    const user = Auth.getCurrentUser();
+    // 訪客不執行自動上傳
+    if (!user || user.username === 'guest') return;
 
-    function saveToCloud() {
-        const user = Auth.getCurrentUser();
-        // 1. 檢查登入狀態
-        if (!user || user.username === 'guest') {
-            alert("訪客模式無法儲存雲端紀錄，請先註冊/登入");
-            return;
-        }
-
-        // 2. 讀取 localStorage 的成績資料
-        const resultStr = localStorage.getItem('examResult');
-        if (!resultStr) {
-            alert("找不到測驗資料，無法上傳");
-            return;
-        }
-        const examResult = JSON.parse(resultStr);
-
-        // UI 狀態更新：顯示讀取中
-        const btn = document.getElementById('btnSave');
-        if(btn) {
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上傳中...';
-            btn.disabled = true;
-        }
-
-        // 3. ★ 關鍵修正：打包資料 (包含錯題列表) ★
-        // 我們將詳細資料 (錯題、總題數) 包成一個 JSON 字串放入 'detail' 欄位
-        const recordData = {
-            action: "save_record",
-            username: user.username,
-            activity: examResult.title || "單元測驗", // 測驗標題
-            score: examResult.score,                // 分數
-            
-            // 這邊是為了讓 Google Sheets 能夠收到完整的錯題結構
-            detail: JSON.stringify({
-                totalCount: examResult.totalCount,
-                correctCount: examResult.correctCount,
-                wrongList: examResult.wrongList || [], // 確保錯題被記錄
-                cheat: examResult.cheat,               // 作弊偵測紀錄
-                tabCheat: examResult.tabCheat
-            })
-        };
-
-        // 4. 發送至 Google Apps Script
-        fetch(GAS_URL, {
-            method: "POST",
-            body: JSON.stringify(recordData) // 使用純文字傳送避免 CORS 預檢問題
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log("上傳成功:", data);
-            if(btn) {
-                btn.className = "hidden md:flex items-center gap-2 text-white bg-green-500 font-bold transition px-4 py-2 rounded-lg cursor-default";
-                btn.innerHTML = '<i class="fas fa-check"></i> 已同步至雲端';
-            }
-        })
-        .catch(err => {
-            console.error("上傳失敗:", err);
-            if(btn) {
-                btn.innerHTML = '<i class="fas fa-times"></i> 上傳失敗，請重試';
-                btn.disabled = false;
-            }
-            alert("連線錯誤，成績未儲存");
-        });
+    const resultStr = localStorage.getItem('examResult');
+    if (!resultStr) return;
+    
+    const examResult = JSON.parse(resultStr);
+    const btn = document.getElementById('btnSave');
+    
+    // 顯示「同步中」狀態
+    if(btn) {
+        btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> 雲端自動同步中...';
+        btn.classList.replace('bg-blue-600', 'bg-amber-500');
     }
+
+    const recordData = {
+        action: "save_record",
+        username: user.username,
+        activity: examResult.title || "單元測驗",
+        score: examResult.score,
+        detail: JSON.stringify({
+            totalCount: examResult.totalCount,
+            correctCount: examResult.correctCount,
+            wrongList: examResult.wrongList || [],
+            cheat: examResult.cheat,
+            tabCheat: examResult.tabCheat
+        })
+    };
+
+    fetch(GAS_URL, {
+        method: "POST",
+        mode: 'no-cors', // 如果 GAS 沒設定 CORS，可用此模式，但無法抓取回傳值
+        body: JSON.stringify(recordData)
+    })
+    .then(() => {
+        if(btn) {
+            btn.className = "flex items-center gap-2 text-white bg-green-500 font-bold transition px-4 py-2 rounded-lg";
+            btn.innerHTML = '<i class="fas fa-cloud-check"></i> 已自動同步';
+        }
+    })
+    .catch(err => {
+        console.error("同步失敗:", err);
+        if(btn) btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> 同步失敗';
+    });
+}
 </script>
 </body>
 </html>
