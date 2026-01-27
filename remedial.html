@@ -16,6 +16,9 @@
         .tab-active { color: #2563eb; border-bottom: 2px solid #2563eb; font-weight: bold; }
         .tab-inactive { color: #64748b; border-bottom: 2px solid transparent; }
         .tab-inactive:hover { color: #334155; border-bottom: 2px solid #cbd5e1; }
+        /* 讀取中動畫 */
+        .fa-spin { animation: fa-spin 2s infinite linear; }
+        @keyframes fa-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -38,12 +41,13 @@
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm"><i class="fas fa-th-large w-5 text-center"></i> 錯題補救</a>
             <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
             <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
-            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-gamepad w-5 text-center"></i> 解題論壇</a>
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-comments w-5 text-center"></i> 解題論壇</a>
         </nav>
         <div class="p-4 border-t border-slate-50">
             <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
         </div>
     </aside>
+
     <main class="flex-grow flex flex-col h-full relative overflow-hidden">
         <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 sticky top-0">
             <div class="flex justify-between items-center mb-4">
@@ -51,9 +55,14 @@
                     <span class="w-2 h-8 bg-blue-500 rounded-full"></span>
                     學習歷程與錯題
                 </h1>
-                <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-bold transition text-sm">
-                    <i class="fas fa-arrow-left mr-2"></i>返回
-                </a>
+                <div class="flex gap-2">
+                    <button onclick="location.reload()" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-bold text-sm transition" title="重新整理與同步">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-bold transition text-sm">
+                        <i class="fas fa-arrow-left mr-2"></i>返回
+                    </a>
+                </div>
             </div>
             
             <div class="flex space-x-6 border-b border-gray-200">
@@ -90,57 +99,65 @@
     </main>
 
     <script>
-        window.onload = function() {
-            const user = Auth.getCurrentUser();
-            if(user) {
-                document.getElementById('sideUserName').textContent = user.name;
-                document.getElementById('sideUserRole').textContent = user.grade;
-                if(user.grade && user.grade.includes('國')) setStage('junior_high');
-                else setStage('high_school');
-            } else {
-                setStage('high_school');
-            }
-        };
+        // ============================================
+        // ★ 設定你的 GAS 網址 (請換成新的部署網址) ★
+        // ============================================
+        const GAS_URL = "https://script.google.com/macros/s/你的部署ID/exec"; 
+
+        // 變數宣告
         let historyDB = [];
         let wrongDB = [];
         let historyKey = "";
         let wrongKey = "";
 
-        // 初始化
+        window.onload = function() {
+            init();
+        };
+
+        // 初始化系統
         function init() {
             const user = Auth.getCurrentUser();
-            if (user) document.getElementById('sideUserName').textContent = user.name;
             
-            // 設定 Key
+            // 1. 設定使用者介面
+            if(user) {
+                document.getElementById('sideUserName').textContent = user.name;
+                document.getElementById('sideUserRole').textContent = user.grade;
+            }
+
+            // 2. 設定 localStorage Key
             historyKey = user ? `history_${user.username}` : `history_guest`;
             wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
 
-            // 暴力掃描 (以防 Key 不一致)
-            loadData();
-            
-            // 渲染
-            renderHistory();
-            renderWrong();
-            
-            // 更新計數
-            document.getElementById('historyCount').textContent = historyDB.length;
-            document.getElementById('wrongCount').textContent = wrongDB.length;
+            // 3. 先讀取「本機」舊資料 (讓使用者不用等，馬上看到東西)
+            loadLocalData();
+            renderAll();
+
+            // 4. 背景執行「雲端同步」 (如果已登入)
+            if (user && user.username !== 'guest') {
+                syncFromCloud(user.username);
+            }
         }
 
-        // 資料讀取 (包含暴力掃描)
-        function loadData() {
+        // ==========================================
+        //  資料處理核心
+        // ==========================================
+
+        // 讀取本機 localStorage
+        function loadLocalData() {
             historyDB = [];
             wrongDB = [];
 
-            // 掃描所有 History Key
+            // 暴力掃描 (防止 Key 錯亂)
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
+                // 讀取歷史
                 if (key.startsWith("history_")) {
                     try {
                         const data = JSON.parse(localStorage.getItem(key));
                         if (Array.isArray(data)) historyDB = historyDB.concat(data);
                     } catch(e) {}
                 }
+                // 讀取錯題
                 if (key.startsWith("wrong_questions_")) {
                     try {
                         const data = JSON.parse(localStorage.getItem(key));
@@ -148,11 +165,71 @@
                     } catch(e) {}
                 }
             }
-            
-            // 排序：最新的在最上面
+            sortAndFilter();
+        }
+
+        // ★ 從雲端同步資料 (下載紀錄 + 錯題)
+        function syncFromCloud(username) {
+            const hCount = document.getElementById('historyCount');
+            const wCount = document.getElementById('wrongCount');
+            // 顯示讀取動畫
+            hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            fetch(`${GAS_URL}?username=${username}`)
+            .then(res => res.json())
+            .then(cloudData => {
+                console.log("雲端資料同步成功:", cloudData);
+                
+                // 1. 合併歷史紀錄 (History)
+                const localIds = new Set(historyDB.map(item => item.id));
+                cloudData.forEach(item => {
+                    if (!localIds.has(item.id)) {
+                        historyDB.push(item);
+                    }
+                });
+
+                // 2. 合併錯題資料 (Wrong Questions)
+                // 從每一筆雲端紀錄中，把 wrongList 挖出來
+                let cloudWrongQuestions = [];
+                cloudData.forEach(exam => {
+                    if (exam.wrongList && Array.isArray(exam.wrongList)) {
+                        cloudWrongQuestions = cloudWrongQuestions.concat(exam.wrongList);
+                    }
+                });
+
+                // 將雲端錯題合併到本機錯題 (去除重複)
+                const existingQuestions = new Set(wrongDB.map(q => q.question));
+                cloudWrongQuestions.forEach(q => {
+                    if (!existingQuestions.has(q.question)) {
+                        wrongDB.push(q);
+                        existingQuestions.add(q.question);
+                    }
+                });
+
+                // 3. 排序與儲存
+                sortAndFilter();
+                
+                // 將合併後的完整資料存回本機，下次開啟比較快
+                if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
+                if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
+
+                // 4. 重新渲染畫面
+                renderAll();
+            })
+            .catch(err => {
+                console.error("同步失敗 (可能是網路問題或網址錯誤):", err);
+                // 失敗時，恢復原本數字
+                updateCounts();
+            });
+        }
+
+        // 排序與去重
+        function sortAndFilter() {
+            // 歷史紀錄：最新的在上面
             historyDB.sort((a, b) => b.id - a.id);
-            
-            // 錯題去重
+
+            // 錯題去重：同樣的題目只留一題
             const uniqueWrongs = [];
             const seen = new Set();
             wrongDB.forEach(q => {
@@ -164,7 +241,22 @@
             wrongDB = uniqueWrongs;
         }
 
-        // 渲染考試紀錄
+        // ==========================================
+        //  UI 渲染邏輯
+        // ==========================================
+
+        function renderAll() {
+            renderHistory();
+            renderWrong();
+            updateCounts();
+        }
+
+        function updateCounts() {
+            document.getElementById('historyCount').textContent = historyDB.length;
+            document.getElementById('wrongCount').textContent = wrongDB.length;
+        }
+
+        // 渲染歷史列表
         function renderHistory() {
             const container = document.getElementById('historyList');
             const empty = document.getElementById('historyEmpty');
@@ -189,11 +281,11 @@
                             </div>
                             <div>
                                 <h3 class="font-bold text-gray-800">${record.title}</h3>
-                                <p class="text-xs text-gray-500">${record.date} • 答對 ${record.correctCount}/${record.totalCount}</p>
+                                <p class="text-xs text-gray-500">${record.date || '未知日期'} • 答對 ${record.correctCount}/${record.totalCount}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${record.subject}</span>
+                            <span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${record.subject || '一般'}</span>
                             <i class="fas fa-chevron-right text-gray-300"></i>
                         </div>
                     </div>
@@ -202,7 +294,7 @@
             });
         }
 
-        // 渲染錯題
+        // 渲染錯題列表
         function renderWrong() {
             const container = document.getElementById('wrongList');
             const empty = document.getElementById('wrongEmpty');
@@ -224,13 +316,13 @@
                     optionsHtml += `<div class="p-2 border rounded mb-1 flex items-center gap-2 ${style}"><span class="font-bold">${icon}</span> ${opt}</div>`;
                 });
 
-                const explain = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : q.explanation;
+                const explain = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : (q.explanation || "無解析");
 
                 const html = `
                     <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
                         <div class="flex justify-between items-start mb-4">
                             <h3 class="font-bold text-gray-800 text-lg">${q.question}</h3>
-                            <button onclick="removeQuestion('${q.question}')" class="text-gray-400 hover:text-green-600"><i class="fas fa-check-circle text-xl"></i></button>
+                            <button onclick="removeQuestion('${q.question}')" class="text-gray-400 hover:text-green-600" title="標記為已懂 (移除)"><i class="fas fa-check-circle text-xl"></i></button>
                         </div>
                         <div class="space-y-1 mb-4 text-sm">${optionsHtml}</div>
                         <div class="bg-slate-50 p-4 rounded text-sm text-slate-700 border-l-4 border-indigo-400">
@@ -243,45 +335,34 @@
             if (window.MathJax) MathJax.typesetPromise();
         }
 
-        // 點擊紀錄 -> 跳轉到分析頁面
+        // ==========================================
+        //  互動功能
+        // ==========================================
+
+        // 查看詳細結果
         window.viewResult = function(recordId) {
-            // 找出該筆紀錄
             const record = historyDB.find(r => r.id === recordId);
             if (record) {
-                // 將其設定為「當前要查看的結果」
                 localStorage.setItem('examResult', JSON.stringify(record));
                 window.location.href = "analysis.html";
             }
         }
 
-        // 移除錯題
+        // 移除錯題 (僅本機移除)
         window.removeQuestion = function(qText) {
-            if(!confirm("確定移除此題？")) return;
-            // 從所有相關 Key 中移除該題
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith("wrong_questions_")) {
-                    let db = JSON.parse(localStorage.getItem(key) || "[]");
-                    db = db.filter(q => q.question !== qText);
-                    localStorage.setItem(key, JSON.stringify(db));
-                }
-            }
-            location.reload();
+            if(!confirm("確定移除此題？(僅從本機列表移除)")) return;
+            
+            // 更新記憶體中的資料
+            wrongDB = wrongDB.filter(q => q.question !== qText);
+            
+            // 更新 LocalStorage (避免重整後跑出來)
+            if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
+            
+            renderWrong();
+            updateCounts();
         }
 
-        // 清除所有資料
-        window.clearAllHistory = function() {
-            if(!confirm("確定要刪除所有考試與錯題紀錄？此動作無法復原！")) return;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith("history_") || key.startsWith("wrong_questions_")) {
-                    localStorage.removeItem(key);
-                }
-            }
-            location.reload();
-        }
-
-        // 分頁切換
+        // 切換分頁
         window.switchTab = function(tab) {
             const histBtn = document.getElementById('tab-history');
             const wrongBtn = document.getElementById('tab-wrong');
@@ -298,10 +379,9 @@
                 wrongBtn.className = "pb-3 px-2 tab-active transition";
                 histView.classList.add('hidden');
                 wrongView.classList.remove('hidden');
+                if (window.MathJax) MathJax.typesetPromise();
             }
         }
-
-        init();
     </script>
 </body>
 </html>
