@@ -141,6 +141,17 @@
     </main>
 
     <script>
+        window.onload = function() {
+            const user = Auth.getCurrentUser();
+            if(user) {
+                document.getElementById('sideUserName').textContent = user.name;
+                document.getElementById('sideUserRole').textContent = user.grade;
+                if(user.grade && user.grade.includes('國')) setStage('junior_high');
+                else setStage('high_school');
+            } else {
+                setStage('high_school');
+            }
+        };
         const urlParams = new URLSearchParams(window.location.search);
         let currentSubject = urlParams.get('subject') || 'math';
         document.getElementById('fcSubject').textContent = currentSubject;
