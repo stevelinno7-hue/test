@@ -314,7 +314,7 @@
         }
     },
 
-    // 國八：單元 3 因式分解
+   // 國八：單元 3 因式分解
     {
         id: "k8_factor_common",
         tags: ["數學","因式分解","國八"],
@@ -323,11 +323,16 @@
             const n = Utils.rnd(1,6);
             const a = m*n;
             const b = m;
-            const c = n;
+            // const c = n; // 這行沒用到，可以註解掉
             const ansStr = `${m}(${n}x + 1)`;
+            
             return {
                 question: `【因式分解】將 ${a}x + ${b} 分解為因式？`,
-                options: [ansStr, `${n}(${m}x+1)`, `${m}x+${b}`, `${a}(${x}+1)`],
+                
+                // ❌ 原本錯誤： `${a}(${x}+1)`  <-- 這裡的 x 被當成變數了
+                // ✅ 修正如下： `${a}(x+1)`     <-- 這裡的 x 只是文字
+                options: [ansStr, `${n}(${m}x+1)`, `${m}x+${b}`, `${a}(x+1)`],
+                
                 correctValue: ansStr,
                 concept: "提公因式",
                 explanation: [
