@@ -357,18 +357,7 @@
             });
         }
 
-        // 8. 交卷流程
-        function trySubmit() {
-            recordTime(); // 紀錄最後一題的時間
-            const answeredCount = userAnswers.filter(a => a !== null).length;
-            document.getElementById('modalAnswered').textContent = answeredCount;
-            document.getElementById('modalUnanswered').textContent = mockQuestions.length - answeredCount;
-            document.getElementById('submitModal').classList.remove('hidden');
-        }
         
-        function closeSubmitModal() { 
-            document.getElementById('submitModal').classList.add('hidden'); 
-        }
 
        // 8. 交卷流程
         function trySubmit() {
