@@ -402,7 +402,7 @@
             const finalScore = Math.round((correctCount / mockQuestions.length) * 100);
             const user = Auth.getCurrentUser() || { username: 'guest', name: '訪客' };
 
-            // 準備詳細資料 (JSON)
+          // 準備詳細資料 (JSON)
             const resultData = {
                 id: Date.now(),
                 date: new Date().toLocaleString(),
@@ -412,15 +412,28 @@
                 correctCount,
                 totalCount: mockQuestions.length,
                 wrongList,
+                
+                // =============================================
+                // ★ 關鍵修正：將切換次數直接放在最外層 ★
+                // 這樣 analysis.html 才能直接讀取到 tabSwitches
+                // =============================================
+                tabSwitches: tabLog.length, 
+                
+                // 為了讓分析頁的秒數判斷也能運作，我們加上這段 cheat 物件
+                cheat: {
+                    cheatLevel: (fastCount > 3) ? 'HIGH' : ((fastCount > 0) ? 'MEDIUM' : 'NORMAL'),
+                    fastCount: fastCount
+                },
+
+                // 保留你原本的 analysis 物件 (以免破壞其他功能)
                 analysis: { 
                     cheatLevel: (fastCount > 5 || tabLog.length > 5) ? 'HIGH' : 'NORMAL', 
                     fastCount, 
                     tabSwitchCount: tabLog.length, 
-                    tabLogDetails: tabLog,
+                    tabLogDetails: tabLog, 
                     timeLog 
                 }
             };
-
             // 1. 存入 LocalStorage (給前端分析頁用)
             localStorage.setItem('examResult', JSON.stringify(resultData));
             const historyKey = `history_${user.username}`;
