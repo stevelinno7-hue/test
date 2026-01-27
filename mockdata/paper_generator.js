@@ -2,9 +2,9 @@
     'use strict';
 
     // ------------------------------------------------------------------
-    //  Paper Generator V9.9.7 (Strict + Auto-Init Fix)
-    //  修正：V9.9.6 因移除初始化導致的「核心未啟動」錯誤
-    //  保留：精準標籤篩選功能 (解決亂出題)
+    //  Paper Generator V9.9.8 (Strict Lockdown)
+    //  修正：徹底移除「找不到題目時自動全科出題」的保底機制。
+    //  效果：選什麼單元就只出什麼單元，寧可空白也不亂跳。
     // ------------------------------------------------------------------
 
     // 1. 確保 Shuffle 功能存在
@@ -18,8 +18,7 @@
         };
     }
 
-    // 2. ★★★ 關鍵修正：自動初始化核心物件 ★★★
-    // 這段代碼在 V9.9.6 被我不小心移除了，現在加回來
+    // 2. 自動初始化核心
     if (!window.RigorousGenerator) {
         window.RigorousGenerator = { 
             _templates: {}, 
@@ -31,21 +30,17 @@
 
     function generatePaper(config) {
         let G = window.RigorousGenerator;
-        
-        // 雙重保險：如果 G 還是空的，就現場造一個
-        if (!G) {
-             G = window.RigorousGenerator = { _templates: {} };
-        }
+        if (!G) G = window.RigorousGenerator = { _templates: {} };
         if (!G.getTemplateIds) G.getTemplateIds = () => Object.keys(G._templates || {});
 
         const subject = (config.subject || 'math').toLowerCase();
         
-        // 處理標籤：轉小寫並過濾空值
+        // 處理標籤：轉小寫，過濾無效值
         const requestTags = (Array.isArray(config.tags) ? config.tags : [config.tags])
                             .map(t => String(t || '').toLowerCase())
-                            .filter(t => t !== '' && t !== 'undefined' && t !== 'null');
+                            .filter(t => t !== '' && t !== 'undefined' && t !== 'null' && t !== 'all');
 
-        console.log(`🔒 [Gen V9.9.7] 精準模式 | 科目: ${subject} | 標籤:`, requestTags);
+        console.log(`🔒 [Gen V9.9.8] 嚴格鎖定模式 | 科目: ${subject} | 指定單元:`, requestTags);
 
         // 3. 收集所有題目來源
         const repos = [
@@ -76,15 +71,18 @@
 
                 if (!isSubjectMatch) return;
 
-                // --- B. 標籤精準計分 ---
+                // --- B. 標籤嚴格篩選 ---
                 let score = 0;
                 const meta = (t.tags || []).map(x => String(x).toLowerCase());
 
                 if (requestTags.length === 0) {
-                    score = 1; // 沒選單元 = 全冊
+                    // 如果沒選單元，代表「全冊」，這時才允許全部通過
+                    score = 1; 
                 } else {
+                    // 如果有選單元，必須命中才算分
                     let hitCount = 0;
                     requestTags.forEach(rt => {
+                        // 雙向模糊比對：例如選「數與量」，標籤「數與量(一)」也算中
                         if (meta.some(m => m.includes(rt) || rt.includes(m))) {
                             hitCount++;
                         }
@@ -93,16 +91,17 @@
                     if (hitCount > 0) {
                         score = 10 + hitCount;
                     } else {
-                        score = 0; // 沒命中標籤，直接淘汰
+                        score = 0; // ★★★ 沒命中就是 0 分，絕對不錄取 ★★★
                     }
                 }
 
-                // --- C. 加入候選 ---
+                // --- C. 加入候選 (包含隨機洗牌權重) ---
                 if (score > 0) {
                     candidates.push({ 
                         tid: tid, 
-                        score: score + Math.random(), // 隨機權重防止死板排序
-                        func: t.func
+                        score: score + Math.random(), // 這裡保留隨機性，是為了「同單元內」題目不要都在前幾題
+                        func: t.func,
+                        debugTags: t.tags
                     });
                 }
             });
@@ -113,21 +112,27 @@
 
         console.log(`📊 篩選結果: 找到 ${candidates.length} 題符合條件`);
         
-        // 5. 如果沒題目，改為全科搜尋 (避免交白卷)
+        // 5. ★★★ 關鍵修改：移除保底機制 ★★★
         if (candidates.length === 0) {
-            console.warn("⚠️ 找不到符合標籤的題目！系統將自動改為「全科出題」...");
-            // 遞迴呼叫自己，但清空標籤
-            return generatePaper({ ...config, tags: [] });
+            console.error("❌ 找不到符合標籤的題目。");
+            console.error("  - 您請求的標籤:", requestTags);
+            console.error("  - 系統拒絕亂出其他單元題目，將回傳空試卷。");
+            return []; // 直接回傳空陣列，讓 UI 顯示「無題目」，而不是亂抓
         }
 
         // 6. 取出題目
         const total = config.total || 10;
         const finalSelection = candidates.slice(0, total);
         
+        // Debug: 檢查第一題是不是真的符合
+        if (finalSelection.length > 0) {
+            console.log("✅ 確認第一題標籤:", finalSelection[0].debugTags);
+        }
+
         return finalSelection.map(c => c.func());
     }
 
     window.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V9.9.7 (Auto-Init Fix) 已修復啟動錯誤");
+    console.log("✅ Paper Generator V9.9.8 (Strict Lockdown) 已載入 - 絕對不亂跳單元");
 
 })(window);
