@@ -462,23 +462,33 @@ function applyCheatResult(result) {
     // 4. 雲端存檔功能 (請填入你的 GAS 網址)
     // ============================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+// 在 script 標籤內最上方定義一個變數作為狀態鎖
+let isUploading = false;
+
 function saveToCloud() {
+    // 如果正在上傳中，直接跳出，不執行任何動作
+    if (isUploading) return;
+
     const user = Auth.getCurrentUser();
-    // 訪客不執行自動上傳
-    if (!user || user.username === 'guest') return;
+    if (!user || user.username === 'guest') {
+        alert("訪客模式無法儲存雲端紀錄");
+        return;
+    }
 
     const resultStr = localStorage.getItem('examResult');
     if (!resultStr) return;
-    
-    const examResult = JSON.parse(resultStr);
+
+    // --- 開始執行上傳 ---
+    isUploading = true; // 開鎖
     const btn = document.getElementById('btnSave');
     
-    // 顯示「同步中」狀態
     if(btn) {
-        btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> 雲端自動同步中...';
-        btn.classList.replace('bg-blue-600', 'bg-amber-500');
+        btn.disabled = true; // 關鍵：讓 HTML 按鈕無法再被點擊
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
+        btn.classList.add('opacity-50', 'cursor-not-allowed'); // 改變外觀讓使用者知道不能按
     }
 
+    const examResult = JSON.parse(resultStr);
     const recordData = {
         action: "save_record",
         username: user.username,
@@ -495,18 +505,25 @@ function saveToCloud() {
 
     fetch(GAS_URL, {
         method: "POST",
-        mode: 'no-cors', // 如果 GAS 沒設定 CORS，可用此模式，但無法抓取回傳值
         body: JSON.stringify(recordData)
     })
-    .then(() => {
+    .then(res => res.json())
+    .then(data => {
         if(btn) {
-            btn.className = "flex items-center gap-2 text-white bg-green-500 font-bold transition px-4 py-2 rounded-lg";
-            btn.innerHTML = '<i class="fas fa-cloud-check"></i> 已自動同步';
+            btn.className = "flex items-center gap-2 text-white bg-green-500 font-bold px-4 py-2 rounded-lg cursor-default shadow-none";
+            btn.innerHTML = '<i class="fas fa-check"></i> 同步完成';
+            // 這裡不解開 isUploading，所以該頁面生命週期內此按鈕宣告永久失效
         }
     })
     .catch(err => {
-        console.error("同步失敗:", err);
-        if(btn) btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> 同步失敗';
+        console.error("上傳失敗:", err);
+        if(btn) {
+            btn.disabled = false; // 只有失敗時才解開按鈕，讓使用者重試
+            isUploading = false;
+            btn.innerHTML = '<i class="fas fa-redo"></i> 重試上傳';
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.classList.replace('bg-green-500', 'bg-red-500');
+        }
     });
 }
 </script>
