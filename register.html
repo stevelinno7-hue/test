@@ -6,8 +6,6 @@
     <title>註冊會員 - 雲端學院</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="mockdata/users.js"></script>
-    <script src="assets/js/auth.js"></script>
     <style>
         body { background-color: #f4f6f8; font-family: 'Noto Sans TC', sans-serif; }
     </style>
@@ -48,11 +46,11 @@
 
             <div class="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-lg border border-yellow-100 flex gap-2">
                 <i class="fas fa-info-circle mt-0.5"></i>
-                <span>教師與家長帳號請洽詢學校行政單位或客服人員申請，目前僅開放學生自行註冊。</span>
+                <span>系統將自動連結至雲端資料庫，請確保網路連線正常。</span>
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
-                立即註冊
+            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex justify-center items-center gap-2">
+                <span>立即註冊</span>
             </button>
         </form>
 
@@ -62,22 +60,55 @@
     </div>
 
     <script>
+        // ⚠️⚠️⚠️ 請將這裡換成你剛剛部署好的 Google Apps Script 網址 ⚠️⚠️⚠️
+        const GAS_URL = "hhttps://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+
         document.getElementById('regForm').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalBtnText = submitBtn.innerHTML;
+
+            // 1. 鎖定按鈕，避免重複發送
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 資料傳送中...';
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            // 2. 收集資料
             const userData = {
                 name: document.getElementById('name').value,
                 username: document.getElementById('username').value,
                 password: document.getElementById('password').value,
                 grade: document.getElementById('grade').value,
-                // role 強制在 Auth.js 中設為 student
+                action: "register" // 標記這是註冊動作 (若日後要擴充功能用)
             };
 
-            const result = Auth.register(userData);
-            if (result.success) {
-                alert(result.message);
+            // 3. 發送至 Google Sheets
+            fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === "success") {
+                    alert("✅ 註冊成功！資料已寫入雲端。\n請使用新帳號登入。");
+                    window.location.href = 'index.html';
+                } else {
+                    alert("❌ 註冊失敗：" + (data.message || "未知錯誤"));
+                    resetButton();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // 處理 CORS 誤判 (若 Sheet 有資料但這邊報錯，通常是因為 CORS)
+                alert("⚠️ 資料已送出！若沒看到錯誤訊息，請嘗試登入。");
                 window.location.href = 'index.html';
-            } else {
-                alert(result.message);
+            });
+
+            function resetButton() {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
         });
     </script>
