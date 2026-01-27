@@ -8,4 +8,11 @@ window.UserDB = [
         role: "teacher",
         grade: "教務主任"
     },
+    {
+        username: "dad",
+        password: "dad",
+        name: "dad",
+        role: "parent",
+        grade: "教務主任"
+    },
 ];
