@@ -140,98 +140,169 @@
         </div>
     </main>
 
-    <script>
-        window.onload = function() {
-            const user = Auth.getCurrentUser();
-            if(user) {
-                document.getElementById('sideUserName').textContent = user.name;
-                document.getElementById('sideUserRole').textContent = user.grade;
-                if(user.grade && user.grade.includes('國')) setStage('junior_high');
-                else setStage('high_school');
-            } else {
-                setStage('high_school');
-            }
-        };
-        const urlParams = new URLSearchParams(window.location.search);
-        let currentSubject = urlParams.get('subject') || 'math';
-        document.getElementById('fcSubject').textContent = currentSubject;
-
-        // 若非數學，隱藏極速挑戰
-        if (currentSubject !== 'math') {
-            document.getElementById('cardMathRush').style.display = 'none';
-        }
-
+<script>
+    window.onload = function() {
         const user = Auth.getCurrentUser();
-        if(user) document.getElementById('coinCount').textContent = user.coins || 0;
+        if(user) {
+            document.getElementById('sideUserName').textContent = user.name;
+            document.getElementById('sideUserRole').textContent = user.grade;
+            if(user.grade && user.grade.includes('國')) setStage('junior_high');
+            else setStage('high_school');
+            document.getElementById('coinCount').textContent = user.coins || 0;
+        } else {
+            setStage('high_school');
+        }
+    };
 
-        let gameQuestions = [], currentQIdx = 0, score = 0, timer = 60, timerInterval;
+    // 1. 解析網址參數 (包含 grade)
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentSubject = urlParams.get('subject') || 'math';
+    
+    // 🔥【關鍵修復】讀取單元標籤
+    const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
+    let targetTags = [];
+    if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
+        targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
+    }
 
-        function generateGameQuestions(subj, count) {
-            if (window.generatePaper) {
-                return window.generatePaper({ subject: subj, total: count, tags: [] }).filter(i => i && i.question);
+    // 更新介面顯示
+    document.getElementById('fcSubject').textContent = currentSubject;
+    // 如果有指定單元，顯示在 console 方便除錯
+    console.log("🎮 遊戲模式鎖定標籤:", targetTags);
+
+    // 若非數學，隱藏極速挑戰 (Math Rush)
+    if (currentSubject !== 'math') {
+        document.getElementById('cardMathRush').style.display = 'none';
+    }
+
+    let gameQuestions = [], currentQIdx = 0, score = 0, timer = 60, timerInterval;
+
+    // 2. 修正題目生成邏輯 (接收 tags)
+    function generateGameQuestions(subj, count) {
+        if (window.generatePaper) {
+            // 🔥【關鍵修復】這裡不能傳空陣列 []，要傳 targetTags！
+            // 如果 targetTags 是空的，才會全科隨機；如果有值，就會鎖定單元。
+            return window.generatePaper({ 
+                subject: subj, 
+                total: count, 
+                tags: targetTags.length > 0 ? targetTags : [subj] // 如果沒單元，至少傳個科目進去
+            }).filter(i => i && i.question);
+        }
+        return [];
+    }
+
+    function startGame(id) {
+        document.getElementById('gameMenu').classList.add('hidden');
+        document.getElementById(`game-${id}`).classList.remove('hidden');
+        document.getElementById(`game-${id}`).classList.add('active');
+        if(id === 'flashcard') initFlashcard();
+        if(id === 'math_rush') initMathRush();
+    }
+
+    function backToMenu() {
+        document.getElementById('gameMenu').classList.remove('hidden');
+        document.querySelectorAll('.game-section').forEach(e => { e.classList.remove('active'); e.classList.add('hidden'); });
+        clearInterval(timerInterval);
+    }
+
+    function initFlashcard() {
+        gameQuestions = generateGameQuestions(currentSubject, 10);
+        
+        // 防呆：如果該單元題目太少
+        if(!gameQuestions || gameQuestions.length === 0) { 
+            alert("⚠️ 此單元目前沒有適合的題目，請嘗試其他單元！"); 
+            backToMenu(); 
+            return; 
+        }
+        
+        currentQIdx = 0; 
+        renderFlashcard();
+    }
+
+    function renderFlashcard() {
+        const q = gameQuestions[currentQIdx % gameQuestions.length];
+        document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
+        
+        // 處理選項顯示 (有些題目是選擇題，有些是填充)
+        let ans = q.options ? `${q.answer}<br><span class="text-sm text-blue-200">(${q.options[q.answer]})</span>` : q.answer;
+        // 如果原本的 answer 已經是選項內容 (字串)，就直接顯示
+        if (typeof q.answer === 'string' && q.options && q.options.includes(q.answer)) {
+             ans = q.answer;
+        } else if (typeof q.answer === 'number' && q.options) {
+             // 如果 answer 是索引 (0, 1, 2, 3)
+             ans = q.options[q.answer];
+        }
+
+        document.getElementById('fcAnswer').innerHTML = ans;
+        document.getElementById('flashCardInner').classList.remove('is-flipped');
+        if(window.MathJax) MathJax.typesetPromise();
+    }
+    
+    function flipCard(el) { el.querySelector('.card-inner').classList.toggle('is-flipped'); }
+    function nextFlashcard() { currentQIdx++; renderFlashcard(); }
+
+    function initMathRush() {
+        // 極速挑戰通常只適合數學，且最好是計算題
+        // 這裡我們也傳入 targetTags，讓使用者可以只玩「整數運算」的極速挑戰
+        gameQuestions = generateGameQuestions('math', 50);
+        
+        if(!gameQuestions || gameQuestions.length === 0) { 
+            alert("無題目"); 
+            backToMenu(); 
+            return; 
+        }
+        
+        score = 0; timer = 60; currentQIdx = 0;
+        document.getElementById('mrGameOver').classList.add('hidden');
+        document.getElementById('mrGameArea').classList.remove('hidden');
+        document.getElementById('mrScore').textContent = 0;
+        
+        timerInterval = setInterval(() => {
+            timer--; document.getElementById('mrTimer').textContent = timer;
+            if(timer<=0) { 
+                clearInterval(timerInterval); 
+                document.getElementById('mrGameArea').classList.add('hidden'); 
+                document.getElementById('mrGameOver').classList.remove('hidden'); 
+                document.getElementById('mrFinalScore').textContent = score; 
             }
-            return [];
-        }
+        }, 1000);
+        
+        renderMathQuestion();
+    }
 
-        function startGame(id) {
-            document.getElementById('gameMenu').classList.add('hidden');
-            document.getElementById(`game-${id}`).classList.remove('hidden');
-            document.getElementById(`game-${id}`).classList.add('active');
-            if(id === 'flashcard') initFlashcard();
-            if(id === 'math_rush') initMathRush();
-        }
+    function renderMathQuestion() {
+        const q = gameQuestions[currentQIdx % gameQuestions.length];
+        document.getElementById('mrQuestion').innerHTML = q.question;
+        const con = document.getElementById('mrOptions'); con.innerHTML = '';
+        
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = "w-full py-3 text-lg font-bold bg-slate-50 border rounded-xl hover:bg-blue-50 transition";
+            btn.innerHTML = opt;
+            btn.onclick = () => {
+                // 判斷答案邏輯
+                let isCorrect = false;
+                if (typeof q.answer === 'number') {
+                    isCorrect = (idx === q.answer);
+                } else {
+                    isCorrect = (opt === q.answer);
+                }
 
-        function backToMenu() {
-            document.getElementById('gameMenu').classList.remove('hidden');
-            document.querySelectorAll('.game-section').forEach(e => { e.classList.remove('active'); e.classList.add('hidden'); });
-            clearInterval(timerInterval);
-        }
-
-        function initFlashcard() {
-            gameQuestions = generateGameQuestions(currentSubject, 10);
-            if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
-            currentQIdx = 0; renderFlashcard();
-        }
-        function renderFlashcard() {
-            const q = gameQuestions[currentQIdx % gameQuestions.length];
-            document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
-            let ans = q.options ? q.options[q.answer] : q.answer;
-            document.getElementById('fcAnswer').innerHTML = ans;
-            document.getElementById('flashCardInner').classList.remove('is-flipped');
-            if(window.MathJax) MathJax.typesetPromise();
-        }
-        function flipCard(el) { el.querySelector('.card-inner').classList.toggle('is-flipped'); }
-        function nextFlashcard() { currentQIdx++; renderFlashcard(); }
-
-        function initMathRush() {
-            gameQuestions = generateGameQuestions('math', 50);
-            if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
-            score = 0; timer = 60; currentQIdx = 0;
-            document.getElementById('mrGameOver').classList.add('hidden');
-            document.getElementById('mrGameArea').classList.remove('hidden');
-            document.getElementById('mrScore').textContent = 0;
-            timerInterval = setInterval(() => {
-                timer--; document.getElementById('mrTimer').textContent = timer;
-                if(timer<=0) { clearInterval(timerInterval); document.getElementById('mrGameArea').classList.add('hidden'); document.getElementById('mrGameOver').classList.remove('hidden'); document.getElementById('mrFinalScore').textContent = score; }
-            }, 1000);
-            renderMathQuestion();
-        }
-        function renderMathQuestion() {
-            const q = gameQuestions[currentQIdx % gameQuestions.length];
-            document.getElementById('mrQuestion').innerHTML = q.question;
-            const con = document.getElementById('mrOptions'); con.innerHTML = '';
-            q.options.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "w-full py-3 text-lg font-bold bg-slate-50 border rounded-xl hover:bg-blue-50 transition";
-                btn.innerHTML = opt;
-                btn.onclick = () => {
-                    if(idx === q.answer) { score+=100; document.getElementById('mrScore').textContent = score; currentQIdx++; renderMathQuestion(); }
-                    else { score = Math.max(0, score-50); document.getElementById('mrScore').textContent = score; btn.classList.add('bg-red-500','text-white'); }
-                };
-                con.appendChild(btn);
-            });
-            if(window.MathJax) MathJax.typesetPromise();
-        }
-    </script>
+                if(isCorrect) { 
+                    score+=100; 
+                    document.getElementById('mrScore').textContent = score; 
+                    currentQIdx++; 
+                    renderMathQuestion(); 
+                } else { 
+                    score = Math.max(0, score-50); 
+                    document.getElementById('mrScore').textContent = score; 
+                    btn.classList.add('bg-red-500','text-white'); 
+                }
+            };
+            con.appendChild(btn);
+        });
+        if(window.MathJax) MathJax.typesetPromise();
+    }
+</script>
 </body>
 </html>
