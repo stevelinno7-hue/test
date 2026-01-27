@@ -2,12 +2,11 @@
     'use strict';
 
     // ------------------------------------------------------------------
-    //  Paper Generator V9.9.8 (Strict Lockdown)
-    //  修正：徹底移除「找不到題目時自動全科出題」的保底機制。
-    //  效果：選什麼單元就只出什麼單元，寧可空白也不亂跳。
+    //  Paper Generator V9.9.9 (Universal Adapter)
+    //  修正：專門解決「題庫明明有，但系統卻說 0 題」的靈異現象
+    //  功能：暴力清洗標籤格式 (字串/陣列/空白通吃) + 詳細診斷 Log
     // ------------------------------------------------------------------
 
-    // 1. 確保 Shuffle 功能存在
     if (!Array.prototype.shuffle) {
         Array.prototype.shuffle = function() {
             for (let i = this.length - 1; i > 0; i--) {
@@ -18,7 +17,7 @@
         };
     }
 
-    // 2. 自動初始化核心
+    // 自動初始化核心
     if (!window.RigorousGenerator) {
         window.RigorousGenerator = { 
             _templates: {}, 
@@ -28,6 +27,19 @@
         };
     }
 
+    function normalizeTags(raw) {
+        if (!raw) return [];
+        // 如果是字串 (例如 "math, grade7")，切開變成陣列
+        if (typeof raw === 'string') {
+            return raw.split(/[,，\s]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
+        }
+        // 如果是陣列，轉小寫並去空白
+        if (Array.isArray(raw)) {
+            return raw.map(t => String(t).trim().toLowerCase()).filter(Boolean);
+        }
+        return [];
+    }
+
     function generatePaper(config) {
         let G = window.RigorousGenerator;
         if (!G) G = window.RigorousGenerator = { _templates: {} };
@@ -35,14 +47,13 @@
 
         const subject = (config.subject || 'math').toLowerCase();
         
-        // 處理標籤：轉小寫，過濾無效值
-        const requestTags = (Array.isArray(config.tags) ? config.tags : [config.tags])
-                            .map(t => String(t || '').toLowerCase())
-                            .filter(t => t !== '' && t !== 'undefined' && t !== 'null' && t !== 'all');
+        // 1. 清洗使用者請求的標籤
+        const requestTags = normalizeTags(config.tags);
 
-        console.log(`🔒 [Gen V9.9.8] 嚴格鎖定模式 | 科目: ${subject} | 指定單元:`, requestTags);
+        console.log(`🔒 [Gen V9.9.9] 萬能轉接模式 | 科目: ${subject}`);
+        console.log(`🎯 您請求的標籤 (已清洗):`, requestTags);
 
-        // 3. 收集所有題目來源
+        // 2. 收集所有題目來源
         const repos = [
             window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__, 
             window.__BIOLOGY_REPO__, window.__EARTH_SCI_REPO__, window.__CHINESE_REPO__,
@@ -50,6 +61,7 @@
         ];
 
         let candidates = [];
+        let debugTagPool = new Set(); // 診斷用：收集系統到底看到了什麼標籤
 
         repos.forEach(repo => {
             if(!repo) return;
@@ -57,33 +69,36 @@
                 const t = repo[tid];
                 if (!t) return;
                 
-                // --- A. 科目嚴格檢查 ---
-                const tSubject = (t.subject || "").toLowerCase();
+                // --- A. 科目寬鬆檢查 ---
+                const tSubject = String(t.subject || "").toLowerCase().trim();
                 let isSubjectMatch = false;
 
                 if (subject === 'science') {
-                    if (['physics', 'chemistry', 'science'].includes(tSubject)) isSubjectMatch = true;
+                    if (['physics', 'chemistry', 'science', '理化', '物理', '化學'].some(s => tSubject.includes(s))) isSubjectMatch = true;
                 } else if (subject === 'social') {
-                    if (['history', 'geography', 'civics', 'social'].includes(tSubject)) isSubjectMatch = true;
-                } else if (tSubject === subject) {
+                    if (['history', 'geography', 'civics', 'social', '歷史', '地理', '公民', '社會'].some(s => tSubject.includes(s))) isSubjectMatch = true;
+                } else if (tSubject.includes(subject) || subject.includes(tSubject)) {
                     isSubjectMatch = true;
                 }
 
                 if (!isSubjectMatch) return;
 
-                // --- B. 標籤嚴格篩選 ---
+                // --- B. 標籤暴力比對 ---
                 let score = 0;
-                const meta = (t.tags || []).map(x => String(x).toLowerCase());
+                // 這裡做這件事：把題庫裡各種怪異格式的 tags 全部洗成乾淨的陣列
+                const rawTags = t.tags || t.meta || (t.func && t.func.tags) || [];
+                const metaTags = normalizeTags(rawTags).concat([tSubject]);
+
+                // (診斷用) 將這個題目的標籤加入清單
+                metaTags.forEach(mt => debugTagPool.add(mt));
 
                 if (requestTags.length === 0) {
-                    // 如果沒選單元，代表「全冊」，這時才允許全部通過
-                    score = 1; 
+                    score = 1; // 沒選標籤 = 全冊
                 } else {
-                    // 如果有選單元，必須命中才算分
                     let hitCount = 0;
                     requestTags.forEach(rt => {
-                        // 雙向模糊比對：例如選「數與量」，標籤「數與量(一)」也算中
-                        if (meta.some(m => m.includes(rt) || rt.includes(m))) {
+                        // 雙向寬鬆比對 (只要包含就算對)
+                        if (metaTags.some(mt => mt.includes(rt) || rt.includes(mt))) {
                             hitCount++;
                         }
                     });
@@ -91,48 +106,46 @@
                     if (hitCount > 0) {
                         score = 10 + hitCount;
                     } else {
-                        score = 0; // ★★★ 沒命中就是 0 分，絕對不錄取 ★★★
+                        score = 0; 
                     }
                 }
 
-                // --- C. 加入候選 (包含隨機洗牌權重) ---
+                // --- C. 加入候選 ---
                 if (score > 0) {
                     candidates.push({ 
                         tid: tid, 
-                        score: score + Math.random(), // 這裡保留隨機性，是為了「同單元內」題目不要都在前幾題
+                        score: score + Math.random(), 
                         func: t.func,
-                        debugTags: t.tags
+                        debugTags: metaTags // 讓 Log 印出來看
                     });
                 }
             });
         });
 
-        // 4. 排序
+        // 3. 排序
         candidates.sort((a, b) => b.score - a.score);
 
         console.log(`📊 篩選結果: 找到 ${candidates.length} 題符合條件`);
         
-        // 5. ★★★ 關鍵修改：移除保底機制 ★★★
+        // 4. 診斷報告 (如果找不到題目，告訴使用者系統到底看到了什麼)
         if (candidates.length === 0) {
-            console.error("❌ 找不到符合標籤的題目。");
-            console.error("  - 您請求的標籤:", requestTags);
-            console.error("  - 系統拒絕亂出其他單元題目，將回傳空試卷。");
-            return []; // 直接回傳空陣列，讓 UI 顯示「無題目」，而不是亂抓
+            console.error("❌ 依然找不到題目！");
+            console.warn("🧐 系統在題庫中只看到以下標籤 (請檢查是否有對應的關鍵字):");
+            console.warn(Array.from(debugTagPool).join(", "));
+            
+            // 這裡不再亂抓，直接回傳空，但請務必看上面的 Log
+            return [];
+        } else {
+            // 如果有找到，印出第一題的標籤證明沒抓錯
+            console.log("✅ 成功抓取！第一題的標籤是:", candidates[0].debugTags);
         }
 
-        // 6. 取出題目
+        // 5. 取出題目
         const total = config.total || 10;
-        const finalSelection = candidates.slice(0, total);
-        
-        // Debug: 檢查第一題是不是真的符合
-        if (finalSelection.length > 0) {
-            console.log("✅ 確認第一題標籤:", finalSelection[0].debugTags);
-        }
-
-        return finalSelection.map(c => c.func());
+        return candidates.slice(0, total).map(c => c.func());
     }
 
     window.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V9.9.8 (Strict Lockdown) 已載入 - 絕對不亂跳單元");
+    console.log("✅ Paper Generator V9.9.9 (Universal Adapter) 已載入 - 標籤強力匹配版");
 
 })(window);
