@@ -94,7 +94,7 @@
                         </div>
                     </div>
                     
-                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3.5 rounded-lg font-bold hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition transform active:scale-95 flex justify-center items-center gap-2">
+                    <button type="submit" id="loginBtn" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3.5 rounded-lg font-bold hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition transform active:scale-95 flex justify-center items-center gap-2">
                         <span>立即登入</span> <i class="fas fa-arrow-right"></i>
                     </button>
                 </form>
@@ -319,41 +319,43 @@
                 password: p
             };
 
+// ...前面的程式碼...
+
             // 發送請求給 Google Sheet
             fetch(GAS_URL, {
                 method: "POST",
+                // 💡 加入這行：用 text/plain 可以避免部分 CORS 預檢請求失敗的問題
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8",
+                },
                 body: JSON.stringify(payload)
             })
             .then(res => res.json())
             .then(data => {
+                // ...中間成功的部分不用改...
                 if (data.result === "success") {
-                    // 🎉 登入成功！
-                    // 把後端回傳的使用者資料存入瀏覽器 LocalStorage
-                    // 這樣 Dashboard 頁面才能知道是誰登入了
                     const userInfo = {
                         username: u,
                         name: data.user.name,
                         grade: data.user.grade,
                         role: data.user.role
                     };
-                    
-                    // 存起來！(這步最重要，取代了原本 Auth.js 的功能)
                     localStorage.setItem('currentUser', JSON.stringify(userInfo));
-
                     alert(`歡迎回來，${data.user.name}！`);
                     redirectUser(data.user.role);
-
                 } else {
-                    // ❌ 登入失敗
                     alert("登入失敗：" + data.message);
                     resetButton();
                 }
             })
             .catch(err => {
-                console.error(err);
-                alert("連線錯誤，請檢查網路或稍後再試。");
+                // 💡 這裡一定要印出詳細錯誤，不然不知道發生什麼事
+                console.error('詳細錯誤:', err);
+                alert("發生錯誤：" + err); 
                 resetButton();
             });
+
+// ...後面的程式碼...
 
             function resetButton() {
                 btn.disabled = false;
