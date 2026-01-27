@@ -20,12 +20,13 @@
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
         .card-inner.is-flipped { transform: rotateY(180deg); }
         
+        /* 確保卡片正反面隱藏邏輯正確 */
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         
-        /* 內容面 (Content)：初始旋轉 180 度 (背面狀態) */
-        .card-front { background: white; color: #1e293b; border: 2px solid #e2e8f0; transform: rotateY(180deg); z-index: 2; }
+        /* 內容面 (Content)：初始旋轉 180 度 (背面狀態)，翻轉後變正面 */
+        .card-front { background: white; color: #0f172a; border: 2px solid #e2e8f0; transform: rotateY(180deg); z-index: 2; overflow: hidden; padding: 0.5rem; }
         
-        /* 封面面 (Pattern)：初始 0 度 (正面狀態) */
+        /* 封面面 (Pattern)：初始 0 度 (正面狀態)，翻轉後隱藏 */
         .card-back { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; transform: rotateY(0deg); z-index: 1; }
         
         .matched .card-inner { opacity: 0; transition: opacity 0.5s; pointer-events: none; }
@@ -451,7 +452,7 @@
             rawQuestions.slice(0, 6).forEach((q, index) => {
                 let ansText = resolveAnswerText(q);
                 // 卡片結構：type Q = 題目, type A = 答案
-                // 加入 display 樣式，確保文字小而清晰
+                // 加入 display 樣式，確保文字小而清晰，並強制黑色字體
                 mmCards.push({ id: index, type: 'Q', content: q.question, display: 'text-sm font-bold text-slate-800' });
                 mmCards.push({ id: index, type: 'A', content: ansText, display: 'text-lg font-extrabold text-blue-600' });
             });
@@ -469,7 +470,7 @@
                         <div class="card-back absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center z-10">
                             <i class="fas fa-question text-white/50 text-2xl"></i>
                         </div>
-                        <div class="card-front absolute inset-0 bg-white rounded-2xl flex items-center justify-center p-2 text-center overflow-auto z-0" style="backface-visibility: hidden;">
+                        <div class="card-face card-front absolute inset-0 bg-white rounded-2xl flex items-center justify-center p-2 text-center overflow-auto z-0">
                             <div class="${card.display} break-words w-full">${card.content}</div>
                         </div>
                     </div>`;
