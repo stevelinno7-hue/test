@@ -176,33 +176,33 @@ function renderUnits(bookIdx) {
                 container.innerHTML = '<p class="text-center py-10 text-gray-400">本冊尚無單元資料</p>';
                 return;
             }
-        
+
             let html = '<div class="grid grid-cols-1 gap-4">';
             
             bookData.units.forEach((unit, uIdx) => {
-                // ---------------------------------------------------------
-                // 1. 抓取標籤 (關鍵修正！)
-                // ---------------------------------------------------------
-                // 先找 tags，沒有就找 topics，確保一定有東西
+                // 1. 抓取標籤 (確保精準度)
                 const tags = unit.tags || [];
                 const topics = unit.topics || [];
                 const displayTags = tags.length > 0 ? tags : topics;
-
-                // 2. 轉成字串，準備塞進網址
+                
+                // 2. 轉成字串參數
                 const tagParam = displayTags.join(','); 
 
-                // 3. 組合網址 (這行最重要！)
-                // 注意最後面的 &grade=${encodeURIComponent(tagParam)}
+                // 3. 製作連結
+                // 測驗連結
                 const examLink = `exam.html?subject=${subject}&title=${encodeURIComponent(unit.name)}&count=10&grade=${encodeURIComponent(tagParam)}`;
-                // ---------------------------------------------------------
+                
+                // 🔥 新增：遊戲連結 (傳送 tags 給 arcade.html)
+                // 我們加上 &mode=unit 讓遊戲頁面知道這是單元模式
+                const gameLink = `arcade.html?subject=${subject}&grade=${encodeURIComponent(tagParam)}`;
 
-                // 產生顯示用的標籤小框框
+                // 標籤顯示 HTML
                 const topicsHtml = displayTags.map(t => `<span class="bg-white border border-slate-200 text-slate-500 text-xs px-2 py-1 rounded">${t}</span>`).join('');
         
                 html += `
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-md transition group fade-in" style="animation-delay: ${uIdx * 0.05}s">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div>
+                            <div class="flex-grow">
                                 <h3 class="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2">
                                     <span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded">單元 ${uIdx + 1}</span>
                                     ${unit.name}
@@ -212,12 +212,17 @@ function renderUnits(bookIdx) {
                                 </div>
                             </div>
                             
-                            <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                                <a href="study.html?filter=${subject}" class="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 text-center">
-                                    <i class="fas fa-book-open mr-1"></i> 複習
+                            <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0 shrink-0">
+                                <a href="study.html?filter=${subject}" class="flex-1 md:flex-none px-3 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 text-center flex items-center justify-center">
+                                    <i class="fas fa-book-open md:mr-1"></i> <span class="hidden md:inline">複習</span>
                                 </a>
-                                <a href="${examLink}" class="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm text-center">
-                                    <i class="fas fa-pencil-alt mr-1"></i> 測驗
+
+                                <a href="${gameLink}" class="flex-1 md:flex-none px-3 py-2 bg-orange-50 text-orange-600 border border-orange-100 rounded-lg text-sm font-bold hover:bg-orange-100 text-center flex items-center justify-center transition">
+                                    <i class="fas fa-gamepad md:mr-1"></i> <span class="hidden md:inline">遊戲</span><span class="md:hidden">玩</span>
+                                </a>
+
+                                <a href="${examLink}" class="flex-1 md:flex-none px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm text-center flex items-center justify-center transition">
+                                    <i class="fas fa-pencil-alt md:mr-1"></i> <span class="hidden md:inline">測驗</span>
                                 </a>
                             </div>
                         </div>
