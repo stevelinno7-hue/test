@@ -181,24 +181,34 @@
         let rawResult = JSON.parse(resultStr);
         const result = normalizeExamData(rawResult);
 
-        // 1. 更新 UI 介面
+        // 1. 執行 UI 渲染 (無論模式為何都要顯示結果)
         updateScoreBoard(result);
         renderRadarChart(result.score);
         applyCheatResult(result);
         renderWrongList(result.wrongList);
 
-        // 2. ★ 核心修正：自動觸發雲端儲存 ★
-        // 為了避免重複上傳（例如重新整理頁面），可以檢查一個 flag
-        const hasUploaded = sessionStorage.getItem('autoUploaded');
-        if (!hasUploaded && result.score !== undefined) {
-            console.log("偵測到新測驗結果，準備自動同步...");
+        // 2. ★ 關鍵邏輯：判斷是否為「第一次顯示」 ★
+        const urlParams = new URLSearchParams(window.location.search);
+        const isNewResult = urlParams.get('mode') === 'new';
+
+        if (isNewResult) {
+            console.log("偵測為新測驗結果，啟動自動同步...");
             saveToCloud();
-            // 標記本次會話已上傳過，防止重新整理網頁時反覆寫入資料庫
-            sessionStorage.setItem('autoUploaded', 'true');
+            
+            // 同步完後，可以考慮移除網址參數，防止重新整理頁面又傳一次
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            console.log("偵測為複習模式，不自動同步。");
+            // 複習模式下，按鈕可以顯示為「已存檔」或「手動同步」
+            const btn = document.getElementById('btnSave');
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-history"></i> 歷程紀錄模式';
+                btn.classList.replace('bg-blue-600', 'bg-gray-400');
+            }
         }
 
     } catch (error) {
-        console.error("資料解析錯誤:", error);
+        console.error("載入失敗:", error);
     }
 }
 
@@ -463,26 +473,28 @@ function applyCheatResult(result) {
     // ============================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 // 1. 定義全域狀態鎖，防止重複執行
+// 1. 定義全域狀態鎖
 let isSyncing = false;
 
 function saveToCloud() {
-    // 如果正在同步中，或是按鈕已經是完成狀態，就直接跳出
     const btn = document.getElementById('btnSave');
-    if (isSyncing || (btn && btn.getAttribute('data-status') === 'done')) return;
+    
+    // 如果正在同步中，或是按鈕已經被鎖定（disabled），就直接跳出
+    if (isSyncing || (btn && btn.disabled)) return;
 
     const user = Auth.getCurrentUser();
+    // 訪客或未登入不上傳
     if (!user || user.username === 'guest') return;
 
     const resultStr = localStorage.getItem('examResult');
     if (!resultStr) return;
-    
     const examResult = JSON.parse(resultStr);
 
     // --- 開始鎖定邏輯 ---
     isSyncing = true;
     if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> 同步中...';
+        btn.disabled = true; // 關鍵：原生禁用，防止任何重複點擊
+        btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> 雲端同步中...';
         btn.classList.add('opacity-75', 'cursor-not-allowed');
     }
 
@@ -496,58 +508,71 @@ function saveToCloud() {
             correctCount: examResult.correctCount,
             wrongList: examResult.wrongList || [],
             cheat: examResult.cheat,
-            tabCheat: examResult.tabCheat,
-            syncTime: new Date().toISOString() // 加入時間戳記作為區分
+            tabSwitches: examResult.tabSwitches, // 修正名稱對應 exam.html
+            syncTime: new Date().toISOString()
         })
     };
 
     fetch(GAS_URL, {
         method: "POST",
+        mode: 'no-cors', // 如果 GAS 沒設 CORS，可用 no-cors 確保發送成功
         body: JSON.stringify(recordData)
     })
-    .then(res => res.json())
-    .then(data => {
-        console.log("雲端同步成功:", data);
+    .then(() => {
+        // 同步成功
         if (btn) {
-            btn.setAttribute('data-status', 'done'); // 標記已完成
-            btn.className = "flex items-center gap-2 text-white bg-green-500 font-bold px-4 py-2 rounded-lg cursor-default shadow-none";
+            btn.setAttribute('data-status', 'done');
+            btn.className = "flex items-center gap-2 text-white bg-green-600 font-bold px-4 py-2 rounded-lg cursor-default shadow-none";
             btn.innerHTML = '<i class="fas fa-check-double"></i> 雲端已同步';
+            btn.disabled = true; // 確保永久鎖定
         }
-        // 同步成功後，紀錄在 sessionStorage，這讓「這次開啟網頁」期間不會再刷第二次
-        sessionStorage.setItem('lastSyncId', examResult.id || 'current');
     })
     .catch(err => {
         console.error("同步失敗:", err);
-        isSyncing = false; // 失敗才解鎖，讓使用者可以點「重試」
+        isSyncing = false; // 只有失敗才解鎖，讓使用者手動重試
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-redo"></i> 同步失敗，請重試';
+            btn.innerHTML = '<i class="fas fa-redo"></i> 同步失敗，點此重試';
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
             btn.classList.replace('bg-blue-600', 'bg-red-500');
         }
     });
 }
 
-// 2. 修改 loadExamResult，讓它在載入資料後「自動執行」一次 saveToCloud
+// 2. 修改載入邏輯：區分「第一次」與「複習」
 function loadExamResult() {
     const resultStr = localStorage.getItem('examResult');
-    // ... 前方的資料檢查邏輯保持不變 ...
+    if (!resultStr) return;
 
     try {
         let rawResult = JSON.parse(resultStr);
         const result = normalizeExamData(rawResult);
 
-        // UI 渲染
+        // UI 渲染 (分數、雷達圖、錯題等)
         updateScoreBoard(result);
         renderRadarChart(result.score);
         applyCheatResult(result);
         renderWrongList(result.wrongList);
 
-        // ★ 自動同步觸發 ★
-        // 如果是剛考完（或是剛點進複習頁），自動跑一次 saveToCloud
-        // 我們判斷如果這一秒還沒同步過，就執行
-        if (!sessionStorage.getItem('lastSyncId')) {
+        // --- ★ 核心判斷：是否自動觸發 ★ ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const isNewResult = urlParams.get('mode') === 'new';
+        const btn = document.getElementById('btnSave');
+
+        if (isNewResult) {
+            console.log("偵測到新測驗結果，執行自動同步...");
             saveToCloud();
+            
+            // 為了防止重新整理頁面又傳一次，將 URL 參數移除
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            console.log("偵測為複習模式，不自動上傳。");
+            if (btn) {
+                btn.disabled = true; // 複習模式下預設鎖定
+                btn.innerHTML = '<i class="fas fa-history"></i> 歷程紀錄模式';
+                btn.classList.replace('bg-blue-600', 'bg-slate-400');
+                btn.classList.add('cursor-default');
+            }
         }
 
     } catch (error) {
