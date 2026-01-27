@@ -89,12 +89,11 @@
                     <h3 class="text-2xl font-bold text-slate-800 mb-2">智能閃示卡</h3>
                     <p class="text-slate-500">翻牌記憶，複習觀念的最佳利器。</p>
                 </div>
-                <div onclick="startGame('math_rush')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group" id="cardMathRush">
+                <div onclick="startGame('math_rush')" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group" id="cardSpeedChallenge">
                     <div class="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition"><i class="fas fa-stopwatch"></i></div>
                     <h3 class="text-2xl font-bold text-slate-800 mb-2">極速挑戰賽</h3>
-                    <p class="text-slate-500">限時 60 秒！數學運算大挑戰。</p>
+                    <p class="text-slate-500">限時搶答！挑戰你的反應速度與正確率。</p>
                 </div>
-            </div>
 
             <div id="game-flashcard" class="game-section max-w-2xl mx-auto hidden">
                 <div class="flex justify-between items-center mb-6">
@@ -118,25 +117,51 @@
             </div>
 
             <div id="game-math_rush" class="game-section max-w-xl mx-auto hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>放棄</button>
-                    <div class="flex items-center gap-3">
-                        <div class="bg-red-50 text-red-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="far fa-clock mr-2"></i><span id="mrTimer">60</span></div>
-                        <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="fas fa-star mr-2"></i><span id="mrScore">0</span></div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-[2rem] shadow-xl p-8 text-center">
-                    <div id="mrGameArea">
-                        <h2 class="text-4xl font-extrabold text-slate-800 mb-8 mt-4" id="mrQuestion">...</h2>
-                        <div class="grid grid-cols-1 gap-3" id="mrOptions"></div>
-                    </div>
-                    <div id="mrGameOver" class="hidden text-center py-10">
-                        <h3 class="text-3xl font-bold text-slate-800 mb-2">時間到！</h3>
-                        <div class="text-6xl font-black text-blue-600 mb-8" id="mrFinalScore">0</div>
-                        <button onclick="initMathRush()" class="px-10 py-3 bg-slate-900 text-white rounded-xl font-bold">再玩一次</button>
-                    </div>
-                </div>
+    <div class="flex justify-between items-center mb-6">
+        <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>放棄</button>
+        <div class="flex items-center gap-3">
+            <div class="bg-red-50 text-red-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="far fa-clock mr-2"></i><span id="mrTimer">--</span></div>
+            <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="fas fa-star mr-2"></i><span id="mrScore">0</span></div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-[2rem] shadow-xl p-8 text-center relative overflow-hidden min-h-[400px] flex flex-col justify-center">
+        
+        <div id="mrTimeSelector" class="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center p-6">
+            <div class="w-20 h-20 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center text-4xl mb-6 animate-bounce">
+                <i class="fas fa-bolt"></i>
             </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">準備好了嗎？</h2>
+            <p class="text-slate-500 mb-8">請選擇挑戰時間</p>
+            
+            <div class="grid grid-cols-1 gap-3 w-full max-w-xs">
+                <button onclick="startSpeedGame(30)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">
+                    ⚡ 30 秒 <span class="text-xs font-normal text-slate-400 group-hover:text-blue-400 ml-2">(閃電戰)</span>
+                </button>
+                <button onclick="startSpeedGame(60)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">
+                    ⏱️ 60 秒 <span class="text-xs font-normal text-slate-400 group-hover:text-blue-400 ml-2">(標準)</span>
+                </button>
+                <button onclick="startSpeedGame(120)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">
+                    🐢 120 秒 <span class="text-xs font-normal text-slate-400 group-hover:text-blue-400 ml-2">(耐力戰)</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="mrGameArea" class="hidden">
+            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-8 mt-2 leading-relaxed" id="mrQuestion">...</h2>
+            <div class="grid grid-cols-1 gap-3" id="mrOptions"></div>
+        </div>
+
+        <div id="mrGameOver" class="hidden text-center py-10">
+            <h3 class="text-3xl font-bold text-slate-800 mb-2">時間到！</h3>
+            <p class="text-slate-500 mb-4">本次得分</p>
+            <div class="text-6xl font-black text-blue-600 mb-8" id="mrFinalScore">0</div>
+            <button onclick="initMathRush()" class="px-10 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-700 transition shadow-lg transform hover:-translate-y-1">
+                再玩一次
+            </button>
+        </div>
+    </div>
+</div>
         </div>
     </main>
 
@@ -154,38 +179,32 @@
         }
     };
 
-    // 1. 解析網址參數 (包含 grade)
+    // 1. 解析網址參數
     const urlParams = new URLSearchParams(window.location.search);
     let currentSubject = urlParams.get('subject') || 'math';
     
-    // 🔥【關鍵修復】讀取單元標籤
+    // 讀取單元標籤
     const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
     let targetTags = [];
     if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
         targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
     }
 
-    // 更新介面顯示
     document.getElementById('fcSubject').textContent = currentSubject;
-    // 如果有指定單元，顯示在 console 方便除錯
     console.log("🎮 遊戲模式鎖定標籤:", targetTags);
 
-    // 若非數學，隱藏極速挑戰 (Math Rush)
-    if (currentSubject !== 'math') {
-        document.getElementById('cardMathRush').style.display = 'none';
-    }
+    // 🔥【修改】不再隱藏極速挑戰，所有科目開放！
+    // if (currentSubject !== 'math') { ... }  <-- 這段刪掉了
 
     let gameQuestions = [], currentQIdx = 0, score = 0, timer = 60, timerInterval;
 
-    // 2. 修正題目生成邏輯 (接收 tags)
+    // 2. 題目生成
     function generateGameQuestions(subj, count) {
         if (window.generatePaper) {
-            // 🔥【關鍵修復】這裡不能傳空陣列 []，要傳 targetTags！
-            // 如果 targetTags 是空的，才會全科隨機；如果有值，就會鎖定單元。
             return window.generatePaper({ 
                 subject: subj, 
                 total: count, 
-                tags: targetTags.length > 0 ? targetTags : [subj] // 如果沒單元，至少傳個科目進去
+                tags: targetTags.length > 0 ? targetTags : [subj] 
             }).filter(i => i && i.question);
         }
         return [];
@@ -205,102 +224,132 @@
         clearInterval(timerInterval);
     }
 
+    // --- 閃示卡邏輯 (保持不變) ---
     function initFlashcard() {
         gameQuestions = generateGameQuestions(currentSubject, 10);
-        
-        // 防呆：如果該單元題目太少
         if(!gameQuestions || gameQuestions.length === 0) { 
             alert("⚠️ 此單元目前沒有適合的題目，請嘗試其他單元！"); 
             backToMenu(); 
             return; 
         }
-        
-        currentQIdx = 0; 
-        renderFlashcard();
+        currentQIdx = 0; renderFlashcard();
     }
-
     function renderFlashcard() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
-        
-        // 處理選項顯示 (有些題目是選擇題，有些是填充)
         let ans = q.options ? `${q.answer}<br><span class="text-sm text-blue-200">(${q.options[q.answer]})</span>` : q.answer;
-        // 如果原本的 answer 已經是選項內容 (字串)，就直接顯示
-        if (typeof q.answer === 'string' && q.options && q.options.includes(q.answer)) {
-             ans = q.answer;
-        } else if (typeof q.answer === 'number' && q.options) {
-             // 如果 answer 是索引 (0, 1, 2, 3)
-             ans = q.options[q.answer];
-        }
-
+        if (typeof q.answer === 'string' && q.options && q.options.includes(q.answer)) ans = q.answer;
+        else if (typeof q.answer === 'number' && q.options) ans = q.options[q.answer];
         document.getElementById('fcAnswer').innerHTML = ans;
         document.getElementById('flashCardInner').classList.remove('is-flipped');
         if(window.MathJax) MathJax.typesetPromise();
     }
-    
     function flipCard(el) { el.querySelector('.card-inner').classList.toggle('is-flipped'); }
     function nextFlashcard() { currentQIdx++; renderFlashcard(); }
 
+    // --- 🔥 極速挑戰賽邏輯 (大幅升級) ---
+    
+    // 步驟 1: 初始化介面，顯示時間選擇器
     function initMathRush() {
-        // 極速挑戰通常只適合數學，且最好是計算題
-        // 這裡我們也傳入 targetTags，讓使用者可以只玩「整數運算」的極速挑戰
-        gameQuestions = generateGameQuestions('math', 50);
+        document.getElementById('mrGameOver').classList.add('hidden');
+        document.getElementById('mrGameArea').classList.add('hidden');
+        document.getElementById('mrTimeSelector').classList.remove('hidden'); // 顯示選擇時間
+        document.getElementById('mrScore').textContent = 0;
+        document.getElementById('mrTimer').textContent = "--";
+    }
+
+    // 步驟 2: 使用者選完時間，正式開始
+    function startSpeedGame(selectedTime) {
+        // 1. 產生題目 (使用目前的科目 currentSubject)
+        gameQuestions = generateGameQuestions(currentSubject, 50);
         
         if(!gameQuestions || gameQuestions.length === 0) { 
-            alert("無題目"); 
+            alert("⚠️ 題目不足，無法開始極速挑戰！"); 
             backToMenu(); 
             return; 
         }
+
+        // 2. 設定狀態
+        score = 0; 
+        timer = selectedTime; 
+        currentQIdx = 0;
         
-        score = 0; timer = 60; currentQIdx = 0;
-        document.getElementById('mrGameOver').classList.add('hidden');
+        // 3. 切換 UI
+        document.getElementById('mrTimeSelector').classList.add('hidden');
         document.getElementById('mrGameArea').classList.remove('hidden');
         document.getElementById('mrScore').textContent = 0;
-        
+        document.getElementById('mrTimer').textContent = timer;
+
+        // 4. 啟動計時器
+        if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
-            timer--; document.getElementById('mrTimer').textContent = timer;
-            if(timer<=0) { 
-                clearInterval(timerInterval); 
-                document.getElementById('mrGameArea').classList.add('hidden'); 
-                document.getElementById('mrGameOver').classList.remove('hidden'); 
-                document.getElementById('mrFinalScore').textContent = score; 
+            timer--; 
+            document.getElementById('mrTimer').textContent = timer;
+            
+            // 時間快到時變色提醒
+            if(timer <= 10) document.getElementById('mrTimer').parentElement.classList.add('animate-pulse');
+            else document.getElementById('mrTimer').parentElement.classList.remove('animate-pulse');
+
+            if(timer <= 0) { 
+                endMathRush();
             }
         }, 1000);
-        
+
         renderMathQuestion();
+    }
+
+    function endMathRush() {
+        clearInterval(timerInterval); 
+        document.getElementById('mrGameArea').classList.add('hidden'); 
+        document.getElementById('mrGameOver').classList.remove('hidden'); 
+        document.getElementById('mrFinalScore').textContent = score; 
     }
 
     function renderMathQuestion() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
-        document.getElementById('mrQuestion').innerHTML = q.question;
-        const con = document.getElementById('mrOptions'); con.innerHTML = '';
+        
+        // 支援換行顯示 (適合國文/英文長題)
+        document.getElementById('mrQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
+        
+        const con = document.getElementById('mrOptions'); 
+        con.innerHTML = '';
+        
+        // 隨機打亂選項順序 (Fisher-Yates Shuffle) - 增加挑戰性
+        let indices = q.options.map((_, i) => i);
+        // 如果原本不是亂的，這裡可以選擇是否要打亂，
+        // 但為了計分方便，我們直接顯示原始選項，透過索引判斷對錯即可。
         
         q.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
-            btn.className = "w-full py-3 text-lg font-bold bg-slate-50 border rounded-xl hover:bg-blue-50 transition";
+            btn.className = "w-full py-3 text-lg font-bold bg-slate-50 border-2 border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-200 text-slate-600 transition active:scale-95";
             btn.innerHTML = opt;
+            
             btn.onclick = () => {
-                // 判斷答案邏輯
                 let isCorrect = false;
-                if (typeof q.answer === 'number') {
-                    isCorrect = (idx === q.answer);
-                } else {
-                    isCorrect = (opt === q.answer);
-                }
+                if (typeof q.answer === 'number') isCorrect = (idx === q.answer);
+                else isCorrect = (opt === q.answer);
 
                 if(isCorrect) { 
-                    score+=100; 
-                    document.getElementById('mrScore').textContent = score; 
+                    // 答對特效
+                    score += 100; 
+                    document.getElementById('mrScore').textContent = score;
                     currentQIdx++; 
                     renderMathQuestion(); 
                 } else { 
-                    score = Math.max(0, score-50); 
+                    // 答錯懲罰
+                    score = Math.max(0, score - 50); 
                     document.getElementById('mrScore').textContent = score; 
-                    btn.classList.add('bg-red-500','text-white'); 
+                    btn.classList.remove('bg-slate-50', 'hover:bg-blue-50');
+                    btn.classList.add('bg-red-100', 'border-red-300', 'text-red-600', 'shake-animation'); // 搖晃特效 (需CSS)
+                    setTimeout(() => {
+                         // 可選：答錯後是否直接跳下一題？極速挑戰通常是讓人繼續試直到對，或者扣分後跳題。
+                         // 這裡維持現狀：答錯扣分，停在同一題
+                    }, 200);
                 }
             };
             con.appendChild(btn);
         });
+
         if(window.MathJax) MathJax.typesetPromise();
     }
 </script>
