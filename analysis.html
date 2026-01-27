@@ -293,42 +293,73 @@
     }
 
     // 作弊行為診斷 UI 更新
-    function applyCheatResult(result) {
-        const timeBox = document.getElementById('timeCheatBox');
-        const timeText = document.getElementById('timeCheatText');
-        const tabBox = document.getElementById('tabCheatBox');
-        const tabText = document.getElementById('tabCheatText');
+    // ----------------------------------------------------
+// 輔助函式：作弊行為診斷 (含自動數值修復功能)
+// ----------------------------------------------------
+function applyCheatResult(result) {
+    const timeBox = document.getElementById('timeCheatBox');
+    const timeText = document.getElementById('timeCheatText');
+    const tabBox = document.getElementById('tabCheatBox');
+    const tabText = document.getElementById('tabCheatText');
 
-        if (!timeBox || !tabBox) return;
+    // ==========================================
+    // ★ 核心修改：自動判斷切換分頁的數值與等級 ★
+    // ==========================================
+    let tabData = result.tabCheat; // 1. 先試著讀取新格式
 
-        // 取得正規化後的資料
-        const cheatData = result.cheat;
-        const tabData = result.tabCheat;
+    // 2. 如果沒有新格式，就讀取舊的數字 (tabSwitches) 並自動算出等級
+    if (!tabData) {
+        // 抓取你資料裡的 'tabSwitches' (例如: 1)
+        const rawCount = result.tabSwitches || 0; 
+        
+        // 自動判斷等級邏輯
+        let autoLevel = 'NORMAL';
+        if (rawCount > 2) {
+            autoLevel = 'HIGH';   // 超過 2 次 -> 紅色
+        } else if (rawCount > 0) {
+            autoLevel = 'MEDIUM'; // 1~2 次 -> 黃色 (這會解決你的問題)
+        }
 
-        // 定義樣式庫
-        const styles = {
-            NORMAL: { class: ['border-green-200', 'bg-green-50'], text: 'text-green-700', icon: 'fa-check-circle' },
-            MEDIUM: { class: ['border-yellow-200', 'bg-yellow-50'], text: 'text-yellow-700', icon: 'fa-exclamation-triangle' },
-            HIGH:   { class: ['border-red-200', 'bg-red-50'],    text: 'text-red-700',    icon: 'fa-radiation' }
+        // 現場組裝成正確的格式
+        tabData = {
+            level: autoLevel,
+            totalSwitch: rawCount
         };
-        
-        // 1. 設定秒數異常 UI
-        const tStyle = styles[cheatData.cheatLevel] || styles.NORMAL;
-        let tLabel = cheatData.cheatLevel === 'NORMAL' ? '作答節奏正常' : (cheatData.cheatLevel === 'HIGH' ? '極速作答 (秒猜)' : '部分題目作答過快');
-        
-        timeBox.className = `p-5 rounded-xl border ${tStyle.class.join(' ')}`;
-        timeText.className = `text-sm font-bold ${tStyle.text} mt-1 pl-11`;
-        timeText.innerHTML = `<i class="fas ${tStyle.icon}"></i> ${tLabel} <span class="text-xs opacity-75 font-normal ml-2">(過快題數：${cheatData.fastCount})</span>`;
-
-        // 2. 設定分頁切換 UI (這裡特別處理 Tab icon)
-        const tabStyle = styles[tabData.level] || styles.NORMAL;
-        let tabLabel = tabData.level === 'NORMAL' ? '專注度良好' : (tabData.level === 'HIGH' ? '頻繁離開測驗頁面' : '有切換分頁紀錄');
-        let tabIcon = tabData.level === 'NORMAL' ? 'fa-check-circle' : (tabData.level === 'MEDIUM' ? 'fa-eye-slash' : 'fa-window-restore');
-
-        tabBox.className = `p-5 rounded-xl border ${tabStyle.class.join(' ')}`;
-        tabText.className = `text-sm font-bold ${tabStyle.text} mt-1 pl-11`;
-        tabText.innerHTML = `<i class="fas ${tabIcon}"></i> ${tabLabel} <span class="text-xs opacity-75 font-normal ml-2">(切換次數：${tabData.totalSwitch})</span>`;
     }
+    // ==========================================
+
+    // 處理作答節奏 (同樣加入防呆預設值)
+    const cheatData = result.cheat || { cheatLevel: 'NORMAL', fastCount: 0 };
+
+    // 1. 渲染秒數異常 UI
+    const timeStyles = {
+        NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '<i class="fas fa-check-circle"></i> 作答節奏正常'],
+        MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '<i class="fas fa-exclamation-triangle"></i> 部分題目作答過快'],
+        HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '<i class="fas fa-radiation"></i> 極速作答 (秒猜)']
+    };
+    const timeStyle = timeStyles[cheatData.cheatLevel] || timeStyles.NORMAL;
+    
+    if(timeBox) {
+        timeBox.className = `p-5 rounded-xl border ${timeStyle[0]} ${timeStyle[1]}`;
+        timeText.className = `text-sm font-bold ${timeStyle[2]} mt-1 pl-11`;
+        timeText.innerHTML = `${timeStyle[3]} <span class="text-xs opacity-75 font-normal ml-2">(過快題數：${cheatData.fastCount})</span>`;
+    }
+
+    // 2. 渲染分頁切換 UI (現在會正確顯示了)
+    const tabStyles = {
+        NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '<i class="fas fa-check-circle"></i> 專注度良好'],
+        MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '<i class="fas fa-eye-slash"></i> 有切換分頁紀錄'], // 黃色
+        HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '<i class="fas fa-window-restore"></i> 頻繁離開測驗頁面'] // 紅色
+    };
+    const tabStyle = tabStyles[tabData.level] || tabStyles.NORMAL;
+
+    if(tabBox) {
+        tabBox.className = `p-5 rounded-xl border ${tabStyle[0]} ${tabStyle[1]}`;
+        tabText.className = `text-sm font-bold ${tabStyle[2]} mt-1 pl-11`;
+        // 這裡會顯示自動抓到的 totalSwitch
+        tabText.innerHTML = `${tabStyle[3]} <span class="text-xs opacity-75 font-normal ml-2">(切換次數：${tabData.totalSwitch})</span>`;
+    }
+}
 
     // 渲染錯題列表
     function renderWrongList(wrongList) {
