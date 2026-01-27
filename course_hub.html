@@ -189,7 +189,11 @@
                 const topicsHtml = displayTags.map(t => `<span class="bg-white border border-slate-200 text-slate-500 text-xs px-2 py-1 rounded">${t}</span>`).join('');
                 
                 // 測驗連結：傳遞單元名稱作為 title
-                const examLink = `exam.html?subject=${subject}&title=${encodeURIComponent(unit.name)}&count=10`;
+                // 1. 先把標籤陣列轉成字串 (例如 "整數,運算")
+                const tagParam = displayTags.join(',');
+                
+                // 2. 組合網址 (重點在最後面加上了 &grade=...)
+                const examLink = `exam.html?subject=${subject}&title=${encodeURIComponent(unit.name)}&count=10&grade=${encodeURIComponent(tagParam)}`;
 
                 html += `
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-md transition group fade-in" style="animation-delay: ${uIdx * 0.05}s">
