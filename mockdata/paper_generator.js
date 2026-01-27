@@ -2,8 +2,9 @@
     'use strict';
 
     // ------------------------------------------------------------------
-    //  Paper Generator V9.9.3 (Random Shuffle Fix)
-    //  修正：加入隨機權重，解決「分數相同時只出第一單元」的問題
+    //  Paper Generator V9.9.6 (Strict Mode)
+    //  修正：「題目亂出」問題。
+    //  特點：嚴格遵守標籤篩選，除非真的 0 題，否則不隨便塞其他單元。
     // ------------------------------------------------------------------
 
     if (!Array.prototype.shuffle) {
@@ -19,185 +20,113 @@
     function generatePaper(config) {
         let G = window.RigorousGenerator || global.RigorousGenerator;
         if (!G) {
-            G = window.RigorousGenerator = { 
-                _templates: {}, 
-                registerTemplate: function(id, f, t){ 
-                    this._templates[id] = {func:f, tags:t, subject: f.subject || 'misc'}; 
-                } 
-            };
+            console.error("❌ 生成器核心未啟動");
+            return [];
         }
         if (!G.getTemplateIds) G.getTemplateIds = () => Object.keys(G._templates || {});
 
         const subject = (config.subject || 'math').toLowerCase();
-        
-        // 1. 全面掃描避難所
-        const repoMap = [
-            { name: 'chinese',   repo: window.__CHINESE_REPO__ },
-            { name: 'math',      repo: window.__MATH_REPO__ },
-            { name: 'english',   repo: window.__ENGLISH_REPO__ },
-            { name: 'physics',   repo: window.__PHYSICS_REPO__ },
-            { name: 'chemistry', repo: window.__CHEMISTRY_REPO__ },
-            { 
-                name: 'science', 
-                repo: { 
-                    ...(window.__PHYSICS_REPO__ || {}), 
-                    ...(window.__CHEMISTRY_REPO__ || {}) 
-                } 
-            },
-            { name: 'biology',   repo: window.__BIOLOGY_REPO__ },
-            { name: 'history',   repo: window.__HISTORY_REPO__ },
-            { name: 'geography', repo: window.__GEOGRAPHY_REPO__ },
-            { name: 'earth',     repo: window.__EARTH_SCI_REPO__ },
-            { name: 'civics',    repo: window.__CIVICS_REPO__ }
+        // 將使用者的請求標籤轉小寫，並過濾掉空值
+        const requestTags = (Array.isArray(config.tags) ? config.tags : [config.tags])
+                            .map(t => String(t || '').toLowerCase())
+                            .filter(t => t !== '' && t !== 'undefined' && t !== 'null');
+
+        console.log(`🔒 [Gen V9.9.6] 精準模式啟動 | 科目: ${subject} | 篩選標籤:`, requestTags);
+
+        // 1. 收集所有題目來源
+        const repos = [
+            window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__, 
+            window.__BIOLOGY_REPO__, window.__EARTH_SCI_REPO__, window.__CHINESE_REPO__,
+            window.__ENGLISH_REPO__, window.__HISTORY_REPO__, window.__CIVICS_REPO__, window.__GEOGRAPHY_REPO__
         ];
 
-        repoMap.forEach(item => {
-            if (item.repo) {
-                const repoIds = Object.keys(item.repo);
-                let restored = 0;
-                repoIds.forEach(id => {
-                    if (!G._templates[id]) {
-                        const data = item.repo[id];
-                        G._templates[id] = {
-                            func: data.func,
-                            tags: data.tags || [],
-                            meta: data.tags || [],
-                            subject: data.subject || item.name
-                        };
-                        restored++;
-                    }
-                });
-                if(restored > 0 && item.name !== 'science') {
-                    // console.log(`🚑 [Gen V9.9] 從 ${item.name} 還原 ${restored} 題`);
-                }
-            }
-        });
-
-        // 2. 關鍵字映射
-        const idMap = {
-            'chinese':   ['chi_', 'chinese', '國文'],
-            'math':      ['math', 'alg', 'geo_', '數學'],
-            'english':   ['eng', 'gram', 'vocab', '英文'],
-            'physics':   ['phy', '物理', '理化'],
-            'chemistry': ['chem', '化學', '理化'],
-            'science':   ['phy', 'chem', '理化', '物理', '化學'],
-            'biology':   ['bio', '生物'],
-            'earth':     ['earth', '地科'],
-            'history':   ['his', 'hist', '歷史'],
-            'geography': ['geo_', 'geography', '地理'], 
-            'civics':    ['civ', 'civics', '公民', '社會']
-        };
-
-        let subjectKeywords = idMap[subject] || [subject];
-        if (subject === 'math') {
-            subjectKeywords = subjectKeywords.filter(k => k !== 'geo_');
-        }
-
-        const requestTags = (Array.isArray(config.tags) ? config.tags : [config.tags])
-                                    .map(t => String(t).toLowerCase());
-        const allTemplateIds = G.getTemplateIds();
-
-        console.log(`🔒 [Gen V9.9.3] 請求: 科目[${subject}] 標籤[${requestTags}]`);
-
-        // 3. 篩選邏輯 (分數制 + 隨機擾動)
         let candidates = [];
 
-        allTemplateIds.forEach(tid => {
-            const t = G._templates[tid];
-            if (!t) return;
+        repos.forEach(repo => {
+            if(!repo) return;
+            Object.keys(repo).forEach(tid => {
+                const t = repo[tid];
+                if (!t) return;
+                
+                // --- A. 科目嚴格檢查 (Subject Guard) ---
+                const tSubject = (t.subject || "").toLowerCase();
+                let isSubjectMatch = false;
 
-            const tidLower = tid.toLowerCase();
-            const rawTags = t.tags || t.meta || (t.func && t.func.tags) || [];
-            const tSubject = (t.subject || (t.func && t.func.subject) || "").toLowerCase();
-            
-            const metaPool = (Array.isArray(rawTags) ? rawTags : [rawTags])
-                             .concat([tSubject])
-                             .map(x => String(x).toLowerCase());
+                // 特殊處理：理化 (Science) 包含 物理 (Physics) + 化學 (Chemistry)
+                if (subject === 'science') {
+                    if (['physics', 'chemistry', 'science'].includes(tSubject)) isSubjectMatch = true;
+                } 
+                // 特殊處理：社會 (Social) 包含 史地公
+                else if (subject === 'social') {
+                    if (['history', 'geography', 'civics', 'social'].includes(tSubject)) isSubjectMatch = true;
+                }
+                // 一般科目比對
+                else if (tSubject === subject) {
+                    isSubjectMatch = true;
+                }
 
-            let score = 0;
+                if (!isSubjectMatch) return; // 科目不對直接踢掉
 
-            // 科目絕對過濾
-            let isSubjectAllowed = false;
-            if (subject === 'science') {
-                if (tSubject === 'physics' || tSubject === 'chemistry' || tSubject === 'science') isSubjectAllowed = true;
-            } else if (subject === 'earth') {
-                 if (tSubject === 'earth' || tSubject === 'earth_science') isSubjectAllowed = true;
-            } else {
-                if (!tSubject || tSubject === 'misc' || tSubject === subject) isSubjectAllowed = true;
-            }
+                // --- B. 標籤精準計分 (Tag Scoring) ---
+                // 如果使用者沒有指定任何標籤 (requestTags 為空)，代表「全冊複習」，所有該科題目都給過。
+                // 如果有指定標籤，則必須命中至少一個。
+                
+                let score = 0;
+                const meta = (t.tags || []).map(x => String(x).toLowerCase());
 
-            if (!isSubjectAllowed) return;
+                if (requestTags.length === 0) {
+                    score = 1; // 沒選單元 = 全冊 = 全部符合
+                } else {
+                    // 檢查是否命中標籤
+                    let hitCount = 0;
+                    requestTags.forEach(rt => {
+                        // 模糊比對：例如選 "國七"，題目標籤 "國七上" 也算中
+                        if (meta.some(m => m.includes(rt) || rt.includes(m))) {
+                            hitCount++;
+                        }
+                    });
+                    
+                    if (hitCount > 0) {
+                        score = 10 + hitCount; // 命中越多分數越高
+                    } else {
+                        score = 0; // ★★★ 關鍵修改：沒命中標籤，分數就是 0 (直接淘汰)
+                    }
+                }
 
-            // 分數計算
-            const isIdMatch = subjectKeywords.some(kw => tidLower.includes(kw));
-            if (isIdMatch) score += 1;
-
-            requestTags.forEach(reqTag => {
-                if (metaPool.some(mt => mt.includes(reqTag) || reqTag.includes(mt))) {
-                    score += 10;
+                // --- C. 嚴格篩選 ---
+                // 只有當分數 > 0 (代表符合條件) 時，才加入候選名單
+                if (score > 0) {
+                    candidates.push({ 
+                        tid: tid, 
+                        score: score + Math.random(), // 加入隨機擾動，避免每次順序一樣
+                        func: t.func
+                    });
                 }
             });
-
-            // ★★★ 關鍵修正：加入隨機小數，打破同分僵局 ★★★
-            // 這樣即使所有題目都是 1 分，也會因為隨機小數而重新洗牌
-            score += Math.random(); 
-
-            if (score > 0 || isSubjectAllowed) {
-                candidates.push({ tid: tid, score: score });
-            }
         });
 
-        // 依照分數排序 (這時已經包含了隨機性)
+        // 2. 排序 (高分優先)
         candidates.sort((a, b) => b.score - a.score);
 
-        // 4. 強制保底 (Fallback)
-        if (candidates.length === 0) {
-            console.warn(`⚠️ [Gen V9.9] 標籤篩選結果為 0！啟動「同科目強制保底」...`);
-            allTemplateIds.forEach(tid => {
-                const t = G._templates[tid];
-                const tSub = (t.subject || "").toLowerCase();
-                
-                let isMatch = (tSub === subject);
-                if (subject === 'science') {
-                    if (tSub === 'physics' || tSub === 'chemistry') isMatch = true;
-                }
-                if (subject === 'earth' && tSub === 'earth_science') isMatch = true;
-
-                if (isMatch) {
-                    // 保底也要隨機排序
-                    candidates.push({ tid: tid, score: Math.random() });
-                }
-            });
-            candidates.sort((a, b) => b.score - a.score);
-        }
-
-        console.log(`📊 最終候選: ${candidates.length} 題 (已隨機打亂)`);
-
-        // 5. 生成考卷
-        const paper = [];
-        const total = config.total || 10;
-        let count = 0;
+        // 3. 檢查結果
+        console.log(`📊 篩選結果: 找到 ${candidates.length} 題符合條件`);
         
-        for (let i = 0; i < candidates.length && count < total; i++) {
-            const tid = candidates[i].tid;
-            try {
-                let q = null;
-                if (typeof G.generateQuestion === 'function') {
-                    q = G.generateQuestion(tid, { tags: requestTags });
-                } else {
-                    const tmpl = G._templates[tid];
-                    if (tmpl && tmpl.func) q = tmpl.func({}, Math.random);
-                }
-                if (q) { paper.push(q); count++; }
-            } catch (e) {
-                console.warn(`[Skip] ${tid} error:`, e);
-            }
+        // 如果完全沒題目，這時才動用「最後手段」
+        if (candidates.length === 0) {
+            console.warn("⚠️ 找不到符合標籤的題目！系統將改為「全科出題」避免空白考卷...");
+            return generatePaper({ ...config, tags: [] });
         }
 
-        return paper;
+        // 4. 取出前 N 題
+        const total = config.total || 10;
+        
+        // ★★★ 最終確認：如果不夠 N 題，就只給現有的，絕對不亂補 ★★★
+        const finalSelection = candidates.slice(0, total);
+        
+        return finalSelection.map(c => c.func());
     }
 
     window.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V9.9.3 (Shuffle Fix) 已修復同分題目排序問題");
+    console.log("✅ Paper Generator V9.9.6 (Strict Mode) 已載入 - 解決題目亂出問題");
 
 })(window);
