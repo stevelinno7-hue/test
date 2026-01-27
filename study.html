@@ -72,12 +72,15 @@
                         <option value="english">🔤 英文</option>
                         <option value="chinese">🀄 國文</option>
                     </optgroup>
-                    <optgroup label="自然科學 (理化)">
-                        <option value="physics">🧲 物理 / 理化(上)</option>
-                        <option value="chemistry">⚗️ 化學 / 理化(下)</option>
+                    
+                    <optgroup label="自然科學" id="scienceGroup">
+                        <option value="science" id="optScience" class="hidden">🧪 自然 (理化)</option>
+                        <option value="physics" id="optPhysics">🧲 物理</option>
+                        <option value="chemistry" id="optChemistry">⚗️ 化學</option>
                         <option value="biology">🧬 生物</option>
                         <option value="earth">🌍 地球科學</option>
                     </optgroup>
+
                     <optgroup label="社會人文">
                         <option value="history">📜 歷史</option>
                         <option value="geography">🗺️ 地理</option>
@@ -114,7 +117,7 @@
     <script>
         // 1. 定義全域變數
         let currentSubject = 'math';
-        let userStage = 'high_school'; // 預設值
+        let userStage = 'high_school'; 
 
         window.onload = function() {
             // --- A. 處理使用者登入與學制判斷 ---
@@ -122,6 +125,8 @@
             if(user) {
                 document.getElementById('sideUserName').textContent = user.name;
                 document.getElementById('sideUserRole').textContent = user.grade;
+                
+                // 判斷是否為國中生
                 if(user.grade && user.grade.includes('國')) {
                     userStage = 'junior_high';
                 } else {
@@ -130,33 +135,63 @@
             }
             if(typeof setStage === 'function') setStage(userStage);
 
-            // --- B. 處理網址參數 ---
-            const urlParams = new URLSearchParams(window.location.search);
-            currentSubject = urlParams.get('filter') || 'math';
+            // --- B. 自動調整下拉選單 (重要更新) ---
+            const optScience = document.getElementById('optScience');
+            const optPhysics = document.getElementById('optPhysics');
+            const optChemistry = document.getElementById('optChemistry');
             const subjectSelect = document.getElementById('subjectSelect');
-            if(subjectSelect) subjectSelect.value = currentSubject;
 
-            // --- C. 初始化資料庫並修復理化缺漏 ---
+            if (userStage === 'junior_high') {
+                // 如果是國中生：顯示「自然(理化)」，隱藏物理/化學
+                optScience.classList.remove('hidden');
+                optPhysics.classList.add('hidden');
+                optChemistry.classList.add('hidden');
+                
+                // 如果原本預設是 math，保持 math；但如果沒有選，預設跳轉邏輯
+                // 這裡簡單處理：如果是 math 不動，其他則預設
+            } else {
+                // 如果是高中生：隱藏整合的理化，顯示分科
+                optScience.classList.add('hidden');
+                optPhysics.classList.remove('hidden');
+                optChemistry.classList.remove('hidden');
+            }
+
+            // --- C. 處理網址參數與預設值 ---
+            const urlParams = new URLSearchParams(window.location.search);
+            let filterParam = urlParams.get('filter');
+
+            // 如果參數是物理或化學，且是國中生，強制轉為 science
+            if ((filterParam === 'physics' || filterParam === 'chemistry') && userStage === 'junior_high') {
+                filterParam = 'science';
+            }
+
+            currentSubject = filterParam || 'math';
+            subjectSelect.value = currentSubject;
+
+            // --- D. 初始化 ---
             setTimeout(() => {
                 if(window.initCurriculumData) window.initCurriculumData(); 
-                patchScienceData(userStage); // ★ 執行理化資料補丁
+                patchScienceData(userStage); // 執行資料補丁
                 loadBookMenu();
             }, 300);
         };
 
-        // ★★★ 新增：理化資料補丁函數 ★★★
-        // 用途：如果系統發現是國中階段，但找不到「物理/化學」的國中對應書本，自動補上「國中理化」資料
+        // 資料補丁：確保國中理化資料存在
         function patchScienceData(stage) {
             if (!window.CurriculumLibrary || !window.CurriculumLibrary.data) return;
 
-            // 1. 補丁：國中物理 (歸類在 physics)
+            // 確保 physics 和 chemistry 陣列存在
             if (!window.CurriculumLibrary.data['physics']) window.CurriculumLibrary.data['physics'] = [];
+            if (!window.CurriculumLibrary.data['chemistry']) window.CurriculumLibrary.data['chemistry'] = [];
+
+            // 檢查是否已有國中物理
             const hasJuniorPhysics = window.CurriculumLibrary.data['physics'].some(b => b.stage === 'junior_high');
-            
             if (!hasJuniorPhysics && stage === 'junior_high') {
                 window.CurriculumLibrary.data['physics'].push({
                     book: "國中理化 (物理篇)",
                     stage: "junior_high",
+                    // 標記這是物理來源，供混合時識別
+                    sourceSubject: "physics", 
                     units: [
                         { name: "基本測量與密度", tags: ["測量", "密度"] },
                         { name: "力與運動", tags: ["牛頓運動定律", "力"] },
@@ -169,14 +204,13 @@
                 });
             }
 
-            // 2. 補丁：國中化學 (歸類在 chemistry)
-            if (!window.CurriculumLibrary.data['chemistry']) window.CurriculumLibrary.data['chemistry'] = [];
+            // 檢查是否已有國中化學
             const hasJuniorChem = window.CurriculumLibrary.data['chemistry'].some(b => b.stage === 'junior_high');
-
             if (!hasJuniorChem && stage === 'junior_high') {
                 window.CurriculumLibrary.data['chemistry'].push({
                     book: "國中理化 (化學篇)",
                     stage: "junior_high",
+                    sourceSubject: "chemistry",
                     units: [
                         { name: "物質的分類與變化", tags: ["物質", "化學變化"] },
                         { name: "原子結構與元素週期表", tags: ["原子", "週期表"] },
@@ -189,7 +223,7 @@
             }
         }
 
-        // 2. 載入左側選單 (維持不變，但現在能讀到補丁後的資料了)
+        // 2. 載入選單 (包含合併邏輯)
         function loadBookMenu() {
             const subjectSelect = document.getElementById('subjectSelect');
             if(subjectSelect) currentSubject = subjectSelect.value;
@@ -202,16 +236,32 @@
                 return;
             }
 
-            const allBooks = window.CurriculumLibrary.data[currentSubject] || [];
-            // 根據使用者的學制篩選書本
-            const books = allBooks.filter(b => b.stage === userStage);
+            let books = [];
+
+            // ★★★ 關鍵修改：處理「science (理化)」的合併邏輯 ★★★
+            if (currentSubject === 'science') {
+                // 1. 抓取物理資料
+                const phyBooks = (window.CurriculumLibrary.data['physics'] || [])
+                    .filter(b => b.stage === userStage)
+                    .map(b => ({...b, realSubject: 'physics'})); // 標記真實科目
+                
+                // 2. 抓取化學資料
+                const chemBooks = (window.CurriculumLibrary.data['chemistry'] || [])
+                    .filter(b => b.stage === userStage)
+                    .map(b => ({...b, realSubject: 'chemistry'})); // 標記真實科目
+
+                // 3. 合併
+                books = [...phyBooks, ...chemBooks];
+
+            } else {
+                // 正常單科處理
+                const allBooks = window.CurriculumLibrary.data[currentSubject] || [];
+                books = allBooks.filter(b => b.stage === userStage)
+                                .map(b => ({...b, realSubject: currentSubject}));
+            }
 
             if (books.length === 0) {
-                let msg = "此科目尚無對應學制的資料";
-                if(currentSubject === 'physics' || currentSubject === 'chemistry') {
-                    if(userStage === 'junior_high') msg = "找不到國中理化資料";
-                }
-                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400 bg-slate-100 m-2 rounded">${msg}</div>`;
+                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400 bg-slate-100 m-2 rounded">此科目尚無資料</div>`;
                 return;
             }
 
@@ -221,9 +271,10 @@
                 
                 book.units.forEach((unit, uIdx) => {
                     const tagsStr = encodeURIComponent(JSON.stringify(unit.tags || []));
+                    // 點擊時，傳入真實科目 (book.realSubject)，這樣 AI 才知道要用物理還是化學公式
                     unitsHtml += `
                         <div class="unit-item px-4 py-3 text-sm text-slate-600 rounded-lg mb-1 flex items-center gap-2 cursor-pointer hover:bg-slate-100" 
-                             onclick="loadUnitContent('${unit.name}', '${tagsStr}', this)">
+                             onclick="loadUnitContent('${unit.name}', '${tagsStr}', this, '${book.realSubject}')">
                             <i class="fas fa-circle text-[6px] text-slate-300"></i>
                             ${unit.name}
                         </div>`;
@@ -244,13 +295,20 @@
             });
         }
 
-        // 3. 核心：根據單元標籤生成重點內容
-        function loadUnitContent(unitName, tagsStr, el) {
+        // 3. 內容生成 (支援真實科目參數)
+        function loadUnitContent(unitName, tagsStr, el, realSubject) {
+            // UI Highlight
             document.querySelectorAll('.unit-item').forEach(i => i.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'font-bold'));
             el.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-bold');
             
+            // 顯示標題 (如果是合併的理化，這裡顯示子標題比較清楚)
+            let displaySubject = currentSubject;
+            if (currentSubject === 'science') {
+                displaySubject = realSubject === 'physics' ? '理化 (物理篇)' : '理化 (化學篇)';
+            }
+            
             document.getElementById('currentUnitTitle').textContent = unitName;
-            document.getElementById('currentUnitSub').textContent = `科目：${currentSubject} | 來源：智慧題庫`;
+            document.getElementById('currentUnitSub').textContent = `科目：${displaySubject} | 來源：智慧題庫`;
 
             const tags = JSON.parse(decodeURIComponent(tagsStr));
             const container = document.getElementById('notesContainer');
@@ -260,8 +318,9 @@
             setTimeout(() => {
                 let questions = [];
                 if (window.generatePaper) {
-                    // 如果是理化，標籤可能需要合併處理，但這裡先傳原始tags
-                    questions = window.generatePaper({ subject: currentSubject, total: 6, tags: tags });
+                    // ★ 這裡使用 realSubject (例如 'physics') 傳給生成引擎，而不是 'science'
+                    // 因為引擎只認得 'physics' 或 'chemistry' 的模板
+                    questions = window.generatePaper({ subject: realSubject || currentSubject, total: 6, tags: tags });
                 }
 
                 if (!questions || questions.length === 0) {
@@ -269,7 +328,6 @@
                         <div class="bg-yellow-50 border border-yellow-100 p-8 rounded-xl text-center">
                             <i class="fas fa-exclamation-circle text-yellow-500 text-3xl mb-3"></i>
                             <p class="text-yellow-700 font-bold">本單元目前尚無重點資料</p>
-                            <p class="text-xs text-yellow-600 mt-1">AI 題庫正在生成中，請稍後再試。</p>
                         </div>`;
                     return;
                 }
@@ -279,9 +337,13 @@
                     const concept = q.concept || unitName.split(' ')[0] || '核心觀念';
                     const explain = (q.explanation && q.explanation.length > 0) ? q.explanation.join('<br>') : "觀念應用題";
                     
-                    // Logic to add a relevant diagram if it's a science subject
+                    // Logic to add a relevant diagram based on realSubject
                     let imageTag = '';
-                    if (['physics', 'chemistry', 'biology', 'earth'].includes(currentSubject)) {
+                    if (realSubject === 'physics') {
+                        imageTag = `<div class="mb-4 text-center"></div>`;
+                    } else if (realSubject === 'chemistry') {
+                        imageTag = `<div class="mb-4 text-center"></div>`;
+                    } else if (['biology', 'earth'].includes(currentSubject)) {
                         imageTag = `<div class="mb-4 text-center"></div>`;
                     }
 
