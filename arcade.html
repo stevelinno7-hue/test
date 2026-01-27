@@ -23,20 +23,16 @@
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         
         /* 內容面 (Content)：初始旋轉 180 度 (背面狀態) */
-        .card-front { background: white; color: #334155; border: 2px solid #e2e8f0; transform: rotateY(180deg); }
+        .card-front { background: white; color: #1e293b; border: 2px solid #e2e8f0; transform: rotateY(180deg); z-index: 2; }
         
         /* 封面面 (Pattern)：初始 0 度 (正面狀態) */
-        .card-back { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; transform: rotateY(0deg); }
+        .card-back { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; transform: rotateY(0deg); z-index: 1; }
         
         .matched .card-inner { opacity: 0; transition: opacity 0.5s; pointer-events: none; }
         
         /* 遊戲區塊切換動畫 */
         .game-section { display: none; }
         .game-section.active { display: block; animation: fadeIn 0.3s ease-out; }
-        
-        /* 特效動畫 */
-        .shake-animation { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -139,6 +135,8 @@
                 </div>
 
             </div>
+
+
             <div id="game-flashcard" class="game-section max-w-2xl mx-auto hidden">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold"><i class="fas fa-arrow-left mr-2"></i>結束</button>
@@ -172,18 +170,12 @@
                         <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xl"><i class="fas fa-star mr-2"></i><span id="mrScore">0</span></div>
                     </div>
                 </div>
-
                 <div class="bg-white rounded-[2rem] shadow-xl p-8 text-center relative overflow-hidden min-h-[400px] flex flex-col justify-center">
                     <div id="mrTimeSelector" class="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center p-6">
-                        <div class="w-20 h-20 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center text-4xl mb-6 animate-bounce">
-                            <i class="fas fa-bolt"></i>
-                        </div>
-                        <h2 class="text-2xl font-bold text-slate-800 mb-2">準備好了嗎？</h2>
-                        <p class="text-slate-500 mb-8">請選擇挑戰時間</p>
-                        <div class="grid grid-cols-1 gap-3 w-full max-w-xs">
-                            <button onclick="startSpeedGame(30)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">⚡ 30 秒</button>
-                            <button onclick="startSpeedGame(60)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">⏱️ 60 秒</button>
-                            <button onclick="startSpeedGame(120)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-xl font-bold text-lg transition shadow-sm group">🐢 120 秒</button>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-2">準備挑戰</h2>
+                        <div class="grid grid-cols-1 gap-3 w-full max-w-xs mt-4">
+                            <button onclick="startSpeedGame(30)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 text-slate-600 rounded-xl font-bold">⚡ 30 秒</button>
+                            <button onclick="startSpeedGame(60)" class="w-full py-3 bg-white border-2 border-slate-200 hover:border-blue-500 text-slate-600 rounded-xl font-bold">⏱️ 60 秒</button>
                         </div>
                     </div>
                     <div id="mrGameArea" class="hidden">
@@ -192,9 +184,8 @@
                     </div>
                     <div id="mrGameOver" class="hidden text-center py-10">
                         <h3 class="text-3xl font-bold text-slate-800 mb-2">時間到！</h3>
-                        <p class="text-slate-500 mb-4">本次得分</p>
                         <div class="text-6xl font-black text-blue-600 mb-8" id="mrFinalScore">0</div>
-                        <button onclick="initMathRush()" class="px-10 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-700 transition shadow-lg transform hover:-translate-y-1">再玩一次</button>
+                        <button onclick="initMathRush()" class="px-10 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-700">再玩一次</button>
                     </div>
                 </div>
             </div>
@@ -208,9 +199,9 @@
                         </div>
                     </div>
                 </div>
-                <div id="mmGrid" class="grid grid-cols-3 md:grid-cols-4 gap-4 w-full perspective-container"></div>
+                <div id="mmGrid" class="grid grid-cols-3 md:grid-cols-4 gap-4 w-full h-[500px]"></div>
+                
                 <div id="mmGameOver" class="hidden text-center py-12 bg-white rounded-3xl shadow-lg mt-4">
-                    <div class="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-5xl mx-auto mb-6 animate-bounce"><i class="fas fa-trophy"></i></div>
                     <h3 class="text-3xl font-bold text-slate-800 mb-2">配對完成！</h3>
                     <button onclick="initMemoryMatch()" class="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">再玩一次</button>
                 </div>
@@ -222,9 +213,8 @@
                     <div class="bg-red-50 text-red-600 px-3 py-1 rounded-lg font-bold">❤️ HP: <span id="heroHp">100</span></div>
                 </div>
                 <div class="bg-slate-800 rounded-2xl p-6 text-white text-center mb-4 relative overflow-hidden h-64 flex flex-col justify-end items-center">
-                    <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]"></div>
-                    <div id="rpgMonster" class="mb-4 transition-transform duration-200">
-                        <i class="fas fa-dragon text-8xl text-red-400 drop-shadow-lg"></i>
+                    <div id="rpgMonster" class="mb-4">
+                        <i class="fas fa-dragon text-8xl text-red-400"></i>
                         <div class="mt-2 font-bold text-red-200">知識惡龍</div>
                         <div class="w-48 h-3 bg-slate-700 rounded-full mx-auto mt-2 border border-slate-600 overflow-hidden">
                             <div id="monsterHpBar" class="h-full bg-red-500 transition-all duration-300" style="width: 100%"></div>
@@ -250,15 +240,13 @@
                         <div class="font-mono text-6xl text-red-500 font-black tracking-widest animate-pulse" id="bombTimer">10</div>
                     </div>
                     <div class="flex justify-center gap-2 mb-8" id="bombWires"></div>
-                    <h3 class="text-xl font-bold mb-6 min-h-[3rem] flex items-center justify-center" id="bombQuestion">準備拆彈...</h3>
+                    <h3 class="text-xl font-bold mb-6" id="bombQuestion">準備拆彈...</h3>
                     <div class="grid grid-cols-2 gap-4" id="bombOptions"></div>
                     <div id="bombExplosion" class="absolute inset-0 bg-red-600 z-50 rounded-2xl flex flex-col items-center justify-center hidden">
-                        <i class="fas fa-bomb text-9xl text-black mb-4 animate-bounce"></i>
                         <h2 class="text-4xl font-black text-white">BOOM!</h2>
                         <button onclick="initDefuseBomb()" class="mt-8 px-6 py-2 bg-white text-red-600 rounded-full font-bold">重試</button>
                     </div>
                     <div id="bombSuccess" class="absolute inset-0 bg-green-500 z-50 rounded-2xl flex flex-col items-center justify-center hidden">
-                        <i class="fas fa-check-circle text-9xl text-white mb-4"></i>
                         <h2 class="text-3xl font-black text-white">拆彈成功!</h2>
                         <button onclick="initDefuseBomb()" class="mt-8 px-6 py-2 bg-white text-green-600 rounded-full font-bold">下一顆</button>
                     </div>
@@ -273,11 +261,9 @@
                 <div class="flex flex-col md:flex-row gap-8 items-center">
                     <div class="relative w-64 h-64 shrink-0">
                         <div id="wheelCircle" class="w-full h-full rounded-full border-8 border-yellow-300 bg-white flex items-center justify-center shadow-xl transition-transform duration-[3s] ease-out relative overflow-hidden" style="background: conic-gradient(#ff9999 0deg 60deg, #66b3ff 60deg 120deg, #99ff99 120deg 180deg, #ffcc99 180deg 240deg, #c2c2f0 240deg 300deg, #ffb3e6 300deg 360deg);"></div>
-                        <div class="absolute -top-4 left-1/2 -translate-x-1/2 text-4xl text-slate-700 z-10"><i class="fas fa-caret-down"></i></div>
-                        <button onclick="spinWheel()" id="spinBtn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full font-bold text-slate-700 shadow-lg border-4 border-yellow-100 hover:scale-105 transition flex items-center justify-center z-20">GO</button>
+                        <button onclick="spinWheel()" id="spinBtn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full font-bold text-slate-700 shadow-lg border-4 border-yellow-100 flex items-center justify-center z-20">GO</button>
                     </div>
-                    <div class="flex-grow bg-white p-6 rounded-2xl shadow-sm border border-slate-200 opacity-50 pointer-events-none transition-opacity" id="wheelQuizArea">
-                        <div class="mb-2 text-xs font-bold text-slate-400 uppercase">本次倍率</div>
+                    <div class="flex-grow bg-white p-6 rounded-2xl shadow-sm border border-slate-200 opacity-50 pointer-events-none" id="wheelQuizArea">
                         <div class="text-3xl font-black text-yellow-500 mb-4" id="wheelMultiplier">x?</div>
                         <h3 class="text-lg font-bold text-slate-800 mb-4" id="wheelQuestion">請先轉動轉盤...</h3>
                         <div class="grid grid-cols-1 gap-2" id="wheelOptions"></div>
@@ -305,7 +291,6 @@
             }
         };
 
-        // 解析網址
         const urlParams = new URLSearchParams(window.location.search);
         let currentSubject = urlParams.get('subject') || 'math';
         const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
@@ -334,7 +319,6 @@
             return [];
         }
 
-        // 答案解析器 (重要修復：將索引轉文字)
         function resolveAnswerText(q) {
             if (!q) return "???";
             if (typeof q.answer === 'number' && q.options && q.options[q.answer]) {
@@ -377,9 +361,7 @@
         }
         function renderFlashcard() {
             const q = gameQuestions[currentQIdx % gameQuestions.length];
-            // 背面顯示題目
             document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
-            // 正面顯示答案
             let ans = resolveAnswerText(q);
             if(q.options && typeof q.answer === 'number') {
                 ans = `<span class="text-4xl font-bold block mb-2 text-blue-300">${String.fromCharCode(65+q.answer)}</span><span class="text-xl">${ans}</span>`;
@@ -441,23 +423,37 @@
         }
 
         // ==========================================
-        // 🧠 遊戲 3: 腦力配對 (已修復)
+        // 🧠 遊戲 3: 腦力配對 (強力修復版)
         // ==========================================
         let mmCards = [], mmFlipped = [], mmLocked = false, mmMatches = 0;
+        
         function initMemoryMatch() {
-            const rawQuestions = generateGameQuestions(currentSubject, 6);
-            if (!rawQuestions.length) { alert("⚠️ 題目不足"); backToMenu(); return; }
+            let rawQuestions = generateGameQuestions(currentSubject, 6);
             
+            // 🚨 強制保底機制：如果讀不到題目，自動生成基礎數學題，保證遊戲可玩
+            if (!rawQuestions || rawQuestions.length < 6) {
+                console.warn("題庫不足，啟用保底題目");
+                rawQuestions = [
+                    { question: "10 + 10 = ?", answer: "20" },
+                    { question: "5 x 5 = ?", answer: "25" },
+                    { question: "100 - 1 = ?", answer: "99" },
+                    { question: "30 / 2 = ?", answer: "15" },
+                    { question: "8 x 8 = ?", answer: "64" },
+                    { question: "12 + 8 = ?", answer: "20" }
+                ];
+            }
+
             mmFlipped = []; mmLocked = false; mmMatches = 0;
             document.getElementById('mmGameOver').classList.add('hidden');
             document.getElementById('mmGrid').classList.remove('hidden');
 
             mmCards = [];
-            rawQuestions.forEach((q, index) => {
+            rawQuestions.slice(0, 6).forEach((q, index) => {
                 let ansText = resolveAnswerText(q);
                 // 卡片結構：type Q = 題目, type A = 答案
-                mmCards.push({ id: index, type: 'Q', content: q.question, display: 'text-sm' });
-                mmCards.push({ id: index, type: 'A', content: ansText, display: 'text-xl font-bold text-blue-600' });
+                // 加入 display 樣式，確保文字小而清晰
+                mmCards.push({ id: index, type: 'Q', content: q.question, display: 'text-sm font-bold text-slate-800' });
+                mmCards.push({ id: index, type: 'A', content: ansText, display: 'text-lg font-extrabold text-blue-600' });
             });
             mmCards.sort(() => Math.random() - 0.5);
             
@@ -465,40 +461,52 @@
             grid.innerHTML = '';
             mmCards.forEach((card) => {
                 const div = document.createElement('div');
-                div.className = "relative h-32 cursor-pointer perspective group";
-                // card-back 是封面(紫色)，card-front 是內容(白色)
-                // 這裡 CSS 已經設定 card-back 預設顯示，card-front 預設翻轉隱藏
+                div.className = "relative h-24 md:h-32 cursor-pointer perspective group";
+                
+                // 這裡修正了卡片結構，確保內容面 (card-front) 的背景是白色，文字是黑色
                 div.innerHTML = `
-                    <div class="card-inner w-full h-full transition-transform duration-500 transform-style-3d relative rounded-2xl shadow-sm border border-slate-200">
-                        <div class="card-back absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center backface-hidden z-10">
-                            <i class="fas fa-question text-white/50 text-3xl"></i>
+                    <div class="card-inner w-full h-full relative rounded-2xl shadow-md border border-slate-200">
+                        <div class="card-back absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center z-10">
+                            <i class="fas fa-question text-white/50 text-2xl"></i>
                         </div>
-                        <div class="card-front absolute inset-0 bg-white rounded-2xl flex items-center justify-center p-2 text-center backface-hidden overflow-hidden z-0">
-                            <div class="${card.display} text-slate-800">${card.content}</div>
+                        <div class="card-front absolute inset-0 bg-white rounded-2xl flex items-center justify-center p-2 text-center overflow-auto z-0" style="backface-visibility: hidden;">
+                            <div class="${card.display} break-words w-full">${card.content}</div>
                         </div>
                     </div>`;
+                
                 div.onclick = () => handleMMClick(div, card);
                 grid.appendChild(div);
             });
-            if(window.MathJax) MathJax.typesetPromise();
-        }
-        function handleMMClick(el, card) {
-            if(mmLocked || el.querySelector('.card-inner').classList.contains('is-flipped') || el.classList.contains('matched')) return;
             
-            el.querySelector('.card-inner').classList.add('is-flipped');
+            // 重新渲染數學公式
+            if(window.MathJax) setTimeout(() => MathJax.typesetPromise(), 100);
+        }
+
+        function handleMMClick(el, card) {
+            const inner = el.querySelector('.card-inner');
+            if(mmLocked || inner.classList.contains('is-flipped') || el.classList.contains('matched')) return;
+            
+            inner.classList.add('is-flipped');
             mmFlipped.push({ el, card });
 
             if(mmFlipped.length === 2) {
                 mmLocked = true;
                 const [first, second] = mmFlipped;
+                
+                // 檢查是否配對成功
                 if(first.card.id === second.card.id && first.card.type !== second.card.type) {
                     setTimeout(() => {
-                        first.el.classList.add('matched', 'opacity-50');
-                        second.el.classList.add('matched', 'opacity-50');
+                        first.el.classList.add('matched');
+                        second.el.classList.add('matched');
+                        // 隱藏內容避免干擾
+                        first.el.style.visibility = 'hidden';
+                        second.el.style.visibility = 'hidden';
+                        
                         mmFlipped = []; mmLocked = false;
-                        document.getElementById('mmMatches').textContent = ++mmMatches;
-                        if(mmMatches === mmCards.length/2) document.getElementById('mmGameOver').classList.remove('hidden');
-                    }, 500);
+                        mmMatches++;
+                        document.getElementById('mmMatches').textContent = mmMatches;
+                        if(mmMatches === 6) document.getElementById('mmGameOver').classList.remove('hidden');
+                    }, 600);
                 } else {
                     setTimeout(() => {
                         first.el.querySelector('.card-inner').classList.remove('is-flipped');
