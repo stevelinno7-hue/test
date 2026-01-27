@@ -144,35 +144,39 @@
     </main>
 
  <script>
-    // ====================================================
-    // 1. 初始化使用者資訊
-    // ====================================================
-    document.addEventListener('DOMContentLoaded', () => {
-        try {
-            const user = Auth.getCurrentUser();
-            if (user) {
-                const nameEl = document.getElementById('sideUserName');
-                const roleEl = document.getElementById('sideUserRole');
-                if (nameEl) nameEl.textContent = user.name;
-                if (roleEl) roleEl.textContent = user.grade || "學生";
-            }
-            
-            loadExamResult();
-        } catch (e) {
-            console.error("初始化失敗:", e);
-        }
-    });
+   // ====================================================
+// 1. 全域變數與初始化
+// ====================================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+let isSyncing = false;
 
-    // ====================================================
-    // 2. 核心邏輯：讀取與處理資料
-   function loadExamResult() {
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const user = Auth.getCurrentUser();
+        if (user) {
+            const nameEl = document.getElementById('sideUserName');
+            const roleEl = document.getElementById('sideUserRole');
+            if (nameEl) nameEl.textContent = user.name;
+            if (roleEl) roleEl.textContent = user.grade || "學生";
+        }
+        // 執行載入
+        loadExamResult();
+    } catch (e) {
+        console.error("初始化失敗:", e);
+    }
+});
+
+// ====================================================
+// 2. 核心邏輯：載入並渲染
+// ====================================================
+function loadExamResult() {
     const resultStr = localStorage.getItem('examResult');
     const reportContent = document.getElementById('reportContent');
     const noDataMessage = document.getElementById('noDataMessage');
 
     if (!resultStr) {
-        reportContent?.classList.add('hidden');
-        noDataMessage?.classList.remove('hidden');
+        if (reportContent) reportContent.classList.add('hidden');
+        if (noDataMessage) noDataMessage.classList.remove('hidden');
         updateMetaInfo("無資料");
         return;
     }
@@ -181,319 +185,54 @@
         let rawResult = JSON.parse(resultStr);
         const result = normalizeExamData(rawResult);
 
-        // 1. 執行 UI 渲染 (無論模式為何都要顯示結果)
+        // --- UI 渲染 ---
         updateScoreBoard(result);
         renderRadarChart(result.score);
         applyCheatResult(result);
         renderWrongList(result.wrongList);
 
-        // 2. ★ 關鍵邏輯：判斷是否為「第一次顯示」 ★
+        // --- ★ 核心判斷：是否自動觸發同步 ★ ---
         const urlParams = new URLSearchParams(window.location.search);
         const isNewResult = urlParams.get('mode') === 'new';
+        const btn = document.getElementById('btnSave');
 
         if (isNewResult) {
             console.log("偵測為新測驗結果，啟動自動同步...");
-            saveToCloud();
+            saveToCloud(); // 執行同步
             
-            // 同步完後，可以考慮移除網址參數，防止重新整理頁面又傳一次
+            // 移除網址參數，避免重新整理頁面重複觸發
             window.history.replaceState({}, document.title, window.location.pathname);
         } else {
             console.log("偵測為複習模式，不自動同步。");
-            // 複習模式下，按鈕可以顯示為「已存檔」或「手動同步」
-            const btn = document.getElementById('btnSave');
             if (btn) {
+                btn.disabled = true; 
                 btn.innerHTML = '<i class="fas fa-history"></i> 歷程紀錄模式';
-                btn.classList.replace('bg-blue-600', 'bg-gray-400');
+                btn.className = "flex items-center gap-2 text-white bg-slate-400 font-bold px-4 py-2 rounded-lg cursor-default shadow-none";
             }
         }
 
     } catch (error) {
-        console.error("載入失敗:", error);
+        console.error("載入解析失敗:", error);
     }
 }
 
-    // ★ 資料正規化輔助函式 (相容性處理) ★
-    function normalizeExamData(data) {
-        // 1. 處理分頁切換 (相容 tabSwitches 寫法)
-        if (!data.tabCheat) {
-            const switches = data.tabSwitches || 0;
-            let level = 'NORMAL';
-            if (switches > 2) level = 'HIGH';
-            else if (switches > 0) level = 'MEDIUM';
-            
-            data.tabCheat = {
-                level: level,
-                totalSwitch: switches
-            };
-        }
-
-        // 2. 處理作答節奏 (若無資料則補上預設值)
-        if (!data.cheat) {
-            data.cheat = { cheatLevel: 'NORMAL', fastCount: 0 };
-        }
-
-        // 3. 處理錯題列表 (若無列表則給空陣列)
-        if (!data.wrongList) {
-            data.wrongList = [];
-        }
-
-        return data;
-    }
-
-    // 更新上方分數板與資訊
-    function updateScoreBoard(result) {
-        document.getElementById('scoreDisplay').textContent = result.score || 0;
-        document.getElementById('correctCount').textContent = result.correctCount || 0;
-        document.getElementById('totalCount').textContent = result.totalCount || 0;
-        
-        const subject = result.subject || '綜合測驗';
-        const date = result.date || new Date().toLocaleDateString();
-        updateMetaInfo(`${subject} | 測驗時間：${date}`);
-    }
-
-    function updateMetaInfo(text) {
-        const el = document.getElementById('examMetaInfo');
-        if (el) el.textContent = text;
-    }
-
-    // ====================================================
-    // 3. 圖表與診斷邏輯
-    // ====================================================
-    
-    // 繪製雷達圖
-    function renderRadarChart(baseScore = 0) {
-        const canvas = document.getElementById('radarChart');
-        if (!canvas) return;
-        
-        const ctx = canvas.getContext('2d');
-        const randomOffset = () => Math.floor(Math.random() * 20) - 10;
-        const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
-        // 確保分數在 40~100 之間，避免圖形太難看
-        const data = labels.map(() => Math.min(100, Math.max(40, baseScore + randomOffset())));
-
-        new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: '本次能力表現',
-                    data: data,
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    borderColor: '#2563eb',
-                    pointBackgroundColor: '#2563eb',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#2563eb'
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        angleLines: { color: '#e2e8f0' },
-                        grid: { color: '#e2e8f0' },
-                        pointLabels: {
-                            font: { size: 12, family: "'Noto Sans TC', sans-serif", weight: 'bold' },
-                            color: '#475569'
-                        },
-                        ticks: { display: false, stepSize: 20 },
-                        min: 0, max: 100
-                    }
-                },
-                plugins: { legend: { display: false } } 
-            }
-        });
-    }
-
-    // 作弊行為診斷 UI 更新
-    // ----------------------------------------------------
-// 輔助函式：作弊行為診斷 (含自動數值修復功能)
-// ----------------------------------------------------
-function applyCheatResult(result) {
-    const timeBox = document.getElementById('timeCheatBox');
-    const timeText = document.getElementById('timeCheatText');
-    const tabBox = document.getElementById('tabCheatBox');
-    const tabText = document.getElementById('tabCheatText');
-
-    // ==========================================
-    // ★ 核心修改：自動判斷切換分頁的數值與等級 ★
-    // ==========================================
-    let tabData = result.tabCheat; // 1. 先試著讀取新格式
-
-    // 2. 如果沒有新格式，就讀取舊的數字 (tabSwitches) 並自動算出等級
-    if (!tabData) {
-        // 抓取你資料裡的 'tabSwitches' (例如: 1)
-        const rawCount = result.tabSwitches || 0; 
-        
-        // 自動判斷等級邏輯
-        let autoLevel = 'NORMAL';
-        if (rawCount > 2) {
-            autoLevel = 'HIGH';   // 超過 2 次 -> 紅色
-        } else if (rawCount > 0) {
-            autoLevel = 'MEDIUM'; // 1~2 次 -> 黃色 (這會解決你的問題)
-        }
-
-        // 現場組裝成正確的格式
-        tabData = {
-            level: autoLevel,
-            totalSwitch: rawCount
-        };
-    }
-    // ==========================================
-
-    // 處理作答節奏 (同樣加入防呆預設值)
-    const cheatData = result.cheat || { cheatLevel: 'NORMAL', fastCount: 0 };
-
-    // 1. 渲染秒數異常 UI
-    const timeStyles = {
-        NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '<i class="fas fa-check-circle"></i> 作答節奏正常'],
-        MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '<i class="fas fa-exclamation-triangle"></i> 部分題目作答過快'],
-        HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '<i class="fas fa-radiation"></i> 極速作答 (秒猜)']
-    };
-    const timeStyle = timeStyles[cheatData.cheatLevel] || timeStyles.NORMAL;
-    
-    if(timeBox) {
-        timeBox.className = `p-5 rounded-xl border ${timeStyle[0]} ${timeStyle[1]}`;
-        timeText.className = `text-sm font-bold ${timeStyle[2]} mt-1 pl-11`;
-        timeText.innerHTML = `${timeStyle[3]} <span class="text-xs opacity-75 font-normal ml-2">(過快題數：${cheatData.fastCount})</span>`;
-    }
-
-    // 2. 渲染分頁切換 UI (現在會正確顯示了)
-    const tabStyles = {
-        NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '<i class="fas fa-check-circle"></i> 專注度良好'],
-        MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '<i class="fas fa-eye-slash"></i> 有切換分頁紀錄'], // 黃色
-        HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '<i class="fas fa-window-restore"></i> 頻繁離開測驗頁面'] // 紅色
-    };
-    const tabStyle = tabStyles[tabData.level] || tabStyles.NORMAL;
-
-    if(tabBox) {
-        tabBox.className = `p-5 rounded-xl border ${tabStyle[0]} ${tabStyle[1]}`;
-        tabText.className = `text-sm font-bold ${tabStyle[2]} mt-1 pl-11`;
-        // 這裡會顯示自動抓到的 totalSwitch
-        tabText.innerHTML = `${tabStyle[3]} <span class="text-xs opacity-75 font-normal ml-2">(切換次數：${tabData.totalSwitch})</span>`;
-    }
-}
-
-    // 渲染錯題列表
-    function renderWrongList(wrongList) {
-        const listContainer = document.getElementById('wrongList');
-        if (!listContainer) return;
-
-        listContainer.innerHTML = ''; // 清空舊內容
-
-        // 如果沒有錯題 (全對)
-        if (!wrongList || wrongList.length === 0) {
-            listContainer.innerHTML = `
-                <div class="bg-green-50 border border-green-200 rounded-xl p-10 text-center shadow-sm">
-                    <div class="w-20 h-20 bg-white text-green-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-sm">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-green-800 mb-2">太棒了！本次測驗全對！</h3>
-                    <p class="text-green-600">您的觀念非常清晰，這是一次完美的表現。</p>
-                </div>`;
-            return;
-        }
-
-        // 生成錯題卡片
-        wrongList.forEach((q, idx) => {
-            const explainText = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : "暫無詳細解析";
-            
-            // 產生選項 HTML
-            let optionsHtml = '';
-            if (q.options && Array.isArray(q.options)) {
-                q.options.forEach((opt, optIdx) => {
-                    let baseClass = "p-4 rounded-lg border flex items-center gap-4 transition mb-2";
-                    let styleClass = "bg-white border-gray-200 text-gray-600"; 
-                    let iconHtml = `<div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-sm shrink-0">${String.fromCharCode(65+optIdx)}</div>`;
-                    let statusHtml = "";
-
-                    if (optIdx === q.answer) {
-                        styleClass = "bg-green-50 border-green-300 text-green-800 ring-1 ring-green-200";
-                        iconHtml = `<div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"><i class="fas fa-check"></i></div>`;
-                        statusHtml = `<div class="ml-auto text-green-600 text-sm font-bold flex items-center bg-white px-2 py-1 rounded-md shadow-sm border border-green-100"><i class="fas fa-check-circle mr-1"></i> 正解</div>`;
-                    } else if (optIdx === q.yourAns) {
-                        styleClass = "bg-red-50 border-red-300 text-red-800 ring-1 ring-red-200";
-                        iconHtml = `<div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"><i class="fas fa-times"></i></div>`;
-                        statusHtml = `<div class="ml-auto text-red-500 text-sm font-bold flex items-center bg-white px-2 py-1 rounded-md shadow-sm border border-red-100"><i class="fas fa-times-circle mr-1"></i> 誤答</div>`;
-                    }
-
-                    optionsHtml += `
-                        <div class="${baseClass} ${styleClass}">
-                            ${iconHtml}
-                            <div class="flex-grow font-medium leading-relaxed">${opt}</div>
-                            ${statusHtml}
-                        </div>`;
-                });
-            }
-
-            const cardHtml = `
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition">
-                    <div class="p-6 md:p-8 border-b border-gray-100">
-                        <div class="flex items-center gap-3 mb-5">
-                            <span class="bg-red-50 text-red-600 text-xs font-bold px-3 py-1 rounded-full border border-red-100 flex items-center">
-                                <i class="fas fa-times mr-1"></i> 第 ${idx+1} 題
-                            </span>
-                            <span class="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full border border-gray-200">
-                                ${q.concept || '綜合題型'}
-                            </span>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 leading-relaxed mb-8">
-                            ${q.question ? q.question.replace(/\n/g, '<br>') : '題目載入失敗'}
-                        </h3>
-                        <div class="space-y-1">
-                            ${optionsHtml}
-                        </div>
-                    </div>
-                    <div class="bg-indigo-50/50 p-6 md:p-8">
-                        <div class="flex items-start gap-4">
-                            <div class="mt-1 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 text-lg shadow-sm border border-indigo-200">
-                                <i class="fas fa-lightbulb"></i>
-                            </div>
-                            <div class="flex-grow">
-                                <h4 class="font-bold text-indigo-800 text-base mb-2">解析重點</h4>
-                                <div class="text-sm text-indigo-900 leading-relaxed bg-white/60 p-4 rounded-xl border border-indigo-100">
-                                    ${explainText}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            
-            listContainer.insertAdjacentHTML('beforeend', cardHtml);
-        });
-
-        // 重新渲染數學公式
-        if (window.MathJax) {
-            MathJax.typesetPromise([listContainer]).catch(err => console.log(err));
-        }
-    }
-     // ============================================
-    // 4. 雲端存檔功能 (請填入你的 GAS 網址)
-    // ============================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
-// 1. 定義全域狀態鎖，防止重複執行
-// 1. 定義全域狀態鎖
-let isSyncing = false;
-
+// ====================================================
+// 3. 雲端同步邏輯
+// ====================================================
 function saveToCloud() {
     const btn = document.getElementById('btnSave');
-    
-    // 如果正在同步中，或是按鈕已經被鎖定（disabled），就直接跳出
     if (isSyncing || (btn && btn.disabled)) return;
 
     const user = Auth.getCurrentUser();
-    // 訪客或未登入不上傳
     if (!user || user.username === 'guest') return;
 
     const resultStr = localStorage.getItem('examResult');
     if (!resultStr) return;
     const examResult = JSON.parse(resultStr);
 
-    // --- 開始鎖定邏輯 ---
     isSyncing = true;
     if (btn) {
-        btn.disabled = true; // 關鍵：原生禁用，防止任何重複點擊
+        btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> 雲端同步中...';
         btn.classList.add('opacity-75', 'cursor-not-allowed');
     }
@@ -508,28 +247,26 @@ function saveToCloud() {
             correctCount: examResult.correctCount,
             wrongList: examResult.wrongList || [],
             cheat: examResult.cheat,
-            tabSwitches: examResult.tabSwitches, // 修正名稱對應 exam.html
+            tabSwitches: examResult.tabSwitches,
             syncTime: new Date().toISOString()
         })
     };
 
     fetch(GAS_URL, {
         method: "POST",
-        mode: 'no-cors', // 如果 GAS 沒設 CORS，可用 no-cors 確保發送成功
+        mode: 'no-cors', // 確保跨網域傳送成功
         body: JSON.stringify(recordData)
     })
     .then(() => {
-        // 同步成功
         if (btn) {
-            btn.setAttribute('data-status', 'done');
             btn.className = "flex items-center gap-2 text-white bg-green-600 font-bold px-4 py-2 rounded-lg cursor-default shadow-none";
             btn.innerHTML = '<i class="fas fa-check-double"></i> 雲端已同步';
-            btn.disabled = true; // 確保永久鎖定
+            btn.disabled = true; 
         }
     })
     .catch(err => {
         console.error("同步失敗:", err);
-        isSyncing = false; // 只有失敗才解鎖，讓使用者手動重試
+        isSyncing = false; 
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-redo"></i> 同步失敗，點此重試';
@@ -539,45 +276,172 @@ function saveToCloud() {
     });
 }
 
-// 2. 修改載入邏輯：區分「第一次」與「複習」
-function loadExamResult() {
-    const resultStr = localStorage.getItem('examResult');
-    if (!resultStr) return;
+// ====================================================
+// 4. 輔助渲染工具 (保持不變)
+// ====================================================
 
-    try {
-        let rawResult = JSON.parse(resultStr);
-        const result = normalizeExamData(rawResult);
+function normalizeExamData(data) {
+    if (!data.tabCheat) {
+        const switches = data.tabSwitches || 0;
+        let level = (switches > 2) ? 'HIGH' : (switches > 0 ? 'MEDIUM' : 'NORMAL');
+        data.tabCheat = { level: level, totalSwitch: switches };
+    }
+    if (!data.cheat) data.cheat = { cheatLevel: 'NORMAL', fastCount: 0 };
+    return data;
+}
 
-        // UI 渲染 (分數、雷達圖、錯題等)
-        updateScoreBoard(result);
-        renderRadarChart(result.score);
-        applyCheatResult(result);
-        renderWrongList(result.wrongList);
+function updateScoreBoard(result) {
+    document.getElementById('scoreDisplay').textContent = result.score || 0;
+    document.getElementById('correctCount').textContent = result.correctCount || 0;
+    document.getElementById('totalCount').textContent = result.totalCount || 0;
+    const subject = result.subject || '綜合測驗';
+    const date = result.date || new Date().toLocaleDateString();
+    updateMetaInfo(`${subject} | 測驗時間：${date}`);
+}
 
-        // --- ★ 核心判斷：是否自動觸發 ★ ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const isNewResult = urlParams.get('mode') === 'new';
-        const btn = document.getElementById('btnSave');
+function updateMetaInfo(text) {
+    const el = document.getElementById('examMetaInfo');
+    if (el) el.textContent = text;
+}
 
-        if (isNewResult) {
-            console.log("偵測到新測驗結果，執行自動同步...");
-            saveToCloud();
-            
-            // 為了防止重新整理頁面又傳一次，將 URL 參數移除
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else {
-            console.log("偵測為複習模式，不自動上傳。");
-            if (btn) {
-                btn.disabled = true; // 複習模式下預設鎖定
-                btn.innerHTML = '<i class="fas fa-history"></i> 歷程紀錄模式';
-                btn.classList.replace('bg-blue-600', 'bg-slate-400');
-                btn.classList.add('cursor-default');
-            }
+function renderRadarChart(baseScore = 0) {
+    const canvas = document.getElementById('radarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
+    const data = labels.map(() => Math.min(100, Math.max(40, baseScore + (Math.floor(Math.random() * 20) - 10))));
+
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '本次能力表現',
+                data: data,
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: '#2563eb',
+                pointBackgroundColor: '#2563eb'
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: { r: { min: 0, max: 100, ticks: { display: false } } },
+            plugins: { legend: { display: false } } 
+        }
+    });
+}
+
+function applyCheatResult(result) {
+    const timeBox = document.getElementById('timeCheatBox');
+    const timeText = document.getElementById('timeCheatText');
+    const tabBox = document.getElementById('tabCheatBox');
+    const tabText = document.getElementById('tabCheatText');
+
+    const cheatData = result.cheat || { cheatLevel: 'NORMAL', fastCount: 0 };
+    const tabData = result.tabCheat;
+
+    const styles = {
+        NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '正常'],
+        MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '異常'],
+        HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '嚴重']
+    };
+
+    if (timeBox) {
+        const s = styles[cheatData.cheatLevel];
+        timeBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]}`;
+        timeText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
+        timeText.innerHTML = `作答節奏${s[3]} (過快題數：${cheatData.fastCount})`;
+    }
+
+    if (tabBox) {
+        const s = styles[tabData.level];
+        tabBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]}`;
+        tabText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
+        tabText.innerHTML = `分頁切換${s[3]} (切換次數：${tabData.totalSwitch})`;
+    }
+}
+
+function renderWrongList(wrongList) {
+    const listContainer = document.getElementById('wrongList');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    if (!wrongList || wrongList.length === 0) {
+        listContainer.innerHTML = `
+            <div class="bg-green-50 border border-green-200 rounded-xl p-10 text-center shadow-sm">
+                <div class="w-20 h-20 bg-white text-green-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-sm">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-green-800 mb-2">太棒了！本次測驗全對！</h3>
+                <p class="text-green-600">您的觀念非常清晰，這是一次完美的表現。</p>
+            </div>`;
+        return;
+    }
+
+    wrongList.forEach((q, idx) => {
+        const explainText = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : "暫無詳細解析";
+        
+        let optionsHtml = '';
+        if (q.options && Array.isArray(q.options)) {
+            q.options.forEach((opt, optIdx) => {
+                let styleClass = "bg-white border-gray-200 text-gray-600"; 
+                let iconHtml = `<div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-sm shrink-0">${String.fromCharCode(65+optIdx)}</div>`;
+                let statusHtml = "";
+
+                if (optIdx === q.answer) {
+                    styleClass = "bg-green-50 border-green-300 text-green-800 ring-1 ring-green-200";
+                    iconHtml = `<div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"><i class="fas fa-check"></i></div>`;
+                    statusHtml = `<div class="ml-auto text-green-600 text-sm font-bold flex items-center bg-white px-2 py-1 rounded-md shadow-sm border border-green-100"><i class="fas fa-check-circle mr-1"></i> 正解</div>`;
+                } else if (optIdx === q.yourAns) {
+                    styleClass = "bg-red-50 border-red-300 text-red-800 ring-1 ring-red-200";
+                    iconHtml = `<div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"><i class="fas fa-times"></i></div>`;
+                    statusHtml = `<div class="ml-auto text-red-500 text-sm font-bold flex items-center bg-white px-2 py-1 rounded-md shadow-sm border border-red-100"><i class="fas fa-times-circle mr-1"></i> 誤答</div>`;
+                }
+
+                optionsHtml += `
+                    <div class="p-4 rounded-lg border flex items-center gap-4 transition mb-2 ${styleClass}">
+                        ${iconHtml}
+                        <div class="flex-grow font-medium leading-relaxed">${opt}</div>
+                        ${statusHtml}
+                    </div>`;
+            });
         }
 
-    } catch (error) {
-        console.error("載入失敗:", error);
-    }
+        listContainer.insertAdjacentHTML('beforeend', `
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition mb-6">
+                <div class="p-6 md:p-8 border-b border-gray-100">
+                    <div class="flex items-center gap-3 mb-5">
+                        <span class="bg-red-50 text-red-600 text-xs font-bold px-3 py-1 rounded-full border border-red-100 flex items-center">
+                            <i class="fas fa-times mr-1"></i> 第 ${idx+1} 題
+                        </span>
+                        <span class="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full border border-gray-200">
+                            ${q.concept || '綜合題型'}
+                        </span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 leading-relaxed mb-8">
+                        ${q.question ? q.question.replace(/\n/g, '<br>') : '題目載入失敗'}
+                    </h3>
+                    <div class="space-y-1">${optionsHtml}</div>
+                </div>
+                <div class="bg-indigo-50/50 p-6 md:p-8">
+                    <div class="flex items-start gap-4">
+                        <div class="mt-1 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 text-lg shadow-sm border border-indigo-200">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-indigo-800 text-base mb-2">解析重點</h4>
+                            <div class="text-sm text-indigo-900 leading-relaxed bg-white/60 p-4 rounded-xl border border-indigo-100">
+                                ${explainText}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    });
+
+    if (window.MathJax) MathJax.typesetPromise([listContainer]).catch(err => console.log(err));
 }
 </script>
 </body>
