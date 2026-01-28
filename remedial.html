@@ -98,7 +98,7 @@
         </div>
     </main>
 
-    <script>
+  <script>
         // ============================================
         // ★ 設定你的 GAS 網址 (請換成新的部署網址) ★
         // ============================================
@@ -116,19 +116,27 @@
 
         // 初始化系統
         function init() {
+            // 檢查 Auth 是否載入
+            if (typeof Auth === 'undefined') {
+                console.error("Auth module missing");
+                return;
+            }
+
             const user = Auth.getCurrentUser();
             
             // 1. 設定使用者介面
             if(user) {
-                document.getElementById('sideUserName').textContent = user.name;
-                document.getElementById('sideUserRole').textContent = user.grade;
+                const nameEl = document.getElementById('sideUserName');
+                const roleEl = document.getElementById('sideUserRole');
+                if(nameEl) nameEl.textContent = user.name;
+                if(roleEl) roleEl.textContent = user.grade;
             }
 
             // 2. 設定 localStorage Key
             historyKey = user ? `history_${user.username}` : `history_guest`;
             wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
 
-            // 3. 先讀取「本機」舊資料 (讓使用者不用等，馬上看到東西)
+            // 3. 先讀取「本機」舊資料
             loadLocalData();
             renderAll();
 
@@ -142,111 +150,87 @@
         //  資料處理核心
         // ==========================================
 
-        // 修改後的讀取邏輯：只讀取屬於「當前使用者」的 Key
         function loadLocalData() {
             historyDB = [];
             wrongDB = [];
         
-            // 1. 嚴格讀取特定的 History Key (例如: history_student123)
-            // 不再去掃描所有的 localStorage，只抓屬於自己的那個
+            // 1. 讀取歷史
             if (historyKey) {
                 try {
                     const data = JSON.parse(localStorage.getItem(historyKey));
-                    if (Array.isArray(data)) {
-                        historyDB = data;
-                        console.log(`已載入 ${historyKey} 的歷史紀錄`);
-                    }
-                } catch(e) {
-                    console.error("歷史紀錄格式錯誤", e);
-                }
+                    if (Array.isArray(data)) historyDB = data;
+                } catch(e) { console.error(e); }
             }
         
-            // 2. 嚴格讀取特定的 Wrong Key (例如: wrong_questions_student123)
+            // 2. 讀取錯題
             if (wrongKey) {
                 try {
                     const data = JSON.parse(localStorage.getItem(wrongKey));
-                    if (Array.isArray(data)) {
-                        wrongDB = data;
-                        console.log(`已載入 ${wrongKey} 的錯題紀錄`);
-                    }
-                } catch(e) {
-                    console.error("錯題紀錄格式錯誤", e);
-                }
+                    if (Array.isArray(data)) wrongDB = data;
+                } catch(e) { console.error(e); }
             }
         
             sortAndFilter();
         }
 
-        // ★ 從雲端同步資料 (下載紀錄 + 錯題)
-       // 在 remedial.html 的 script 中找到 syncFromCloud
-function syncFromCloud(username) {
-    const hCount = document.getElementById('historyCount');
-    const wCount = document.getElementById('wrongCount');
-    
-    // 顯示讀取動畫
-    hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        // ★ 從雲端同步資料
+        function syncFromCloud(username) {
+            const hCount = document.getElementById('historyCount');
+            const wCount = document.getElementById('wrongCount');
+            
+            if(hCount) hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if(wCount) wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-    fetch(`${GAS_URL}?username=${username}`)
-    .then(res => res.json())
-    .then(cloudData => {
-        console.log("從雲端收到原始資料:", cloudData.length, "筆");
+            fetch(`${GAS_URL}?username=${username}`)
+            .then(res => res.json())
+            .then(cloudData => {
+                console.log("雲端資料:", cloudData.length);
 
-        // 1. 過濾出屬於當前使用者的資料
-        const myData = cloudData.filter(item => {
-            const owner = item.owner || item.username; 
-            return owner === username;
-        });
+                // 過濾屬於我的資料
+                const myData = cloudData.filter(item => {
+                    const owner = item.owner || item.username; 
+                    return owner === username;
+                });
 
-        console.log("過濾後屬於我的資料:", myData.length, "筆");
+                // ★ 讀取「已解決錯題黑名單」
+                const resolvedKey = `resolved_${username}`;
+                const resolvedList = JSON.parse(localStorage.getItem(resolvedKey) || "[]");
 
-        // ★ 新增：讀取「已解決錯題黑名單」
-        const resolvedKey = `resolved_${username}`;
-        const resolvedList = JSON.parse(localStorage.getItem(resolvedKey) || "[]");
+                // 合併歷史紀錄
+                const localIds = new Set(historyDB.map(item => item.id));
+                myData.forEach(item => {
+                    if (!localIds.has(item.id)) historyDB.push(item);
+                });
 
-        // 2. 合併歷史紀錄 (保持不變)
-        const localIds = new Set(historyDB.map(item => item.id));
-        myData.forEach(item => {
-            if (!localIds.has(item.id)) {
-                historyDB.push(item);
-            }
-        });
+                // 合併錯題資料 (加入黑名單過濾)
+                let cloudWrongQuestions = [];
+                myData.forEach(exam => {
+                    if (exam.wrongList && Array.isArray(exam.wrongList)) {
+                        const activeWrongs = exam.wrongList.filter(q => !resolvedList.includes(q.question));
+                        cloudWrongQuestions = cloudWrongQuestions.concat(activeWrongs);
+                    }
+                });
 
-        // 3. 合併錯題資料 (★ 修改處：加入黑名單過濾)
-        let cloudWrongQuestions = [];
-        myData.forEach(exam => {
-            if (exam.wrongList && Array.isArray(exam.wrongList)) {
-                // 過濾：只有「不在黑名單中」的題目才会被加入
-                const activeWrongs = exam.wrongList.filter(q => !resolvedList.includes(q.question));
-                cloudWrongQuestions = cloudWrongQuestions.concat(activeWrongs);
-            }
-        });
+                wrongDB = wrongDB.concat(cloudWrongQuestions);
+                
+                sortAndFilter();
+                
+                if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
+                if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
+                
+                renderAll();
+            })
+            .catch(err => {
+                console.error("同步失敗:", err);
+                updateCounts(); 
+            });
+        }
 
-        // 將雲端的新錯題合併進 wrongDB
-        // (注意：這裡先合併，後續的 sortAndFilter 會負責去重)
-        wrongDB = wrongDB.concat(cloudWrongQuestions);
-        
-        // 4. 執行排序、去重、儲存與渲染
-        sortAndFilter();
-        
-        if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
-        if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
-        
-        renderAll();
-    })
-    .catch(err => {
-        console.error("同步失敗:", err);
-        // 失敗時也要恢復原本的數字顯示
-        updateCounts(); 
-    });
-}
-
-        // 排序與去重
         function sortAndFilter() {
             // 歷史紀錄：最新的在上面
             historyDB.sort((a, b) => b.id - a.id);
 
-            // 錯題去重：同樣的題目只留一題
+            // 錯題去重
             const uniqueWrongs = [];
             const seen = new Set();
             wrongDB.forEach(q => {
@@ -269,21 +253,24 @@ function syncFromCloud(username) {
         }
 
         function updateCounts() {
-            document.getElementById('historyCount').textContent = historyDB.length;
-            document.getElementById('wrongCount').textContent = wrongDB.length;
+            const hCount = document.getElementById('historyCount');
+            const wCount = document.getElementById('wrongCount');
+            if(hCount) hCount.textContent = historyDB.length;
+            if(wCount) wCount.textContent = wrongDB.length;
         }
 
-        // 渲染歷史列表
         function renderHistory() {
             const container = document.getElementById('historyList');
             const empty = document.getElementById('historyEmpty');
+            if(!container) return;
+            
             container.innerHTML = '';
 
             if (historyDB.length === 0) {
-                empty.classList.remove('hidden');
+                if(empty) empty.classList.remove('hidden');
                 return;
             }
-            empty.classList.add('hidden');
+            if(empty) empty.classList.add('hidden');
 
             historyDB.forEach(record => {
                 let scoreColor = "text-gray-600";
@@ -311,35 +298,40 @@ function syncFromCloud(username) {
             });
         }
 
-        // 渲染錯題列表
         function renderWrong() {
             const container = document.getElementById('wrongList');
             const empty = document.getElementById('wrongEmpty');
+            if(!container) return;
+
             container.innerHTML = '';
 
             if (wrongDB.length === 0) {
-                empty.classList.remove('hidden');
+                if(empty) empty.classList.remove('hidden');
                 return;
             }
-            empty.classList.add('hidden');
+            if(empty) empty.classList.add('hidden');
 
             wrongDB.forEach((q, idx) => {
                 let optionsHtml = '';
-                q.options.forEach((opt, i) => {
-                    let style = "bg-white border-gray-200 text-gray-600";
-                    let icon = String.fromCharCode(65+i);
-                    if (i === q.answer) style = "bg-green-50 border-green-300 text-green-800";
-                    else if (i === q.yourAns) style = "bg-red-50 border-red-300 text-red-800";
-                    optionsHtml += `<div class="p-2 border rounded mb-1 flex items-center gap-2 ${style}"><span class="font-bold">${icon}</span> ${opt}</div>`;
-                });
+                if(q.options) {
+                    q.options.forEach((opt, i) => {
+                        let style = "bg-white border-gray-200 text-gray-600";
+                        let icon = String.fromCharCode(65+i);
+                        if (i === q.answer) style = "bg-green-50 border-green-300 text-green-800";
+                        else if (i === q.yourAns) style = "bg-red-50 border-red-300 text-red-800";
+                        optionsHtml += `<div class="p-2 border rounded mb-1 flex items-center gap-2 ${style}"><span class="font-bold">${icon}</span> ${opt}</div>`;
+                    });
+                }
 
                 const explain = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : (q.explanation || "無解析");
+                // 處理引號問題，防止 onclick 報錯
+                const safeQuestion = q.question.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
                 const html = `
                     <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
                         <div class="flex justify-between items-start mb-4">
                             <h3 class="font-bold text-gray-800 text-lg">${q.question}</h3>
-                            <button onclick="removeQuestion('${q.question}')" class="text-gray-400 hover:text-green-600" title="標記為已懂 (移除)"><i class="fas fa-check-circle text-xl"></i></button>
+                            <button onclick="removeQuestion('${safeQuestion}')" class="text-gray-400 hover:text-green-600" title="標記為已懂 (移除)"><i class="fas fa-check-circle text-xl"></i></button>
                         </div>
                         <div class="space-y-1 mb-4 text-sm">${optionsHtml}</div>
                         <div class="bg-slate-50 p-4 rounded text-sm text-slate-700 border-l-4 border-indigo-400">
@@ -356,47 +348,38 @@ function syncFromCloud(username) {
         //  互動功能
         // ==========================================
 
-        // 查看詳細結果
         window.viewResult = function(recordId) {
             const record = historyDB.find(r => r.id === recordId);
             if (record) {
                 localStorage.setItem('examResult', JSON.stringify(record));
                 window.location.href = "analysis.html";
             }
-        }
+        };
 
-        // 定義一個新的 Key 來存黑名單
-const resolvedKey = user ? `resolved_${user.username}` : `resolved_guest`;
+        // 移除錯題 (修正版：將 Key 的定義放進函式內)
+        window.removeQuestion = function(qText) {
+            if(!confirm("恭喜弄懂了！確定移除此題？(將不再顯示)")) return;
+            
+            // 1. 從記憶體資料庫中移除
+            wrongDB = wrongDB.filter(q => q.question !== qText);
+            
+            // 2. 更新 LocalStorage
+            if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
 
-window.removeQuestion = function(qText) {
-    if(!confirm("恭喜弄懂了！確定移除此題？(將不再顯示)")) return;
-    
-    // 1. 從記憶體資料庫 (wrongDB) 中移除
-    wrongDB = wrongDB.filter(q => q.question !== qText);
-    
-    // 2. 更新 LocalStorage 的錯題庫 (wrongKey)
-    if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
-
-    // 3. ★ 新增：將此題加入「已解決黑名單」，防止雲端同步時復活
-    const user = Auth.getCurrentUser();
-    // 確保有使用者名稱，如果是訪客則用 guest
-    const currentUsername = user ? user.username : 'guest';
-    const resolvedKey = `resolved_${currentUsername}`;
-    
-    // 讀取目前的黑名單
-    let resolvedList = JSON.parse(localStorage.getItem(resolvedKey) || "[]");
-    
-    // 如果名單裡還沒有這題，就加進去
-    if (!resolvedList.includes(qText)) {
-        resolvedList.push(qText);
-        localStorage.setItem(resolvedKey, JSON.stringify(resolvedList));
-        console.log(`已將題目加入黑名單: ${qText.substring(0, 10)}...`);
-    }
-    
-    // 4. 重新渲染畫面
-    renderWrong();
-    updateCounts();
-}
+            // 3. 加入黑名單
+            const user = Auth.getCurrentUser();
+            const currentUsername = user ? user.username : 'guest';
+            const resolvedKey = `resolved_${currentUsername}`;
+            
+            let resolvedList = JSON.parse(localStorage.getItem(resolvedKey) || "[]");
+            if (!resolvedList.includes(qText)) {
+                resolvedList.push(qText);
+                localStorage.setItem(resolvedKey, JSON.stringify(resolvedList));
+            }
+            
+            renderWrong();
+            updateCounts();
+        };
 
         // 切換分頁
         window.switchTab = function(tab) {
@@ -417,7 +400,7 @@ window.removeQuestion = function(qText) {
                 wrongView.classList.remove('hidden');
                 if (window.MathJax) MathJax.typesetPromise();
             }
-        }
+        };
     </script>
 </body>
 </html>
