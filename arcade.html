@@ -463,11 +463,20 @@ window.onload = function() {
             if(window.MathJax) MathJax.typesetPromise();
         }
         function endMathRush() {
-            clearInterval(timerInterval);
-            document.getElementById('mrGameArea').classList.add('hidden');
-            document.getElementById('mrGameOver').classList.remove('hidden');
-            document.getElementById('mrFinalScore').textContent = score;
-        }
+    clearInterval(timerInterval);
+    document.getElementById('mrGameArea').classList.add('hidden');
+    document.getElementById('mrGameOver').classList.remove('hidden');
+    document.getElementById('mrFinalScore').textContent = score;
+
+    // ★★★ 加入金幣結算 ★★★
+    // 假設每 100 分換 1 金幣
+    const coinsEarned = Math.floor(score / 100);
+    if (coinsEarned > 0) {
+        let current = window.loadCoins(); // 讀取目前使用者的金幣
+        window.saveCoins(current + coinsEarned); // 存入專屬帳號
+        alert(`恭喜！獲得 ${coinsEarned} 枚金幣！`);
+    }
+}
 
         // ==========================================
         // 🧠 遊戲 3: 腦力配對 (強力修復版)
@@ -567,7 +576,7 @@ window.onload = function() {
         // ==========================================
         // ⚔️ 遊戲 4: 勇者鬥惡龍
         // ==========================================
-        let rpgHp = 100, monsterHp = 100;
+        let rpgHp = 200, monsterHp = 100;
         function initRPG() {
             gameQuestions = generateGameQuestions(currentSubject, 20);
             if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
