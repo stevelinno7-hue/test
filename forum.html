@@ -52,10 +52,16 @@
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
-        <div class="px-4 py-6">
-            <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
-                <h3 class="font-bold text-slate-800" id="sideUserName">訪客</h3>
-                <div class="text-[11px] text-slate-400 mt-1 mb-3" id="sideUserRole">學生</div>
+        <div class="p-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                    <i class="fas fa-pen mr-1"></i> 編輯年級
+                </button>
             </div>
         </div>
         <nav class="flex-grow px-3 space-y-1">
