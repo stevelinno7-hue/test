@@ -185,13 +185,11 @@ function syncFromCloud(username) {
     hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-    fetch(`${GAS_URL}?username=${username}`)
+   fetch(`${GAS_URL}?username=${username}`)
     .then(res => res.json())
     .then(cloudData => {
         console.log("從雲端收到原始資料:", cloudData.length, "筆");
 
-        // ★★★ 【修復核心】強制過濾：只保留屬於目前使用者的資料 ★★★
-        // 防止後端不小心回傳了別人的資料
         const myData = cloudData.filter(item => {
             // 檢查 item.owner (擁有者) 或 item.username 是否等於目前登入者
             const owner = item.owner || item.username; 
