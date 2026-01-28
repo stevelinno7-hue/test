@@ -142,29 +142,38 @@
         //  資料處理核心
         // ==========================================
 
-        // 讀取本機 localStorage
+        // 修改後的讀取邏輯：只讀取屬於「當前使用者」的 Key
         function loadLocalData() {
             historyDB = [];
             wrongDB = [];
-
-            // 暴力掃描 (防止 Key 錯亂)
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                // 讀取歷史
-                if (key.startsWith("history_")) {
-                    try {
-                        const data = JSON.parse(localStorage.getItem(key));
-                        if (Array.isArray(data)) historyDB = historyDB.concat(data);
-                    } catch(e) {}
-                }
-                // 讀取錯題
-                if (key.startsWith("wrong_questions_")) {
-                    try {
-                        const data = JSON.parse(localStorage.getItem(key));
-                        if (Array.isArray(data)) wrongDB = wrongDB.concat(data);
-                    } catch(e) {}
+        
+            // 1. 嚴格讀取特定的 History Key (例如: history_student123)
+            // 不再去掃描所有的 localStorage，只抓屬於自己的那個
+            if (historyKey) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(historyKey));
+                    if (Array.isArray(data)) {
+                        historyDB = data;
+                        console.log(`已載入 ${historyKey} 的歷史紀錄`);
+                    }
+                } catch(e) {
+                    console.error("歷史紀錄格式錯誤", e);
                 }
             }
+        
+            // 2. 嚴格讀取特定的 Wrong Key (例如: wrong_questions_student123)
+            if (wrongKey) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(wrongKey));
+                    if (Array.isArray(data)) {
+                        wrongDB = data;
+                        console.log(`已載入 ${wrongKey} 的錯題紀錄`);
+                    }
+                } catch(e) {
+                    console.error("錯題紀錄格式錯誤", e);
+                }
+            }
+        
             sortAndFilter();
         }
 
