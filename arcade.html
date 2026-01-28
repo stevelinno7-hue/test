@@ -279,6 +279,42 @@
             </div>
 
         </div>
+        <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+            <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+            <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+            <div class="relative">
+                <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                    <option value="國一">國一</option>
+                    <option value="國二">國二</option>
+                    <option value="國三">國三</option>
+                    <hr>
+                    <option value="高一">高一</option>
+                    <option value="高二">高二</option>
+                    <option value="高三">高三</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+        </div>
+
+        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+            <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+            <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                確認修改
+            </button>
+        </div>
+    </div>
+</div>
     </main>
 
 <script>
