@@ -428,7 +428,23 @@
             document.getElementById('submitModal').classList.add('hidden'); 
         }
 
-        async function finalSubmit() {
+       async function finalSubmit() {
+            // 1. 防止重複提交
+            const submitBtn = document.getElementById('confirmSubmitBtn');
+            if (submitBtn.disabled) return; // 如果按鈕已經被停用，就直接結束
+            submitBtn.disabled = true;      // 停用按鈕
+            submitBtn.textContent = "處理中..."; // 改變文字
+        
+            if (timerInterval) clearInterval(timerInterval);
+            
+            // ★ 解除防重整鎖定 (這行很重要，不然交卷後跳轉會被擋住)
+            isSubmitting = true; 
+        
+            document.getElementById('submitModal').classList.add('hidden');
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        
+            // ... (剩下的程式碼) ...
+    
             if (timerInterval) clearInterval(timerInterval);
             
             // ★ 重要：設定為正在交卷狀態，解除頁面鎖定
@@ -491,19 +507,32 @@ const resultData = {
 
 // 1. 儲存「當前」結果 (給下一頁分析用)
 // 為了避免下一頁讀錯，我們多存一個 owner 欄位
-localStorage.setItem('examResult', JSON.stringify(resultData));
+// ... (上面成績計算的部分不變) ...
 
-// 2. 儲存「歷史」紀錄 (這是永久保存的，必須嚴格區分帳號)
-// ★★★ 關鍵：Key 必須包含 user.username (例如 history_student123) ★★★
-const historyKey = `history_${user.username}`; 
+localStorage.setItem('examResult', JSON.stringify(resultData));
+const historyKey = `history_${user.username}`;
 
 try {
     let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+    
+    // 1. 新增這筆成績
     history.push(resultData);
-    localStorage.setItem(historyKey, JSON.stringify(history));
-    console.log(`已儲存至 ${user.username} 的歷史紀錄`);
-} catch (e) { console.error("History save failed", e); }
 
+    // ★★★ 新增：限制數量 (例如只留最近 20 筆) ★★★
+    const MAX_HISTORY = 20; // 您可以自己改這個數字
+    if (history.length > MAX_HISTORY) {
+        // slice(-20) 代表只取「最後」20 筆，也就是最新的
+        history = history.slice(-MAX_HISTORY);
+    }
+
+    localStorage.setItem(historyKey, JSON.stringify(history));
+    console.log(`已更新歷史紀錄，目前保留 ${history.length} 筆`);
+
+} catch (e) { 
+    console.error("History save failed", e); 
+}
+
+// ... (後面雲端上傳與跳轉的部分不變) ...
 // ... (後面雲端上傳與跳轉程式碼不變) ...
             if (user.username !== 'guest') {
                 try {
