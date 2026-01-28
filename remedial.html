@@ -182,51 +182,62 @@
 function syncFromCloud(username) {
     const hCount = document.getElementById('historyCount');
     const wCount = document.getElementById('wrongCount');
+    
+    // 顯示讀取動畫
     hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-   fetch(`${GAS_URL}?username=${username}`)
+    fetch(`${GAS_URL}?username=${username}`)
     .then(res => res.json())
     .then(cloudData => {
         console.log("從雲端收到原始資料:", cloudData.length, "筆");
 
+        // 1. 過濾出屬於當前使用者的資料
         const myData = cloudData.filter(item => {
-            // 檢查 item.owner (擁有者) 或 item.username 是否等於目前登入者
             const owner = item.owner || item.username; 
             return owner === username;
         });
 
         console.log("過濾後屬於我的資料:", myData.length, "筆");
 
-        // --- 以下邏輯不變，但變數改成使用過濾後的 myData ---
-        
-        // 1. 合併歷史紀錄
+        // ★ 新增：讀取「已解決錯題黑名單」
+        const resolvedKey = `resolved_${username}`;
+        const resolvedList = JSON.parse(localStorage.getItem(resolvedKey) || "[]");
+
+        // 2. 合併歷史紀錄 (保持不變)
         const localIds = new Set(historyDB.map(item => item.id));
-        myData.forEach(item => { // 注意：這裡改成 myData
+        myData.forEach(item => {
             if (!localIds.has(item.id)) {
                 historyDB.push(item);
             }
         });
 
-        // 2. 合併錯題資料
+        // 3. 合併錯題資料 (★ 修改處：加入黑名單過濾)
         let cloudWrongQuestions = [];
-        myData.forEach(exam => { // 注意：這裡改成 myData
+        myData.forEach(exam => {
             if (exam.wrongList && Array.isArray(exam.wrongList)) {
-                cloudWrongQuestions = cloudWrongQuestions.concat(exam.wrongList);
+                // 過濾：只有「不在黑名單中」的題目才会被加入
+                const activeWrongs = exam.wrongList.filter(q => !resolvedList.includes(q.question));
+                cloudWrongQuestions = cloudWrongQuestions.concat(activeWrongs);
             }
         });
 
-        // ... (後面的去重與渲染程式碼保持不變) ...
+        // 將雲端的新錯題合併進 wrongDB
+        // (注意：這裡先合併，後續的 sortAndFilter 會負責去重)
+        wrongDB = wrongDB.concat(cloudWrongQuestions);
         
-        // 記得最後呼叫渲染
+        // 4. 執行排序、去重、儲存與渲染
         sortAndFilter();
+        
         if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
         if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
+        
         renderAll();
     })
     .catch(err => {
         console.error("同步失敗:", err);
-        updateCounts();
+        // 失敗時也要恢復原本的數字顯示
+        updateCounts(); 
     });
 }
 
@@ -354,19 +365,38 @@ function syncFromCloud(username) {
             }
         }
 
-        // 移除錯題 (僅本機移除)
-        window.removeQuestion = function(qText) {
-            if(!confirm("確定移除此題？(僅從本機列表移除)")) return;
-            
-            // 更新記憶體中的資料
-            wrongDB = wrongDB.filter(q => q.question !== qText);
-            
-            // 更新 LocalStorage (避免重整後跑出來)
-            if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
-            
-            renderWrong();
-            updateCounts();
-        }
+        // 定義一個新的 Key 來存黑名單
+const resolvedKey = user ? `resolved_${user.username}` : `resolved_guest`;
+
+window.removeQuestion = function(qText) {
+    if(!confirm("恭喜弄懂了！確定移除此題？(將不再顯示)")) return;
+    
+    // 1. 從記憶體資料庫 (wrongDB) 中移除
+    wrongDB = wrongDB.filter(q => q.question !== qText);
+    
+    // 2. 更新 LocalStorage 的錯題庫 (wrongKey)
+    if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
+
+    // 3. ★ 新增：將此題加入「已解決黑名單」，防止雲端同步時復活
+    const user = Auth.getCurrentUser();
+    // 確保有使用者名稱，如果是訪客則用 guest
+    const currentUsername = user ? user.username : 'guest';
+    const resolvedKey = `resolved_${currentUsername}`;
+    
+    // 讀取目前的黑名單
+    let resolvedList = JSON.parse(localStorage.getItem(resolvedKey) || "[]");
+    
+    // 如果名單裡還沒有這題，就加進去
+    if (!resolvedList.includes(qText)) {
+        resolvedList.push(qText);
+        localStorage.setItem(resolvedKey, JSON.stringify(resolvedList));
+        console.log(`已將題目加入黑名單: ${qText.substring(0, 10)}...`);
+    }
+    
+    // 4. 重新渲染畫面
+    renderWrong();
+    updateCounts();
+}
 
         // 切換分頁
         window.switchTab = function(tab) {
