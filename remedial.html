@@ -178,60 +178,59 @@
         }
 
         // ★ 從雲端同步資料 (下載紀錄 + 錯題)
-        function syncFromCloud(username) {
-            const hCount = document.getElementById('historyCount');
-            const wCount = document.getElementById('wrongCount');
-            // 顯示讀取動畫
-            hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+       // 在 remedial.html 的 script 中找到 syncFromCloud
+function syncFromCloud(username) {
+    const hCount = document.getElementById('historyCount');
+    const wCount = document.getElementById('wrongCount');
+    hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-            fetch(`${GAS_URL}?username=${username}`)
-            .then(res => res.json())
-            .then(cloudData => {
-                console.log("雲端資料同步成功:", cloudData);
-                
-                // 1. 合併歷史紀錄 (History)
-                const localIds = new Set(historyDB.map(item => item.id));
-                cloudData.forEach(item => {
-                    if (!localIds.has(item.id)) {
-                        historyDB.push(item);
-                    }
-                });
+    fetch(`${GAS_URL}?username=${username}`)
+    .then(res => res.json())
+    .then(cloudData => {
+        console.log("從雲端收到原始資料:", cloudData.length, "筆");
 
-                // 2. 合併錯題資料 (Wrong Questions)
-                // 從每一筆雲端紀錄中，把 wrongList 挖出來
-                let cloudWrongQuestions = [];
-                cloudData.forEach(exam => {
-                    if (exam.wrongList && Array.isArray(exam.wrongList)) {
-                        cloudWrongQuestions = cloudWrongQuestions.concat(exam.wrongList);
-                    }
-                });
+        // ★★★ 【修復核心】強制過濾：只保留屬於目前使用者的資料 ★★★
+        // 防止後端不小心回傳了別人的資料
+        const myData = cloudData.filter(item => {
+            // 檢查 item.owner (擁有者) 或 item.username 是否等於目前登入者
+            const owner = item.owner || item.username; 
+            return owner === username;
+        });
 
-                // 將雲端錯題合併到本機錯題 (去除重複)
-                const existingQuestions = new Set(wrongDB.map(q => q.question));
-                cloudWrongQuestions.forEach(q => {
-                    if (!existingQuestions.has(q.question)) {
-                        wrongDB.push(q);
-                        existingQuestions.add(q.question);
-                    }
-                });
+        console.log("過濾後屬於我的資料:", myData.length, "筆");
 
-                // 3. 排序與儲存
-                sortAndFilter();
-                
-                // 將合併後的完整資料存回本機，下次開啟比較快
-                if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
-                if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
+        // --- 以下邏輯不變，但變數改成使用過濾後的 myData ---
+        
+        // 1. 合併歷史紀錄
+        const localIds = new Set(historyDB.map(item => item.id));
+        myData.forEach(item => { // 注意：這裡改成 myData
+            if (!localIds.has(item.id)) {
+                historyDB.push(item);
+            }
+        });
 
-                // 4. 重新渲染畫面
-                renderAll();
-            })
-            .catch(err => {
-                console.error("同步失敗 (可能是網路問題或網址錯誤):", err);
-                // 失敗時，恢復原本數字
-                updateCounts();
-            });
-        }
+        // 2. 合併錯題資料
+        let cloudWrongQuestions = [];
+        myData.forEach(exam => { // 注意：這裡改成 myData
+            if (exam.wrongList && Array.isArray(exam.wrongList)) {
+                cloudWrongQuestions = cloudWrongQuestions.concat(exam.wrongList);
+            }
+        });
+
+        // ... (後面的去重與渲染程式碼保持不變) ...
+        
+        // 記得最後呼叫渲染
+        sortAndFilter();
+        if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
+        if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
+        renderAll();
+    })
+    .catch(err => {
+        console.error("同步失敗:", err);
+        updateCounts();
+    });
+}
 
         // 排序與去重
         function sortAndFilter() {
