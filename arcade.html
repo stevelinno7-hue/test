@@ -279,28 +279,74 @@
         // ==========================================
         // 🌐 全域變數與初始化
         // ==========================================
-        window.onload = function() {
-            const user = Auth.getCurrentUser();
-            if(user) {
-                document.getElementById('sideUserName').textContent = user.name;
-                document.getElementById('sideUserRole').textContent = user.grade;
-                if(user.grade && user.grade.includes('國')) setStage('junior_high');
-                else setStage('high_school');
-                document.getElementById('coinCount').textContent = user.coins || 0;
-            } else {
-                setStage('high_school');
+        // ==========================================
+// 🌐 全域變數與初始化
+// ==========================================
+window.onload = function() {
+    // 1. 身分驗證與帳號綁定
+    const user = Auth.getCurrentUser();
+    if (!user) {
+        alert("請先登入！");
+        window.location.href = "index.html";
+        return;
+    }
+
+    // 更新側邊欄資訊
+    if(document.getElementById('sideUserName')) document.getElementById('sideUserName').innerText = user.name || user.username;
+    if(document.getElementById('sideUserRole')) document.getElementById('sideUserRole').innerText = user.role === 'teacher' ? '老師' : '學生';
+
+    // 2. 設定專屬的金幣 Key (例如: coins_student123)
+    // 這樣每個人登入時，只會讀取到自己的金幣，不會跟別人混用
+    const COIN_KEY = `coins_${user.username}`; 
+    const coinDisplay = document.getElementById('coinCount');
+
+    // 定義讀取金幣函式
+    window.loadCoins = function() {
+        const saved = localStorage.getItem(COIN_KEY);
+        return saved ? parseInt(saved) : 0;
+    };
+
+    // 定義儲存金幣函式 (並更新畫面)
+    window.saveCoins = function(amount) {
+        localStorage.setItem(COIN_KEY, amount);
+        if(coinDisplay) coinDisplay.innerText = amount;
+    };
+
+    // 初始化顯示金幣
+    let currentCoins = window.loadCoins();
+    if(coinDisplay) coinDisplay.innerText = currentCoins;
+
+    // ------------------------------------------------
+    // 以下是原本的網址參數讀取與題目生成邏輯
+    // ------------------------------------------------
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentSubject = urlParams.get('subject') || 'math';
+    const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
+    let targetTags = [];
+    if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
+        targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
+    }
+    if(document.getElementById('fcSubject')) document.getElementById('fcSubject').textContent = currentSubject;
+
+    // 將題目生成器掛載到 window 以便遊戲呼叫
+    window.generateGameQuestions = function(subj, count) {
+        if (window.generatePaper) {
+            let q = window.generatePaper({ 
+                subject: subj, 
+                total: count, 
+                tags: targetTags.length > 0 ? targetTags : [subj] 
+            }).filter(i => i && i.question);
+            
+            // 補齊題目防止當機
+            if (q.length < count) {
+                const backup = window.generatePaper({ subject: subj, total: count - q.length });
+                q = q.concat(backup);
             }
-        };
-
-        const urlParams = new URLSearchParams(window.location.search);
-        let currentSubject = urlParams.get('subject') || 'math';
-        const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
-        let targetTags = [];
-        if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
-            targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
+            return q;
         }
-        if(document.getElementById('fcSubject')) document.getElementById('fcSubject').textContent = currentSubject;
-
+        return [];
+    };
+};
         // 題目生成器
         function generateGameQuestions(subj, count) {
             if (window.generatePaper) {
