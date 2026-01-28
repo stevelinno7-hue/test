@@ -183,12 +183,31 @@
         // ★★★ 防呆機制變數 ★★★
         let isSubmitting = false; // 用來標記是否正在交卷，若是，則允許跳轉
 
-        window.onload = function() {
-            if (window.Auth && !Auth.requireLogin()) return;
-            initVisibilityListener();
-            setupRefreshProtection(); // 啟動防重整保護
-            showSetupModal();
-        };
+       window.onload = function() {
+    // 1. 檢查登入狀態
+    if (window.Auth && !Auth.requireLogin()) return;
+    
+    // 2. 取得當前使用者
+    const currentUser = window.Auth ? Auth.getCurrentUser() : { username: 'guest' };
+    
+    // ★★★ 防呆核心：清除上一位使用者的殘留資料 ★★★
+    const lastUser = localStorage.getItem('last_exam_user');
+    
+    // 如果換人了 (例如從 user1 換成 user2)，或者根本沒有紀錄
+    if (lastUser && lastUser !== currentUser.username) {
+        console.log("偵測到使用者切換，清除舊資料...");
+        localStorage.removeItem('examResult'); // 清除上一位的成績單
+        localStorage.removeItem('temp_answers'); // 如果你有做暫存答案功能，也要清掉
+    }
+    
+    // 更新目前的使用者紀錄
+    localStorage.setItem('last_exam_user', currentUser.username);
+
+    // 3. 啟動其他防護與設定
+    initVisibilityListener();
+    setupRefreshProtection();
+    showSetupModal();
+};
 
         // ★★★ 核心：防重整保護邏輯 ★★★
         function setupRefreshProtection() {
@@ -442,39 +461,50 @@
             });
 
             const finalScore = Math.round((correctCount / mockQuestions.length) * 100);
-            const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
+            // ... (上面計算成績的程式碼不變) ...
+const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
 
-            const resultData = {
-                id: Date.now(),
-                date: new Date().toLocaleString(),
-                subject: examInfo.subject,
-                title: examInfo.title,
-                score: finalScore,
-                correctCount,
-                totalCount: mockQuestions.length,
-                wrongList,
-                tabSwitches: tabLog.length, 
-                cheat: {
-                    cheatLevel: (fastCount > 3) ? 'HIGH' : ((fastCount > 0) ? 'MEDIUM' : 'NORMAL'),
-                    fastCount: fastCount
-                },
-                analysis: { 
-                    cheatLevel: (fastCount > 5 || tabLog.length > 5) ? 'HIGH' : 'NORMAL', 
-                    fastCount, 
-                    tabSwitchCount: tabLog.length, 
-                    tabLogDetails: tabLog, 
-                    timeLog 
-                }
-            };
+const resultData = {
+    // 加入擁有者標記，以防萬一
+    owner: user.username, 
+    id: Date.now(),
+    date: new Date().toLocaleString(),
+    subject: examInfo.subject,
+    title: examInfo.title,
+    score: finalScore,
+    correctCount,
+    totalCount: mockQuestions.length,
+    wrongList,
+    tabSwitches: tabLog.length, 
+    cheat: {
+        cheatLevel: (fastCount > 3) ? 'HIGH' : ((fastCount > 0) ? 'MEDIUM' : 'NORMAL'),
+        fastCount: fastCount
+    },
+    analysis: { 
+        cheatLevel: (fastCount > 5 || tabLog.length > 5) ? 'HIGH' : 'NORMAL', 
+        fastCount, 
+        tabSwitchCount: tabLog.length, 
+        tabLogDetails: tabLog, 
+        timeLog 
+    }
+};
 
-            localStorage.setItem('examResult', JSON.stringify(resultData));
-            const historyKey = `history_${user.username}`;
-            try {
-                let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-                history.push(resultData);
-                localStorage.setItem(historyKey, JSON.stringify(history));
-            } catch (e) { console.error("History save failed", e); }
+// 1. 儲存「當前」結果 (給下一頁分析用)
+// 為了避免下一頁讀錯，我們多存一個 owner 欄位
+localStorage.setItem('examResult', JSON.stringify(resultData));
 
+// 2. 儲存「歷史」紀錄 (這是永久保存的，必須嚴格區分帳號)
+// ★★★ 關鍵：Key 必須包含 user.username (例如 history_student123) ★★★
+const historyKey = `history_${user.username}`; 
+
+try {
+    let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+    history.push(resultData);
+    localStorage.setItem(historyKey, JSON.stringify(history));
+    console.log(`已儲存至 ${user.username} 的歷史紀錄`);
+} catch (e) { console.error("History save failed", e); }
+
+// ... (後面雲端上傳與跳轉程式碼不變) ...
             if (user.username !== 'guest') {
                 try {
                     await Promise.race([
