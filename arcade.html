@@ -275,78 +275,83 @@
         </div>
     </main>
 
-    <script>
+<script>
         // ==========================================
-        // 🌐 全域變數與初始化
+        // 🌐 全域變數
         // ==========================================
+        let currentSubject = 'math';
+        let targetTags = [];
+        let gameQuestions = [];
+        let currentQIdx = 0;
+        let timerInterval;
+
         // ==========================================
-// 🌐 全域變數與初始化
-// ==========================================
-window.onload = function() {
-    // 1. 身分驗證與帳號綁定
-    const user = Auth.getCurrentUser();
-    if (!user) {
-        alert("請先登入！");
-        window.location.href = "index.html";
-        return;
-    }
-
-    // 更新側邊欄資訊
-    if(document.getElementById('sideUserName')) document.getElementById('sideUserName').innerText = user.name || user.username;
-    if(document.getElementById('sideUserRole')) document.getElementById('sideUserRole').innerText = user.role === 'teacher' ? '老師' : '學生';
-
-    // 2. 設定專屬的金幣 Key (例如: coins_student123)
-    // 這樣每個人登入時，只會讀取到自己的金幣，不會跟別人混用
-    const COIN_KEY = `coins_${user.username}`; 
-    const coinDisplay = document.getElementById('coinCount');
-
-    // 定義讀取金幣函式
-    window.loadCoins = function() {
-        const saved = localStorage.getItem(COIN_KEY);
-        return saved ? parseInt(saved) : 0;
-    };
-
-    // 定義儲存金幣函式 (並更新畫面)
-    window.saveCoins = function(amount) {
-        localStorage.setItem(COIN_KEY, amount);
-        if(coinDisplay) coinDisplay.innerText = amount;
-    };
-
-    // 初始化顯示金幣
-    let currentCoins = window.loadCoins();
-    if(coinDisplay) coinDisplay.innerText = currentCoins;
-
-    // ------------------------------------------------
-    // 以下是原本的網址參數讀取與題目生成邏輯
-    // ------------------------------------------------
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentSubject = urlParams.get('subject') || 'math';
-    const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
-    let targetTags = [];
-    if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
-        targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
-    }
-    if(document.getElementById('fcSubject')) document.getElementById('fcSubject').textContent = currentSubject;
-
-    // 將題目生成器掛載到 window 以便遊戲呼叫
-    window.generateGameQuestions = function(subj, count) {
-        if (window.generatePaper) {
-            let q = window.generatePaper({ 
-                subject: subj, 
-                total: count, 
-                tags: targetTags.length > 0 ? targetTags : [subj] 
-            }).filter(i => i && i.question);
-            
-            // 補齊題目防止當機
-            if (q.length < count) {
-                const backup = window.generatePaper({ subject: subj, total: count - q.length });
-                q = q.concat(backup);
+        // 🚀 系統初始化 (window.onload)
+        // ==========================================
+        window.onload = function() {
+            // 1. 身分驗證與帳號綁定
+            if (typeof Auth === 'undefined') {
+                console.error("Auth module not loaded");
+                alert("系統錯誤：無法載入驗證模組");
+                return;
             }
-            return q;
+
+            const user = Auth.getCurrentUser();
+            if (!user) {
+                alert("請先登入！");
+                window.location.href = "index.html";
+                return;
+            }
+
+            // 更新側邊欄資訊
+            const nameEl = document.getElementById('sideUserName');
+            const roleEl = document.getElementById('sideUserRole');
+            if(nameEl) nameEl.innerText = user.name || user.username;
+            if(roleEl) roleEl.innerText = user.role === 'teacher' ? '老師' : '學生';
+
+            // 2. 設定專屬的金幣 Key (例如: coins_student123)
+            const COIN_KEY = `coins_${user.username}`; 
+            const coinDisplay = document.getElementById('coinCount');
+
+            // 定義讀取金幣函式
+            window.loadCoins = function() {
+                const saved = localStorage.getItem(COIN_KEY);
+                return saved ? parseInt(saved) : 0;
+            };
+
+            // 定義儲存金幣函式 (並更新畫面)
+            window.saveCoins = function(amount) {
+                localStorage.setItem(COIN_KEY, amount);
+                if(coinDisplay) coinDisplay.innerText = amount;
+            };
+
+            // 初始化顯示金幣
+            let currentCoins = window.loadCoins();
+            if(coinDisplay) coinDisplay.innerText = currentCoins;
+
+            // 3. 讀取網址參數 (設定科目與年級)
+            const urlParams = new URLSearchParams(window.location.search);
+            currentSubject = urlParams.get('subject') || 'math';
+            const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
+            
+            if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
+                targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
+            }
+            
+            const subjTitle = document.getElementById('fcSubject');
+            if(subjTitle) subjTitle.textContent = getSubjectName(currentSubject);
+        };
+
+        // 輔助：轉換科目名稱
+        function getSubjectName(code) {
+            const map = { 'math': '數學', 'chinese': '國語', 'english': '英文', 'physics': '物理', 'biology': '生物' };
+            return map[code] || code;
         }
-        return [];
-    };
-};
+
+        // ==========================================
+        // ⚙️ 核心功能函式
+        // ==========================================
+
         // 題目生成器
         function generateGameQuestions(subj, count) {
             if (window.generatePaper) {
@@ -363,6 +368,8 @@ window.onload = function() {
                 }
                 return q;
             }
+            // 如果沒有生成器，回傳假資料避免當機
+            console.warn("無法載入題目生成器");
             return [];
         }
 
@@ -377,8 +384,12 @@ window.onload = function() {
         function startGame(id) {
             document.getElementById('gameMenu').classList.add('hidden');
             document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`game-${id}`).classList.remove('hidden');
-            document.getElementById(`game-${id}`).classList.add('active');
+            
+            const gameSection = document.getElementById(`game-${id}`);
+            if(gameSection) {
+                gameSection.classList.remove('hidden');
+                gameSection.classList.add('active');
+            }
             
             if(id === 'flashcard') initFlashcard();
             if(id === 'math_rush') initMathRush();
@@ -394,16 +405,15 @@ window.onload = function() {
                 e.classList.remove('active');
                 e.classList.add('hidden');
             });
-            clearInterval(timerInterval);
+            if (timerInterval) clearInterval(timerInterval);
         }
 
         // ==========================================
         // 🃏 遊戲 1: 智能閃示卡
         // ==========================================
-        let gameQuestions = [], currentQIdx = 0;
         function initFlashcard() {
             gameQuestions = generateGameQuestions(currentSubject, 10);
-            if(!gameQuestions.length) { alert("⚠️ 無題目"); backToMenu(); return; }
+            if(!gameQuestions.length) { alert("⚠️ 無題目，請檢查題庫設定"); backToMenu(); return; }
             currentQIdx = 0; renderFlashcard();
         }
         function renderFlashcard() {
@@ -421,9 +431,9 @@ window.onload = function() {
         function nextFlashcard() { currentQIdx++; renderFlashcard(); }
 
         // ==========================================
-        // ⏱️ 遊戲 2: 極速挑戰
+        // ⏱️ 遊戲 2: 極速挑戰 (含金幣獎勵)
         // ==========================================
-        let score = 0, timer = 60, timerInterval;
+        let mrScore = 0, mrTimer = 60;
         function initMathRush() {
             document.getElementById('mrGameOver').classList.add('hidden');
             document.getElementById('mrGameArea').classList.add('hidden');
@@ -433,14 +443,16 @@ window.onload = function() {
         function startSpeedGame(selectedTime) {
             gameQuestions = generateGameQuestions(currentSubject, 50);
             if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
-            score = 0; timer = selectedTime; currentQIdx = 0;
+            mrScore = 0; mrTimer = selectedTime; currentQIdx = 0;
             document.getElementById('mrTimeSelector').classList.add('hidden');
             document.getElementById('mrGameArea').classList.remove('hidden');
-            document.getElementById('mrTimer').textContent = timer;
+            document.getElementById('mrTimer').textContent = mrTimer;
+            
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                timer--; document.getElementById('mrTimer').textContent = timer;
-                if(timer<=0) endMathRush();
+                mrTimer--; 
+                document.getElementById('mrTimer').textContent = mrTimer;
+                if(mrTimer<=0) endMathRush();
             }, 1000);
             renderMathQuestion();
         }
@@ -454,29 +466,28 @@ window.onload = function() {
                 btn.innerHTML = opt;
                 btn.onclick = () => {
                     let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
-                    if(isCorrect) { score += 100; currentQIdx++; renderMathQuestion(); }
-                    else { score = Math.max(0, score-50); btn.classList.add('bg-red-100', 'text-red-600'); }
-                    document.getElementById('mrScore').textContent = score;
+                    if(isCorrect) { mrScore += 100; currentQIdx++; renderMathQuestion(); }
+                    else { mrScore = Math.max(0, mrScore-50); btn.classList.add('bg-red-100', 'text-red-600'); }
+                    document.getElementById('mrScore').textContent = mrScore;
                 };
                 con.appendChild(btn);
             });
             if(window.MathJax) MathJax.typesetPromise();
         }
         function endMathRush() {
-    clearInterval(timerInterval);
-    document.getElementById('mrGameArea').classList.add('hidden');
-    document.getElementById('mrGameOver').classList.remove('hidden');
-    document.getElementById('mrFinalScore').textContent = score;
+            clearInterval(timerInterval);
+            document.getElementById('mrGameArea').classList.add('hidden');
+            document.getElementById('mrGameOver').classList.remove('hidden');
+            document.getElementById('mrFinalScore').textContent = mrScore;
 
-    // ★★★ 加入金幣結算 ★★★
-    // 假設每 100 分換 1 金幣
-    const coinsEarned = Math.floor(score / 100);
-    if (coinsEarned > 0) {
-        let current = window.loadCoins(); // 讀取目前使用者的金幣
-        window.saveCoins(current + coinsEarned); // 存入專屬帳號
-        alert(`恭喜！獲得 ${coinsEarned} 枚金幣！`);
-    }
-}
+            // 金幣獎勵邏輯
+            const coinsEarned = Math.floor(mrScore / 100);
+            if (coinsEarned > 0) {
+                let current = window.loadCoins(); 
+                window.saveCoins(current + coinsEarned);
+                alert(`時間到！恭喜獲得 ${coinsEarned} 枚金幣！`);
+            }
+        }
 
         // ==========================================
         // 🧠 遊戲 3: 腦力配對 (強力修復版)
@@ -486,7 +497,7 @@ window.onload = function() {
         function initMemoryMatch() {
             let rawQuestions = generateGameQuestions(currentSubject, 6);
             
-            // 🚨 強制保底機制：如果讀不到題目，自動生成基礎數學題，保證遊戲可玩
+            // 保底題目
             if (!rawQuestions || rawQuestions.length < 6) {
                 console.warn("題庫不足，啟用保底題目");
                 rawQuestions = [
@@ -502,12 +513,11 @@ window.onload = function() {
             mmFlipped = []; mmLocked = false; mmMatches = 0;
             document.getElementById('mmGameOver').classList.add('hidden');
             document.getElementById('mmGrid').classList.remove('hidden');
+            document.getElementById('mmMatches').textContent = 0;
 
             mmCards = [];
             rawQuestions.slice(0, 6).forEach((q, index) => {
                 let ansText = resolveAnswerText(q);
-                // 卡片結構：type Q = 題目, type A = 答案
-                // 加入 display 樣式，確保文字小而清晰，並強制黑色字體
                 mmCards.push({ id: index, type: 'Q', content: q.question, display: 'text-sm font-bold text-slate-800' });
                 mmCards.push({ id: index, type: 'A', content: ansText, display: 'text-lg font-extrabold text-blue-600' });
             });
@@ -518,8 +528,6 @@ window.onload = function() {
             mmCards.forEach((card) => {
                 const div = document.createElement('div');
                 div.className = "relative h-24 md:h-32 cursor-pointer perspective group";
-                
-                // 這裡修正了卡片結構，確保內容面 (card-front) 的背景是白色，文字是黑色
                 div.innerHTML = `
                     <div class="card-inner w-full h-full relative rounded-2xl shadow-md border border-slate-200">
                         <div class="card-back absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center z-10">
@@ -529,12 +537,9 @@ window.onload = function() {
                             <div class="${card.display} break-words w-full">${card.content}</div>
                         </div>
                     </div>`;
-                
                 div.onclick = () => handleMMClick(div, card);
                 grid.appendChild(div);
             });
-            
-            // 重新渲染數學公式
             if(window.MathJax) setTimeout(() => MathJax.typesetPromise(), 100);
         }
 
@@ -549,19 +554,21 @@ window.onload = function() {
                 mmLocked = true;
                 const [first, second] = mmFlipped;
                 
-                // 檢查是否配對成功
                 if(first.card.id === second.card.id && first.card.type !== second.card.type) {
                     setTimeout(() => {
                         first.el.classList.add('matched');
                         second.el.classList.add('matched');
-                        // 隱藏內容避免干擾
                         first.el.style.visibility = 'hidden';
                         second.el.style.visibility = 'hidden';
-                        
                         mmFlipped = []; mmLocked = false;
                         mmMatches++;
                         document.getElementById('mmMatches').textContent = mmMatches;
-                        if(mmMatches === 6) document.getElementById('mmGameOver').classList.remove('hidden');
+                        if(mmMatches === 6) {
+                            document.getElementById('mmGameOver').classList.remove('hidden');
+                            // 腦力配對獎勵
+                            let current = window.loadCoins();
+                            window.saveCoins(current + 20); // 這裡給固定 20 金幣
+                        }
                     }, 600);
                 } else {
                     setTimeout(() => {
@@ -576,7 +583,7 @@ window.onload = function() {
         // ==========================================
         // ⚔️ 遊戲 4: 勇者鬥惡龍
         // ==========================================
-        let rpgHp = 200, monsterHp = 100;
+        let rpgHp = 100, monsterHp = 100;
         function initRPG() {
             gameQuestions = generateGameQuestions(currentSubject, 20);
             if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
@@ -588,7 +595,12 @@ window.onload = function() {
         function updateMonsterHp(val) {
             monsterHp = Math.max(0, val);
             document.getElementById('monsterHpBar').style.width = monsterHp + '%';
-            if(monsterHp === 0) { alert("🎉 恭喜！你擊敗了惡龍！"); backToMenu(); }
+            if(monsterHp === 0) { 
+                alert("🎉 恭喜！你擊敗了惡龍！獲得 50 金幣！"); 
+                let current = window.loadCoins();
+                window.saveCoins(current + 50);
+                backToMenu(); 
+            }
         }
         function renderRPGQuestion() {
             const q = gameQuestions[currentQIdx % gameQuestions.length];
@@ -619,21 +631,26 @@ window.onload = function() {
         // ==========================================
         // 💣 遊戲 5: 拆彈專家
         // ==========================================
-        let bombStreak = 0, bombTarget = 5;
+        let bombStreak = 0, bombTarget = 5, bombTimerValue = 10;
         function initDefuseBomb() {
             gameQuestions = generateGameQuestions(currentSubject, 20);
             if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
-            bombStreak = 0; timer = 10; currentQIdx = 0;
+            bombStreak = 0; bombTimerValue = 10; currentQIdx = 0;
             document.getElementById('bombExplosion').classList.add('hidden');
             document.getElementById('bombSuccess').classList.add('hidden');
             updateBombWires(); startBombTimer(); renderBombQuestion();
         }
         function startBombTimer() {
             if(timerInterval) clearInterval(timerInterval);
-            timer = 10; document.getElementById('bombTimer').textContent = timer;
+            bombTimerValue = 10; 
+            document.getElementById('bombTimer').textContent = bombTimerValue;
             timerInterval = setInterval(() => {
-                timer--; document.getElementById('bombTimer').textContent = timer;
-                if(timer <= 0) { clearInterval(timerInterval); document.getElementById('bombExplosion').classList.remove('hidden'); }
+                bombTimerValue--; 
+                document.getElementById('bombTimer').textContent = bombTimerValue;
+                if(bombTimerValue <= 0) { 
+                    clearInterval(timerInterval); 
+                    document.getElementById('bombExplosion').classList.remove('hidden'); 
+                }
             }, 1000);
         }
         function updateBombWires() {
@@ -657,9 +674,17 @@ window.onload = function() {
                     let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
                     if(isCorrect) {
                         bombStreak++; updateBombWires();
-                        if(bombStreak >= bombTarget) { clearInterval(timerInterval); document.getElementById('bombSuccess').classList.remove('hidden'); }
+                        if(bombStreak >= bombTarget) { 
+                            clearInterval(timerInterval); 
+                            document.getElementById('bombSuccess').classList.remove('hidden'); 
+                            let current = window.loadCoins();
+                            window.saveCoins(current + 30); // 拆彈成功獎勵
+                        }
                         else { currentQIdx++; startBombTimer(); renderBombQuestion(); }
-                    } else { clearInterval(timerInterval); document.getElementById('bombExplosion').classList.remove('hidden'); }
+                    } else { 
+                        clearInterval(timerInterval); 
+                        document.getElementById('bombExplosion').classList.remove('hidden'); 
+                    }
                 };
                 con.appendChild(btn);
             });
@@ -703,22 +728,32 @@ window.onload = function() {
                 btn.onclick = () => {
                     let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
                     if(isCorrect) {
-                        wheelScore += (100 * currentMultiplier);
+                        const points = 100 * currentMultiplier;
+                        wheelScore += points;
                         document.getElementById('wheelScore').textContent = wheelScore;
-                        alert(`🎉 答對！獲得 ${100 * currentMultiplier} 分`);
+                        alert(`🎉 答對！獲得 ${points} 分`);
+                        
+                        // 轉盤金幣：每 1000 分給 1 金幣
+                        if(wheelScore % 1000 === 0) {
+                             let current = window.loadCoins();
+                             window.saveCoins(current + 1);
+                        }
                     } else { alert("💥 答錯了..."); }
                     currentQIdx++;
-                    document.getElementById('wheelQuizArea').style.opacity = '0.5';
-                    document.getElementById('wheelQuizArea').style.pointerEvents = 'none';
-                    document.getElementById('spinBtn').disabled = false;
-                    document.getElementById('wheelCircle').style.transform = 'rotate(0deg)';
-                    document.getElementById('wheelMultiplier').textContent = 'x?';
-                    document.getElementById('wheelQuestion').textContent = '請先轉動轉盤...';
-                    con.innerHTML = '';
+                    resetWheelState();
                 };
                 con.appendChild(btn);
             });
             if(window.MathJax) MathJax.typesetPromise();
+        }
+        function resetWheelState() {
+            document.getElementById('wheelQuizArea').style.opacity = '0.5';
+            document.getElementById('wheelQuizArea').style.pointerEvents = 'none';
+            document.getElementById('spinBtn').disabled = false;
+            document.getElementById('wheelCircle').style.transform = 'rotate(0deg)';
+            document.getElementById('wheelMultiplier').textContent = 'x?';
+            document.getElementById('wheelQuestion').textContent = '請先轉動轉盤...';
+            document.getElementById('wheelOptions').innerHTML = '';
         }
     </script>
 </body>
