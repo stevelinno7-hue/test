@@ -71,8 +71,17 @@ const Auth = {
         }
     },
 
+    // ★★★ 關鍵修改：登出時清除敏感資料 ★★★
     logout: function() {
+        // 1. 移除登入狀態
         localStorage.removeItem("currentUser");
+
+        // 2. 清除考試相關的暫存 (防止資料外洩給下一個使用者)
+        localStorage.removeItem("examResult");      // 清除上一位的成績單
+        localStorage.removeItem("last_exam_user");  // 清除上一位的考試身分紀錄
+        localStorage.removeItem("temp_answers");    // 清除暫存答案(若有的話)
+
+        // 3. 跳轉回登入頁
         window.location.href = "index.html";
     },
 
