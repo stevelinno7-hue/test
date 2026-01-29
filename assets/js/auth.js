@@ -118,7 +118,10 @@ const Auth = {
             localStorage.setItem(this.dbKey, JSON.stringify(allUsers));
         }
     },
-    
+     getCurrentUser: function() {
+        const userStr = localStorage.getItem('cloud_academy_user');
+        return userStr ? JSON.parse(userStr) : null;
+    },
 };
 
 // 初始化
