@@ -119,10 +119,7 @@ const Auth = {
         }
     },
     
-    getCurrentUser: function() {
-        const userStr = localStorage.getItem("currentUser");
-        return userStr ? JSON.parse(userStr) : null;
-    }
+    
         // ... (保留原本的 getCurrentUser, login, logout, requireLogin 等) ...
 
     getCurrentUser: function() {
