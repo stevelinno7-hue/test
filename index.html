@@ -38,14 +38,13 @@
             <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl text-white flex items-center justify-center font-bold text-xl shadow-lg">學</div>
             <span class="text-2xl font-bold text-gray-800 tracking-wide">雲端學院</span>
         </div>
-        <div class="hidden md:flex gap-8 text-gray-600 font-medium">
-            <a href="#features" class="hover:text-blue-600 transition">平台特色</a>
-            <a href="#roadmap" class="hover:text-blue-600 transition">平台里程</a>
-            <a href="#stats" class="hover:text-blue-600 transition">學習成效</a>
-            <a href="#pricing" class="hover:text-blue-600 transition">方案費用</a>
-            <a href="#faq" class="hover:text-blue-600 transition">常見問題</a>
-            
-        </div>
+       <div class="hidden lg:flex gap-8 text-gray-600 font-medium">
+    <a href="#features" class="hover:text-blue-600 transition">平台特色</a>
+    <a href="#roadmap" class="hover:text-blue-600 transition">平台里程</a>
+    <a href="#stats" class="hover:text-blue-600 transition">學習成效</a>
+    <a href="#pricing" class="hover:text-blue-600 transition">方案費用</a>
+    <a href="#faq" class="hover:text-blue-600 transition">常見問題</a>
+</div>
         <div>
             <a href="register.html" class="bg-blue-600 text-white px-5 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-md">
                 免費註冊
@@ -53,7 +52,7 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-6 pt-32 pb-12 md:pb-20 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
+    <main class="max-w-7xl mx-auto px-6 pt-32 pb-12 md:pb-20 flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
         
         <div class="md:w-1/2 space-y-6">
             <div class="inline-block bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-bold tracking-wide mb-2 animate-pulse">
@@ -88,27 +87,26 @@
                 
                 <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">會員登入</h2>
 
-                <form id="loginForm" class="space-y-5">
-                    <div>
-                        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">帳號</label>
-                        <div class="relative">
-                            <i class="fas fa-user absolute left-3 top-3.5 text-gray-400"></i>
-                            <input type="text" id="username" class="w-full pl-10 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition" placeholder="輸入帳號" value="">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">密碼</label>
-                        <div class="relative">
-                            <i class="fas fa-lock absolute left-3 top-3.5 text-gray-400"></i>
-                            <input type="password" id="password" class="w-full pl-10 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition" placeholder="輸入密碼" value="">
-                        </div>
-                    </div>
-                    
-                    <button type="submit" id="loginBtn" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3.5 rounded-lg font-bold hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition transform active:scale-95 flex justify-center items-center gap-2">
-                        <span>立即登入</span> <i class="fas fa-arrow-right"></i>
-                    </button>
-                </form>
-
+              <form id="loginForm" class="space-y-5">
+    <div>
+        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">帳號</label>
+        <div class="relative">
+            <i class="fas fa-user absolute left-3 top-3.5 text-gray-400"></i>
+            <input type="text" id="username" class="w-full pl-10 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition text-base" placeholder="輸入帳號" value="">
+        </div>
+    </div>
+    <div>
+        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">密碼</label>
+        <div class="relative">
+            <i class="fas fa-lock absolute left-3 top-3.5 text-gray-400"></i>
+            <input type="password" id="password" class="w-full pl-10 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition text-base" placeholder="輸入密碼" value="">
+        </div>
+    </div>
+    
+    <button type="submit" id="loginBtn" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3.5 rounded-lg font-bold hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition transform active:scale-95 flex justify-center items-center gap-2">
+        <span>立即登入</span> <i class="fas fa-arrow-right"></i>
+    </button>
+</form>
                 <div class="mt-6 pt-6 border-t border-gray-100 text-center">
                     <a href="register.html" class="inline-block text-blue-600 font-bold hover:underline">
                         還沒有帳號？立即註冊
@@ -176,9 +174,10 @@
                 <p class="text-gray-500 mt-4">從構想到實踐，我們持續進化的開發歷程</p>
             </div>
 
-            <div class="relative pl-8 md:pl-0">
-                <div class="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200 md:left-1/2 md:-ml-0.5"></div>
-
+            <div class="relative pl-12 md:pl-0">
+    <div class="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200 md:left-1/2 md:-ml-0.5"></div>
+    
+    </div>
                 <div class="space-y-12">
 
                     <div class="relative flex flex-col md:flex-row items-center justify-between group">
