@@ -69,7 +69,24 @@
     <script src="mockdata/templates_geography_core.js"></script>
     <script src="mockdata/templates_civics_core.js"></script>
 </head>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. 檢查 Auth 是否載入
+        if (typeof Auth === 'undefined') {
+            console.error("Auth 模組未載入");
+            return;
+        }
 
+        // 2. 檢查是否有登入者
+        const currentUser = Auth.getCurrentUser();
+
+        // 3. 如果沒人登入，或者是 Guest (如果你不想讓 Guest 用)，就踢走
+        if (!currentUser) {
+            alert("⚠️ 您尚未登入，請先進行登入！");
+            window.location.href = 'index.html'; // 假設你的登入頁是 index.html
+        }
+    });
+</script>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden bg-[#f8fafc]">
 
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
