@@ -32,35 +32,18 @@
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
-        <div class="px-4 py-6">
-    <div class="bg-white border border-slate-100 rounded-3xl p-5 text-center shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative overflow-hidden group">
-        
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
-
-        <div class="mb-4 relative inline-block">
-            <div class="w-16 h-16 bg-slate-100 rounded-full mx-auto flex items-center justify-center text-3xl shadow-inner mb-2">
-                😀 </div>
-            <h3 class="font-bold text-slate-800 text-lg" id="sideUserName">讀取中...</h3>
-            <div class="text-xs text-slate-400 font-medium bg-slate-50 inline-block px-2 py-0.5 rounded-full border border-slate-100 mt-1" id="sideUserRole">學生</div>
-        </div>
-
-        <div class="mt-2 bg-slate-50 rounded-xl p-3 border border-slate-100">
-            <div class="flex justify-between items-end mb-2">
-                <div class="flex items-baseline gap-1">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Lv.</span>
-                    <span id="displayLevel" class="text-2xl font-black text-blue-600 leading-none">1</span>
+        <div class="p-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
                 </div>
-                <span class="text-[10px] font-bold text-slate-400"><span id="displayXP">0</span>/100 XP</span>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                    <i class="fas fa-pen mr-1"></i> 編輯年級
+                </button>
             </div>
-            
-            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner">
-                <div id="xpBar" class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
-            </div>
-            <p class="text-[10px] text-slate-400 mt-2 text-center">再 <span id="xpToNext" class="text-blue-500 font-bold">100</span> XP 升級</p>
         </div>
-
-    </div>
-</div>
          <nav class="flex-grow px-3 space-y-1">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 錯題補救</a>
@@ -200,26 +183,64 @@
         </div>
     </div>
 </div>
-        <div id="levelUpModal" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white rounded-3xl p-8 text-center max-w-sm mx-4 shadow-2xl relative overflow-hidden animate-[bounce_1s_infinite]">
-                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-100/50 to-transparent pointer-events-none"></div>
-                <div class="text-6xl mb-4">🆙</div>
-                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-600 mb-2">LEVEL UP!</h2>
-                <p class="text-gray-500 font-bold mb-6">恭喜升上 <span id="newLevelNum" class="text-2xl text-blue-600">2</span> 等！</p>
-                <button onclick="document.getElementById('levelUpModal').classList.add('hidden')" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">
-                    太棒了！
-                </button>
-            </div>
-        </div>
     </main>
 
-<script>
-// ====================================================
+ <script>
+     // ==========================================
+// ✏️ 個人資料編輯功能
+// ==========================================
+
+// 1. 開啟編輯視窗
+function openProfileModal() {
+    const user = Auth.getCurrentUser();
+    if (!user) {
+        alert("請先登入！");
+        return;
+    }
+
+    // 設定下拉選單為目前的年級
+    const select = document.getElementById('editGradeSelect');
+    if (user.grade) {
+        select.value = user.grade;
+    }
+    
+    // 顯示視窗
+    document.getElementById('profileModal').classList.remove('hidden');
+}
+
+// 2. 關閉編輯視窗
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+// 3. 儲存修改
+function saveProfile() {
+    const newGrade = document.getElementById('editGradeSelect').value;
+    
+    // 呼叫 Auth 模組更新資料庫 (這會同時更新 LocalStorage 和 mockdata)
+    if (Auth.updateUser) {
+        Auth.updateUser('grade', newGrade);
+        
+        // 更新畫面上的文字
+        const roleEl = document.getElementById('sideUserRole');
+        if (roleEl) roleEl.innerText = newGrade;
+        
+        // 提示成功
+        alert(`修改成功！目前年級已更新為：${newGrade}`);
+        closeProfileModal();
+        
+        // 如果是在 dashboard，可能需要重新整理頁面以套用新題庫設定
+        // location.reload(); 
+    } else {
+        console.error("Auth.updateUser 函式不存在，請檢查 auth.js");
+        alert("系統錯誤：無法儲存資料");
+    }
+}
+   // ====================================================
 // 1. 全域變數與初始化
 // ====================================================
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 let isSyncing = false;
-const XP_PER_LEVEL = 100; // 每級經驗值需求
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
@@ -227,106 +248,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             const nameEl = document.getElementById('sideUserName');
             const roleEl = document.getElementById('sideUserRole');
-            if (nameEl) nameEl.textContent = user.name || user.username;
+            if (nameEl) nameEl.textContent = user.name;
             if (roleEl) roleEl.textContent = user.grade || "學生";
         }
-        
-        // 初始化等級條
-        updateLevelUI();
-
-        // 執行載入結果
+        // 執行載入
         loadExamResult();
     } catch (e) {
         console.error("初始化失敗:", e);
     }
 });
-
-// ==========================================
-// 🆙 等級系統核心邏輯
-// ==========================================
-function loadXP() {
-    const user = Auth.getCurrentUser();
-    if (!user) return 0;
-    const key = `xp_${user.username}`;
-    return parseInt(localStorage.getItem(key) || 0);
-}
-
-function addXP(amount) {
-    const user = Auth.getCurrentUser();
-    if (!user) return;
-    
-    const key = `xp_${user.username}`;
-    let currentXP = loadXP();
-    let oldLevel = Math.floor(currentXP / XP_PER_LEVEL) + 1;
-    
-    // 更新數值
-    let newXP = currentXP + amount;
-    localStorage.setItem(key, newXP);
-    
-    // 檢查是否升級
-    let newLevel = Math.floor(newXP / XP_PER_LEVEL) + 1;
-    if (newLevel > oldLevel) {
-        showLevelUp(newLevel);
-    }
-    
-    updateLevelUI();
-    console.log(`獲得 ${amount} XP，目前總經驗: ${newXP}`);
-}
-
-function updateLevelUI() {
-    const totalXP = loadXP();
-    const currentLevel = Math.floor(totalXP / XP_PER_LEVEL) + 1;
-    const currentLevelXP = totalXP % XP_PER_LEVEL;
-    const percentage = (currentLevelXP / XP_PER_LEVEL) * 100;
-
-    const elLevel = document.getElementById('displayLevel');
-    const elXP = document.getElementById('displayXP');
-    const elBar = document.getElementById('xpBar');
-    const elNext = document.getElementById('xpToNext');
-
-    if (elLevel) elLevel.innerText = currentLevel;
-    if (elXP) elXP.innerText = currentLevelXP;
-    if (elBar) elBar.style.width = `${percentage}%`;
-    if (elNext) elNext.innerText = XP_PER_LEVEL - currentLevelXP;
-}
-
-function showLevelUp(level) {
-    document.getElementById('newLevelNum').innerText = level;
-    document.getElementById('levelUpModal').classList.remove('hidden');
-}
-
-// ==========================================
-// ✏️ 個人資料編輯功能
-// ==========================================
-function openProfileModal() {
-    const user = Auth.getCurrentUser();
-    if (!user) { alert("請先登入！"); return; }
-    
-    const select = document.getElementById('editGradeSelect');
-    if (user.grade) select.value = user.grade;
-    
-    document.getElementById('profileModal').classList.remove('hidden');
-}
-
-function closeProfileModal() {
-    document.getElementById('profileModal').classList.add('hidden');
-}
-
-function saveProfile() {
-    const newGrade = document.getElementById('editGradeSelect').value;
-    
-    if (Auth.updateUser) {
-        Auth.updateUser('grade', newGrade);
-        
-        const roleEl = document.getElementById('sideUserRole');
-        if (roleEl) roleEl.innerText = newGrade;
-        
-        alert(`修改成功！目前年級已更新為：${newGrade}`);
-        closeProfileModal();
-    } else {
-        alert("系統錯誤：無法儲存資料");
-    }
-}
 
 // ====================================================
 // 2. 核心邏輯：載入並渲染
@@ -353,7 +283,7 @@ function loadExamResult() {
         applyCheatResult(result);
         renderWrongList(result.wrongList);
 
-        // --- ★ 核心判斷：是否自動觸發同步與發放XP ★ ---
+        // --- ★ 核心判斷：是否自動觸發同步 ★ ---
         const urlParams = new URLSearchParams(window.location.search);
         const isNewResult = urlParams.get('mode') === 'new';
         const btn = document.getElementById('btnSave');
@@ -362,13 +292,6 @@ function loadExamResult() {
             console.log("偵測為新測驗結果，啟動自動同步...");
             saveToCloud(); // 執行同步
             
-            // ★ 新增：發放測驗獎勵 (例如：分數除以10當作XP)
-            if(result.score > 0) {
-                const earnedXP = Math.ceil(result.score / 10);
-                addXP(earnedXP); 
-                // 可以選擇是否彈出提示 alert(`測驗完成！獲得 ${earnedXP} 經驗值！`);
-            }
-
             // 移除網址參數，避免重新整理頁面重複觸發
             window.history.replaceState({}, document.title, window.location.pathname);
         } else {
@@ -450,11 +373,13 @@ function saveToCloud() {
 // ====================================================
 
 function normalizeExamData(data) {
+    // 如果沒有 tabCheat 物件，則根據外層的 tabSwitches 建立它
     if (!data.tabCheat) {
         const switches = data.tabSwitches || 0;
         let level = (switches > 5) ? 'HIGH' : (switches > 2 ? 'MEDIUM' : 'NORMAL');
         data.tabCheat = { level: level, totalSwitch: switches };
     }
+    // 確保 cheat 物件存在
     if (!data.cheat) {
         data.cheat = { cheatLevel: 'NORMAL', fastCount: 0 };
     }
@@ -480,22 +405,28 @@ function renderRadarChart(baseScore = 0) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
+    // 定義維度
     const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
+    
+    // 從 localStorage 取得原始資料來分析錯題
     const resultStr = localStorage.getItem('examResult');
     const result = JSON.parse(resultStr || "{}");
     const wrongList = result.wrongList || [];
     
+    // 初始分數（以總分為基準）
     let chartData = labels.map(() => Math.max(40, baseScore));
 
+    // 如果有錯題，根據錯題的 concept 扣分
     wrongList.forEach(q => {
         const concept = q.concept || "";
         labels.forEach((label, index) => {
             if (concept.includes(label)) {
-                chartData[index] -= 10;
+                chartData[index] -= 10; // 錯一題在該維度扣 10 分
             }
         });
     });
 
+    // 確保分數不低於 40
     chartData = chartData.map(v => Math.max(40, v));
 
     new Chart(ctx, {
@@ -526,37 +457,41 @@ function renderRadarChart(baseScore = 0) {
         }
     });
 }
-
 function applyCheatResult(result) {
     const timeBox = document.getElementById('timeCheatBox');
     const timeText = document.getElementById('timeCheatText');
     const tabBox = document.getElementById('tabCheatBox');
     const tabText = document.getElementById('tabCheatText');
 
+    // 1. 確保數據存在，若無則給予預設值
     const cheatData = result.cheat || { cheatLevel: 'NORMAL', fastCount: 0 };
     const tabData = result.tabCheat || { level: 'NORMAL', totalSwitch: 0 };
 
+    // 2. 定義樣式對照表
     const styles = {
         'NORMAL': ['border-green-200', 'bg-green-50', 'text-green-700', '正常'],
         'MEDIUM': ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '異常'],
         'HIGH':   ['border-red-200', 'bg-red-50', 'text-red-700', '嚴重']
     };
 
+    // 3. 處理作答節奏 (Time)
     if (timeBox && timeText) {
+        // 使用安全抓取，若 cheatLevel 找不到則回傳 NORMAL
         const s = styles[cheatData.cheatLevel] || styles['NORMAL'];
         timeBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]}`;
         timeText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
         timeText.innerHTML = `作答節奏${s[3]} (過快題數：${cheatData.fastCount || 0})`;
     }
 
+    // 4. 處理分頁切換 (Tab)
     if (tabBox && tabText) {
+        // 使用安全抓取，若 level 找不到則回傳 NORMAL
         const s = styles[tabData.level] || styles['NORMAL'];
         tabBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]}`;
         tabText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
         tabText.innerHTML = `分頁切換${s[3]} (切換次數：${tabData.totalSwitch || 0})`;
     }
 }
-
 function renderWrongList(wrongList) {
     const listContainer = document.getElementById('wrongList');
     if (!listContainer) return;
