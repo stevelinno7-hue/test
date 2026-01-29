@@ -123,6 +123,56 @@ const Auth = {
         const userStr = localStorage.getItem("currentUser");
         return userStr ? JSON.parse(userStr) : null;
     }
+        // ... (保留原本的 getCurrentUser, login, logout, requireLogin 等) ...
+
+    getCurrentUser: function() {
+        const userStr = localStorage.getItem('cloud_academy_user');
+        return userStr ? JSON.parse(userStr) : null;
+    },
+
+    updateUser: function(key, value) {
+        const user = this.getCurrentUser();
+        if (user) {
+            user[key] = value;
+            localStorage.setItem('cloud_academy_user', JSON.stringify(user));
+            return user;
+        }
+        return null;
+    },
+    // ==========================================
+    // 🎮 Gamification (新增的經驗值系統)
+    // ==========================================
+    
+    // 獲得經驗值 (回傳是否升級)
+    addXP: function(amount) {
+        let user = this.getCurrentUser();
+        if (!user) return false;
+
+        // 初始化 XP
+        if (!user.xp) user.xp = 0;
+        
+        const oldLevel = this.calculateLevel(user.xp);
+        user.xp += amount;
+        const newLevel = this.calculateLevel(user.xp);
+
+        // 存檔
+        this.updateUser('xp', user.xp);
+        
+        // 如果等級變高了，回傳 true
+        return newLevel > oldLevel;
+    },
+
+    // 計算等級 (每 100 XP 升一級)
+    calculateLevel: function(xp) {
+        return Math.floor((xp || 0) / 100) + 1;
+    },
+
+    // 取得當前等級進度 (0% - 100%)
+    getLevelProgress: function() {
+        const user = this.getCurrentUser();
+        const xp = user.xp || 0;
+        return (xp % 100); // 因為每 100 升一級，餘數就是當前進度
+    }
 };
 
 // 初始化
