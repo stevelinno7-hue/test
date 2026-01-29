@@ -467,14 +467,21 @@ function saveProfile() {
                 }
 
                 const explain = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : (q.explanation || "無解析");
-                // 處理引號問題，防止 onclick 報錯
                 const safeQuestion = q.question.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-
+                
+                // --- ✨ 修改重點開始：加入「提問」按鈕 ---
                 const html = `
-                    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm group hover:border-blue-200 transition">
                         <div class="flex justify-between items-start mb-4">
-                            <h3 class="font-bold text-gray-800 text-lg">${q.question}</h3>
-                            <button onclick="removeQuestion('${safeQuestion}')" class="text-gray-400 hover:text-green-600" title="標記為已懂 (移除)"><i class="fas fa-check-circle text-xl"></i></button>
+                            <h3 class="font-bold text-gray-800 text-lg flex-grow mr-4">${q.question}</h3>
+                            <div class="flex gap-2 shrink-0">
+                                <button onclick="askInForum('${safeQuestion}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1">
+                                    <i class="fas fa-comment-dots"></i> AI 解題
+                                </button>
+                                <button onclick="removeQuestion('${safeQuestion}')" class="px-3 py-1.5 bg-gray-50 text-gray-400 rounded-lg text-xs font-bold hover:bg-green-50 hover:text-green-600 transition" title="標記為已懂 (移除)">
+                                    <i class="fas fa-check"></i> 已懂
+                                </button>
+                            </div>
                         </div>
                         <div class="space-y-1 mb-4 text-sm">${optionsHtml}</div>
                         <div class="bg-slate-50 p-4 rounded text-sm text-slate-700 border-l-4 border-indigo-400">
@@ -482,11 +489,33 @@ function saveProfile() {
                         </div>
                     </div>
                 `;
+                // --- 修改重點結束 ---
+                
                 container.insertAdjacentHTML('beforeend', html);
             });
             if (window.MathJax) MathJax.typesetPromise();
         }
-
+// ✨ 跳轉到論壇並自動填寫
+        window.askInForum = function(qText) {
+            // 找出完整的題目物件
+            const targetQ = wrongDB.find(q => q.question.replace(/'/g, "\\'").replace(/"/g, '&quot;') === qText || q.question === qText);
+            
+            if (targetQ) {
+                // 準備草稿資料
+                const draftPost = {
+                    title: `[請教] 關於錯題：${targetQ.question.substring(0, 15)}...`,
+                    content: `AI 老師您好，我在練習時做錯了這題，請幫我詳細解說觀念：\n\n**題目**：\n${targetQ.question}\n\n**我的選項**：${targetQ.options[targetQ.yourAns]}\n**正確答案**：${targetQ.options[targetQ.answer]}\n\n**我不懂的地方**：\n(請在此輸入您的疑問)`
+                };
+                
+                // 存入 LocalStorage 讓論壇頁面讀取
+                localStorage.setItem('forum_draft', JSON.stringify(draftPost));
+                
+                // 跳轉
+                window.location.href = 'forum.html';
+            } else {
+                alert("發生錯誤：找不到該題目資料");
+            }
+        };
         // ==========================================
         //  互動功能
         // ==========================================
