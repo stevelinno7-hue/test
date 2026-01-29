@@ -119,9 +119,9 @@ const Auth = {
         }
     },
      getCurrentUser: function() {
-        const userStr = localStorage.getItem('cloud_academy_user');
-        return userStr ? JSON.parse(userStr) : null;
-    },
+    const userStr = localStorage.getItem("currentUser");
+    return userStr ? JSON.parse(userStr) : null;
+},
 };
 
 // 初始化
