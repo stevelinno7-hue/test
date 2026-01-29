@@ -205,6 +205,16 @@ function saveProfile() {
         let activeBookIndex = 0;
 
         window.onload = function() {
+            // === 1. 初始化使用者資料 (新增這段) ===
+    const user = Auth.getCurrentUser();
+    if (user) {
+        const nameEl = document.getElementById('sideUserName');
+        const roleEl = document.getElementById('sideUserRole');
+        if (nameEl) nameEl.innerText = user.name || "學生";
+        if (roleEl) roleEl.innerText = user.grade || "未設定年級";
+    }
+
+    
             // 1. 確保資料庫已載入
             if(window.initCurriculumData) window.initCurriculumData();
 
