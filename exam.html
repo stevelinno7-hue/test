@@ -23,8 +23,7 @@
         .q-dot.normal { background-color: #f1f5f9; color: #94a3b8; }
         .modal-enter { animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        /* 請加入這行 CSS */
-.sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -45,9 +44,8 @@
     <script src="mockdata/templates_geography_core.js"></script>
     <script src="mockdata/templates_civics_core.js"></script>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
 
-  <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden bg-[#f8fafc]">
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden bg-[#f8fafc]">
 
     <header class="lg:hidden h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
         <div class="flex items-center gap-2">
@@ -114,45 +112,45 @@
             </div>
         </header>
 
-    <main class="flex-grow flex bg-[#f8fafc] relative overflow-hidden">
-        <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth p-4 md:p-8" id="mainScroll">
-            <div class="w-full max-w-3xl">
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 min-h-[500px] flex flex-col fade-in relative overflow-hidden">
-                    <div class="w-full bg-slate-100 h-1.5 absolute top-0 left-0">
-                        <div id="progressBar" class="bg-blue-500 h-1.5 transition-all duration-500 rounded-r-full" style="width: 0%"></div>
-                    </div>
-                    
-                    <div class="p-8 md:p-10 flex-grow">
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-blue-50 text-blue-600 text-xs font-bold px-2 py-1 rounded border border-blue-100">單選題</span>
-                                <span id="conceptBadge" class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded border border-slate-200">觀念</span>
+        <main class="flex-grow flex bg-[#f8fafc] relative overflow-hidden">
+            <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth p-4 md:p-8" id="mainScroll">
+                <div class="w-full max-w-3xl">
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 min-h-[500px] flex flex-col fade-in relative overflow-hidden">
+                        <div class="w-full bg-slate-100 h-1.5 absolute top-0 left-0">
+                            <div id="progressBar" class="bg-blue-500 h-1.5 transition-all duration-500 rounded-r-full" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="p-8 md:p-10 flex-grow">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-blue-50 text-blue-600 text-xs font-bold px-2 py-1 rounded border border-blue-100">單選題</span>
+                                    <span id="conceptBadge" class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded border border-slate-200">觀念</span>
+                                </div>
+                                <span class="text-slate-300 text-4xl font-black font-mono select-none opacity-20">Q<span id="currentQNumDisplay">1</span></span>
                             </div>
-                            <span class="text-slate-300 text-4xl font-black font-mono select-none opacity-20">Q<span id="currentQNumDisplay">1</span></span>
+                            <div class="mb-8">
+                                <h2 id="questionText" class="text-xl md:text-2xl font-bold text-slate-800 leading-relaxed">請先完成測驗設定...</h2>
+                            </div>
+                            <div id="optionsContainer" class="space-y-3"></div>
                         </div>
-                        <div class="mb-8">
-                            <h2 id="questionText" class="text-xl md:text-2xl font-bold text-slate-800 leading-relaxed">請先完成測驗設定...</h2>
-                        </div>
-                        <div id="optionsContainer" class="space-y-3"></div>
-                    </div>
 
-                    <div class="bg-slate-50 px-8 py-5 border-t border-slate-100 flex justify-between items-center">
-                        <button id="prevBtn" class="text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-200 transition">
-                            <i class="fas fa-arrow-left"></i> 上一題
-                        </button>
-                        <div class="text-xs text-slate-400 font-bold">
-                            <span id="currentQIdx">1</span> / <span id="totalQCount">--</span>
+                        <div class="bg-slate-50 px-8 py-5 border-t border-slate-100 flex justify-between items-center">
+                            <button id="prevBtn" class="text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-200 transition">
+                                <i class="fas fa-arrow-left"></i> 上一題
+                            </button>
+                            <div class="text-xs text-slate-400 font-bold">
+                                <span id="currentQIdx">1</span> / <span id="totalQCount">--</span>
+                            </div>
+                            <button id="nextBtn" class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition">
+                                下一題 <i class="fas fa-arrow-right"></i>
+                            </button>
                         </div>
-                        <button id="nextBtn" class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition">
-                            下一題 <i class="fas fa-arrow-right"></i>
-                        </button>
                     </div>
+                    <div class="h-20"></div>
                 </div>
-                <div class="h-20"></div>
             </div>
-        </div>
 
-        <aside class="w-full lg:w-72 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 flex-shrink-0 flex flex-col z-10 h-48 lg:h-auto order-last">
+            <aside class="w-full lg:w-72 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 flex-shrink-0 flex flex-col z-10 h-48 lg:h-auto order-last">
                 <div class="p-4 border-b border-slate-100 bg-slate-50 lg:bg-white">
                     <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-th"></i> 答題狀況</h3>
                 </div>
@@ -160,7 +158,8 @@
                     <div class="grid grid-cols-5 gap-2" id="questionPalette"></div>
                 </div>
             </aside>
-    </main>
+        </main>
+    </div>
 
     <div id="setupModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 mx-4 modal-enter border-4 border-slate-100">
@@ -225,43 +224,44 @@
         // ★★★ 防呆機制變數 ★★★
         let isSubmitting = false; // 用來標記是否正在交卷，若是，則允許跳轉
 
-       window.onload = function() {
-    // 1. 檢查登入狀態
-    if (window.Auth && !Auth.requireLogin()) return;
-    
-    // 2. 取得當前使用者
-    const currentUser = window.Auth ? Auth.getCurrentUser() : { username: 'guest' };
-    
-    // ★★★ 防呆核心：清除上一位使用者的殘留資料 ★★★
-    const lastUser = localStorage.getItem('last_exam_user');
-    
-    // 如果換人了 (例如從 user1 換成 user2)，或者根本沒有紀錄
-    if (lastUser && lastUser !== currentUser.username) {
-        console.log("偵測到使用者切換，清除舊資料...");
-        localStorage.removeItem('examResult'); // 清除上一位的成績單
-        localStorage.removeItem('temp_answers'); // 如果你有做暫存答案功能，也要清掉
-    }
-    
-    // 更新目前的使用者紀錄
-    localStorage.setItem('last_exam_user', currentUser.username);
+        window.onload = function() {
+            // 1. 檢查登入狀態
+            if (window.Auth && !Auth.requireLogin()) return;
+            
+            // 2. 取得當前使用者
+            const currentUser = window.Auth ? Auth.getCurrentUser() : { username: 'guest' };
+            
+            // ★★★ 防呆核心：清除上一位使用者的殘留資料 ★★★
+            const lastUser = localStorage.getItem('last_exam_user');
+            
+            // 如果換人了 (例如從 user1 換成 user2)，或者根本沒有紀錄
+            if (lastUser && lastUser !== currentUser.username) {
+                console.log("偵測到使用者切換，清除舊資料...");
+                localStorage.removeItem('examResult'); // 清除上一位的成績單
+                localStorage.removeItem('temp_answers'); // 如果你有做暫存答案功能，也要清掉
+            }
+            
+            // 更新目前的使用者紀錄
+            localStorage.setItem('last_exam_user', currentUser.username);
 
-    // 3. 啟動其他防護與設定
-    initVisibilityListener();
-    setupRefreshProtection();
-    showSetupModal();
-};
+            // 3. 啟動其他防護與設定
+            initVisibilityListener();
+            setupRefreshProtection();
+            showSetupModal();
+        };
+
         function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    
-    if (sidebar.classList.contains('-translate-x-full')) {
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
-    } else {
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-    }
-}
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
 
         // ★★★ 核心：防重整保護邏輯 ★★★
         function setupRefreshProtection() {
@@ -482,28 +482,19 @@
             document.getElementById('submitModal').classList.add('hidden'); 
         }
 
-       async function finalSubmit() {
+        // ✅ 修正：清理了重複代碼與邏輯的 finalSubmit 函數
+        async function finalSubmit() {
             // 1. 防止重複提交
             const submitBtn = document.getElementById('confirmSubmitBtn');
             if (submitBtn.disabled) return; // 如果按鈕已經被停用，就直接結束
             submitBtn.disabled = true;      // 停用按鈕
             submitBtn.textContent = "處理中..."; // 改變文字
-        
+            
             if (timerInterval) clearInterval(timerInterval);
             
-            // ★ 解除防重整鎖定 (這行很重要，不然交卷後跳轉會被擋住)
+            // ★ 解除防重整鎖定
             isSubmitting = true; 
-        
-            document.getElementById('submitModal').classList.add('hidden');
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-        
-            // ... (剩下的程式碼) ...
-    
-            if (timerInterval) clearInterval(timerInterval);
             
-            // ★ 重要：設定為正在交卷狀態，解除頁面鎖定
-            isSubmitting = true;
-
             document.getElementById('submitModal').classList.add('hidden');
             document.getElementById('loadingOverlay').classList.remove('hidden');
 
@@ -531,63 +522,50 @@
             });
 
             const finalScore = Math.round((correctCount / mockQuestions.length) * 100);
-            // ... (上面計算成績的程式碼不變) ...
-const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
+            const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
 
-const resultData = {
-    // 加入擁有者標記，以防萬一
-    owner: user.username, 
-    id: Date.now(),
-    date: new Date().toLocaleString(),
-    subject: examInfo.subject,
-    title: examInfo.title,
-    score: finalScore,
-    correctCount,
-    totalCount: mockQuestions.length,
-    wrongList,
-    tabSwitches: tabLog.length, 
-    cheat: {
-        cheatLevel: (fastCount > 3) ? 'HIGH' : ((fastCount > 0) ? 'MEDIUM' : 'NORMAL'),
-        fastCount: fastCount
-    },
-    analysis: { 
-        cheatLevel: (fastCount > 5 || tabLog.length > 5) ? 'HIGH' : 'NORMAL', 
-        fastCount, 
-        tabSwitchCount: tabLog.length, 
-        tabLogDetails: tabLog, 
-        timeLog 
-    }
-};
+            const resultData = {
+                owner: user.username, 
+                id: Date.now(),
+                date: new Date().toLocaleString(),
+                subject: examInfo.subject,
+                title: examInfo.title,
+                score: finalScore,
+                correctCount,
+                totalCount: mockQuestions.length,
+                wrongList,
+                tabSwitches: tabLog.length, 
+                cheat: {
+                    cheatLevel: (fastCount > 3) ? 'HIGH' : ((fastCount > 0) ? 'MEDIUM' : 'NORMAL'),
+                    fastCount: fastCount
+                },
+                analysis: { 
+                    cheatLevel: (fastCount > 5 || tabLog.length > 5) ? 'HIGH' : 'NORMAL', 
+                    fastCount, 
+                    tabSwitchCount: tabLog.length, 
+                    tabLogDetails: tabLog, 
+                    timeLog 
+                }
+            };
 
-// 1. 儲存「當前」結果 (給下一頁分析用)
-// 為了避免下一頁讀錯，我們多存一個 owner 欄位
-// ... (上面成績計算的部分不變) ...
+            // 儲存結果到 LocalStorage
+            localStorage.setItem('examResult', JSON.stringify(resultData));
+            
+            // 更新歷史紀錄
+            const historyKey = `history_${user.username}`;
+            try {
+                let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+                history.push(resultData);
+                const MAX_HISTORY = 20;
+                if (history.length > MAX_HISTORY) {
+                    history = history.slice(-MAX_HISTORY);
+                }
+                localStorage.setItem(historyKey, JSON.stringify(history));
+            } catch (e) { 
+                console.error("History save failed", e); 
+            }
 
-localStorage.setItem('examResult', JSON.stringify(resultData));
-const historyKey = `history_${user.username}`;
-
-try {
-    let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-    
-    // 1. 新增這筆成績
-    history.push(resultData);
-
-    // ★★★ 新增：限制數量 (例如只留最近 20 筆) ★★★
-    const MAX_HISTORY = 20; // 您可以自己改這個數字
-    if (history.length > MAX_HISTORY) {
-        // slice(-20) 代表只取「最後」20 筆，也就是最新的
-        history = history.slice(-MAX_HISTORY);
-    }
-
-    localStorage.setItem(historyKey, JSON.stringify(history));
-    console.log(`已更新歷史紀錄，目前保留 ${history.length} 筆`);
-
-} catch (e) { 
-    console.error("History save failed", e); 
-}
-
-// ... (後面雲端上傳與跳轉的部分不變) ...
-// ... (後面雲端上傳與跳轉程式碼不變) ...
+            // 雲端上傳與跳轉
             if (user.username !== 'guest') {
                 try {
                     await Promise.race([
