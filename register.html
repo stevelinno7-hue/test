@@ -10,24 +10,7 @@
         body { background-color: #f4f6f8; font-family: 'Noto Sans TC', sans-serif; }
     </style>
 </head>
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // 1. 檢查 Auth 是否載入
-        if (typeof Auth === 'undefined') {
-            console.error("Auth 模組未載入");
-            return;
-        }
-
-        // 2. 檢查是否有登入者
-        const currentUser = Auth.getCurrentUser();
-
-        // 3. 如果沒人登入，或者是 Guest (如果你不想讓 Guest 用)，就踢走
-        if (!currentUser) {
-            alert("⚠️ 您尚未登入，請先進行登入！");
-            window.location.href = 'index.html'; // 假設你的登入頁是 index.html
-        }
-    });
-</script>
+    
 <body class="flex items-center justify-center min-h-screen">
 
     <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
