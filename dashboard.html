@@ -85,19 +85,51 @@
     </aside>
 
     <main class="flex-grow flex flex-col h-full relative">
-        <div class="bg-white border-b border-gray-200 p-6 z-10 shadow-sm sticky top-0">
-            <div class="max-w-7xl mx-auto flex justify-between items-center mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">課程總覽</h1>
-                    <p class="text-sm text-gray-500 mt-1">選擇科目，進入單元式學習</p>
-                </div>
-                <div class="bg-gray-100 p-1 rounded-lg flex text-sm font-bold">
-                    <button onclick="setStage('high_school')" id="btnHigh" class="px-4 py-1.5 rounded-md transition bg-white text-gray-800 shadow-sm">高中</button>
-                    <button onclick="setStage('junior_high')" id="btnJunior" class="px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700">國中</button>
-                </div>
+        <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">
+    
+    <div class="shrink-0">
+        <h2 class="text-2xl font-bold text-gray-800">課程總覽</h2>
+        <p class="text-gray-500 text-sm mt-1">選擇科目，進入單元式學習</p>
+    </div>
+
+    <div class="flex-1 w-full md:px-8">
+    <div class="bg-white rounded-xl p-3 border border-blue-100 shadow-sm flex items-center gap-3 max-w-lg mx-auto md:mr-auto">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white shadow-sm shrink-0 relative group">
+            <i class="fas fa-crown text-sm"></i>
+            <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                累積考卷數
             </div>
         </div>
+        
+        <div class="flex-1">
+            <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-gray-800" id="userLevelDisplay">LV. 1 新手</span>
+                <span class="text-xs text-gray-500 bg-gray-100 px-2 rounded-full" id="totalExamCount">0 張試卷</span>
+            </div>
+            
+            <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden relative">
+                <div id="expBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-1000 relative" style="width: 0%">
+                    <div class="absolute top-0 right-0 bottom-0 w-2 bg-white/30 rounded-full"></div>
+                </div>
+            </div>
+            
+            <div class="text-right mt-1">
+                <span class="text-[10px] text-blue-600 font-bold" id="expText">0 / 1000 EXP</span>
+            </div>
+        </div>
+    </div>
+</div>
 
+    <div class="flex bg-gray-100 p-1 rounded-lg shrink-0">
+        <button class="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-blue-600 shadow-sm transition-all">
+            高中
+        </button>
+        <button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700 transition-all">
+            國中
+        </button>
+    </div>
+
+</div>
         <div class="flex-grow overflow-y-auto p-6 md:p-8" id="mainScroll">
             <div class="max-w-7xl mx-auto pb-20">
                 <div id="courseContainer" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
@@ -145,15 +177,23 @@
 
    <script>
         window.onload = function() {
-            // 確保 Auth 物件存在，避免報錯 (如果只測試前端 UI，可以註解掉這塊)
+            // 確保 Auth 物件存在
             if (typeof Auth !== 'undefined') {
                 const user = Auth.getCurrentUser();
+                
                 if(user) {
+                    // 1. 基本資料
                     document.getElementById('sideUserName').textContent = user.name;
                     document.getElementById('sideUserRole').textContent = user.grade;
+                    
+                    // 2. ✨ 新增：更新等級、經驗條、考卷數
+                    updateDashboardStats(user);
+
+                    // 3. 設定預設題庫 (國/高中)
                     if(user.grade && user.grade.includes('國')) setStage('junior_high');
                     else setStage('high_school');
                 } else {
+                    // 未登入預設
                     setStage('high_school');
                 }
             } else {
@@ -161,6 +201,35 @@
                 setStage('high_school');
             }
         };
+
+        // ==========================================
+        // ✨ 新增：更新儀表板數據 (等級/XP/考卷數)
+        // ==========================================
+        function updateDashboardStats(user) {
+            // 1. 讀取考卷歷史數量
+            const historyKey = `history_${user.username}`;
+            const history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+            document.getElementById('totalExamCount').innerText = `${history.length} 張試卷`;
+
+            // 2. 更新等級顯示 (預設 LV.1 新手)
+            const level = user.level || 1;
+            const title = user.title || '新手';
+            document.getElementById('userLevelDisplay').innerText = `LV. ${level} ${title}`;
+
+            // 3. 更新經驗條
+            const currentXP = user.currentXP || 0;
+            const nextXP = user.nextLevelXP || 100; // 避免除以 0
+            
+            // 計算百分比 (最高 100%)
+            let percentage = (currentXP / nextXP) * 100;
+            if (percentage > 100) percentage = 100;
+
+            // 更新 CSS 與文字
+            document.getElementById('expBar').style.width = `${percentage}%`;
+            document.getElementById('expText').innerText = `${currentXP} / ${nextXP} EXP`;
+        }
+
+        // ... (以下保留原本的 toggleSidebar, openProfileModal, setStage 等函式) ...
 // ==========================================
 // ✏️ 個人資料編輯功能
 // ==========================================
