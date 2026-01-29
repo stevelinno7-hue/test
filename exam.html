@@ -37,7 +37,14 @@
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
-
+/* 隱藏橫向捲動軸但保留功能 */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
         /* 自定義滾動條 */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -174,15 +181,18 @@
                 </div>
             </div>
 
-            <aside class="w-full lg:w-72 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 flex-shrink-0 flex flex-col z-10 h-auto max-h-[35vh] lg:max-h-full lg:h-auto order-last shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:shadow-none">
-                <div class="p-3 md:p-4 border-b border-slate-100 bg-slate-50 lg:bg-white flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm md:text-base"><i class="fas fa-th"></i> 答題狀況</h3>
-                    <span class="text-xs text-slate-400 lg:hidden">可滑動查看更多</span>
-                </div>
-                <div class="flex-grow overflow-y-auto p-3 md:p-4">
-                    <div class="grid grid-cols-6 lg:grid-cols-5 gap-2 md:gap-2" id="questionPalette"></div>
-                </div>
-            </aside>
+           <aside class="w-full lg:w-72 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 flex-shrink-0 z-10 order-last shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:shadow-none">
+    
+            <div class="hidden lg:flex p-4 border-b border-slate-100 bg-white justify-between items-center">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-th"></i> 答題狀況</h3>
+            </div>
+        
+            <div class="py-3 px-2 lg:p-4 overflow-x-auto no-scrollbar w-full">
+                
+                <div class="flex lg:grid lg:grid-cols-5 gap-3 lg:gap-2 items-center px-2" id="questionPalette">
+                    </div>
+            </div>
+        </aside>
         </main>
     </div>
 
@@ -436,7 +446,8 @@
             mockQuestions.forEach((_, i) => {
                 const cls = userAnswers[i] !== null ? 'q-dot answered' : (i === currentQIndex ? 'q-dot active' : 'q-dot normal');
                 const dot = document.createElement('div');
-                dot.className = cls;
+                // 加入 flex-shrink-0 確保圓球不會在手機版被擠壓
+                dot.className = cls + " flex-shrink-0";
                 dot.textContent = i + 1;
                 dot.onclick = () => { currentQIndex = i; renderQuestion(); };
                 p.appendChild(dot);
