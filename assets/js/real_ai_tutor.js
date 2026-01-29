@@ -1,69 +1,108 @@
-// assets/js/real_ai_tutor.js
+
+/* =====================================================
+ * 翰林 AI 助教 (Gemini API Core)
+ * ===================================================== */
+
+// ★★★ PLEASE REPLACE THIS WITH YOUR ACTUAL GOOGLE GEMINI API KEY ★★★
+const API_KEY = "AIzaSyD60TkJPPZKmGwM9USe70ZfbrwQvIX8BXA"; 
 
 const RealAITutor = {
-    name: "翰林 Gemini 助教",
+
+    /* ===============================
+     * Basic Settings
+     * =============================== */
+    name: "翰林 AI 助教 (GenAI)",
+    gradeLevel: "senior",
+    teacherMode: true,
+
+    /* ===============================
+     * State Tracking
+     * =============================== */
+    history: [],
+    mastery: {}, 
     
-    // 【重要】請將您的 Google Gemini API Key 填入下方引號中
-    // ⚠️ 警告：將 API Key 寫在前端程式碼中極不安全，僅適合演示或個人測試使用
-    apiKey: "AIzaSyD60TkJPPZKmGwM9USe70ZfbrwQvIX8BXA", 
-
-    // 系統提示詞 (System Prompt)
-    systemInstruction: `
-        你現在是「翰林雲端學院」的專業 AI 助教。
-        
-        【你的角色設定】：
-        1. 語氣親切、專業、充滿鼓勵性 (像一位有耐心的資深教師)。
-        2. 使用「繁體中文 (台灣)」回答。
-        3. 專長科目：國文、英文、數學、物理、化學、生物、地科、歷史、地理、公民。
-        
-        【回答規則】：
-        1. 不要直接給出簡答，要嘗試引導學生思考 (蘇格拉底教學法)。
-        2. 如果是數學或理化題，請一步步列出解題思路。
-        3. 篇幅控制在 300 字以內，重點清晰，適當使用條列式。
-        4. 結尾可以加上一句鼓勵的話。
-    `,
-
-    // 呼叫 Gemini API (不再需要 userApiKey 參數)
-    askGemini: async function(userTitle, userContent) {
-        // 檢查是否已設定 Key
-        if (!this.apiKey || this.apiKey.includes("AIzaSyCJY9pC7oXq-k7vJnRsRVgj9DZU_BDUFRE")) {
-            return "【系統提示】管理者尚未設定 API Key，請通知管理員至程式碼中填入金鑰。";
+    /* ===============================
+     * Core LLM Communication
+     * =============================== */
+    async callGeminiAPI(prompt) {
+        if (!API_KEY || API_KEY === "AIzaSyCfEILOin4gSmH_stCv-zuE9dORTHJ4RjA") {
+            console.error("API Key Missing");
+            return "⚠️ System Alert: Please configure your Google Gemini API Key in 'assets/js/real_ai_tutor.js' to enable AI responses.";
         }
 
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
-
-        const prompt = `
-            學生標題：${userTitle}
-            學生問題內容：${userContent}
-            
-            請根據上述內容，以老師的身份給予指導與詳解。
-        `;
-
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+        
         try {
-            const response = await fetch(API_URL, {
+            const response = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: this.systemInstruction + "\n\n" + prompt }]
-                    }]
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: 800
+                    }
                 })
             });
-
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error("API Error:", errData);
-                return "【連線錯誤】AI 腦袋打結了，請檢查您的 API Key 額度或網路連線。";
+            
+            const data = await response.json();
+            
+            if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                console.error("Gemini Response Error:", data);
+                return "🤖 AI is temporarily unavailable. Please check your API key or quota.";
             }
 
-            const data = await response.json();
-            const aiText = data.candidates[0].content.parts[0].text;
-            
-            return aiText;
-
+            return data.candidates[0].content.parts[0].text;
         } catch (error) {
-            console.error("Fetch Error:", error);
-            return "【系統錯誤】無法連接到 AI 伺服器，請稍後再試。";
+            console.error("Network Error:", error);
+            return "🤖 Network error. Please try again later.";
         }
+    },
+
+    /* ===============================
+     * Prompt Engineering
+     * =============================== */
+    constructPrompt(title, content) {
+        return `
+        你現在是【翰林出版的 AI 專業助教】，請用繁體中文回答。
+        
+        【你的任務】：
+        1. 分析學生的問題。
+        2. 使用「蘇格拉底教學法」進行引導，盡量不要直接給出最終答案，而是引導思考。
+        3. 語氣要親切、正面、鼓勵學生。
+        4. 如果問題包含學科知識（如數學、理化），請提供結構化的解析步驟。
+
+        【學生提問】：
+        - 標題：${title}
+        - 內容：${content}
+
+        【回答格式】：
+        請直接以 Markdown 格式輸出回答。
+        開頭請使用：📘 **【翰林 AI 助教】**
+        `;
+    },
+
+    /* ===============================
+     * Main Entry Point: askGemini
+     * =============================== */
+    // This is the function your forum.html is trying to call!
+    async askGemini(title, content) {
+        // 1. Build Prompt
+        const prompt = this.constructPrompt(title, content);
+
+        console.log("🧠 AI is thinking...", title);
+
+        // 2. Call AI
+        const aiResponse = await this.callGeminiAPI(prompt);
+
+        // 3. Save History
+        this.history.push({ 
+            q: title + " - " + content, 
+            a: aiResponse, 
+            time: new Date() 
+        });
+
+        // 4. Return Result
+        return aiResponse;
     }
 };
