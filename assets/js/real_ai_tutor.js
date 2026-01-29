@@ -2158,27 +2158,45 @@ const RealAITutor = {
         // 3. 加上 AI 的開頭與結尾
         return `📘 **【AI 助教】**\n\n${bestResponse}\n\n---\n*💡 還有哪裡不清楚嗎？歡迎繼續提問！*`;
     },
+history: [],
 
-    /* ===============================
-     * 介面函式：askGemini (對外接口)
-     * =============================== */
+    // 這裡統一名稱為 analyzeInput
+    analyzeInput(text) {
+        let bestResponse = `
+### 思考引導
+1. **關鍵字定位**：先找出題目中的核心觀念。
+2. **回想定義**：課本裡關於這個詞彙的定義是什麼？
+3. **舉例思考**：能不能舉一個簡單的例子來模擬？
+        `;
+
+        for (const entry of this.knowledgeBase) {
+            // 修正：確保使用傳入的參數 'text'
+            const match = entry.keywords.some(keyword => text.includes(keyword.toLowerCase()));
+            if (match) {
+                bestResponse = entry.response;
+                break;
+            }
+        }
+        return `📘 **【AI 助教】**\n\n${bestResponse}\n\n---\n*💡 還有哪裡不清楚嗎？歡迎繼續提問！*`;
+    },
+
     async askGemini(title, content) {
-        console.log("🧠 Mock AI is simulating thinking...", title);
+        console.log("🧠 AI 思考中...", title);
         
-        // 1. 組合輸入文字以供分析
-        const fullInput = (title + " " + content).toLowerCase(); // 轉小寫以利搜尋
-
-        // 2. 模擬網路延遲 (讓體驗更像真的 AI)
-        const delay = Math.floor(Math.random() * 1500) + 500; // 0.5 ~ 2 秒隨機延遲
+        // 1. 組合輸入並轉小寫
+        const fullInput = (title + " " + content).toLowerCase();
+        
+        // 2. 模擬延遲
+        const delay = Math.floor(Math.random() * 1000) + 500;
 
         return new Promise((resolve) => {
             setTimeout(() => {
-                // 3. 取得分析結果
+                // 3. 呼叫內部的分析函式
                 const response = this.analyzeInput(fullInput);
 
-                // 4. 儲存歷史紀錄
+                // 4. 紀錄歷史
                 this.history.push({ 
-                    q: title + " - " + content, 
+                    q: title, 
                     a: response, 
                     time: new Date() 
                 });
@@ -2188,3 +2206,6 @@ const RealAITutor = {
         });
     }
 };
+
+// 確保全域可以存取到
+window.RealAITutor = RealAITutor;
