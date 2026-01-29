@@ -85,13 +85,12 @@
             <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
         </div>
     </aside>
-
-    <main class="flex-grow flex h-full relative overflow-hidden">
+<main class="flex-grow flex flex-col lg:flex-row h-full relative overflow-hidden">
         
-        <div class="w-64 bg-slate-50 border-r border-slate-200 flex-shrink-0 flex flex-col h-full">
-            <div class="p-4 border-b border-slate-200 bg-white">
+        <div class="w-full lg:w-64 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200 flex-shrink-0 flex flex-col h-[40%] lg:h-full transition-all duration-300">
+            <div class="p-3 lg:p-4 border-b border-slate-200 bg-white">
                 <label class="text-xs font-bold text-gray-400 uppercase">科目選擇</label>
-                <select id="subjectSelect" onchange="loadBookMenu()" class="w-full mt-1 p-2 border border-slate-200 rounded-lg font-bold text-slate-700 focus:outline-none focus:border-blue-500">
+                <select id="subjectSelect" onchange="loadBookMenu()" class="w-full mt-1 p-2 border border-slate-200 rounded-lg font-bold text-slate-700 focus:outline-none focus:border-blue-500 text-sm lg:text-base">
                     <optgroup label="主要學科">
                         <option value="math">📐 數學</option>
                         <option value="english">🔤 英文</option>
@@ -113,65 +112,66 @@
                     </optgroup>
                 </select>
             </div>
-            <div class="flex-grow overflow-y-auto p-2 space-y-4 no-scrollbar" id="unitMenu">
+            <div class="flex-grow overflow-y-auto p-2 space-y-2 lg:space-y-4 no-scrollbar" id="unitMenu">
                 <div class="text-center py-10 text-gray-400 text-sm"><i class="fas fa-spinner fa-spin"></i> 載入中...</div>
             </div>
         </div>
 
-        <div class="flex-grow flex flex-col h-full bg-white relative">
-            <div class="h-16 border-b border-slate-100 flex items-center justify-between px-8 bg-white z-10">
+        <div class="flex-grow flex flex-col h-full bg-white relative overflow-hidden">
+            <div class="h-14 lg:h-16 border-b border-slate-100 flex items-center justify-between px-4 lg:px-8 bg-white z-10 shrink-0">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-800" id="currentUnitTitle">請選擇單元</h2>
-                    <p class="text-xs text-slate-400" id="currentUnitSub">點擊左側目錄以檢視重點</p>
+                    <h2 class="text-lg lg:text-xl font-bold text-slate-800 truncate max-w-[200px] lg:max-w-none" id="currentUnitTitle">請選擇單元</h2>
+                    <p class="text-[10px] lg:text-xs text-slate-400" id="currentUnitSub">點擊目錄以檢視重點</p>
                 </div>
             </div>
 
-            <div class="flex-grow overflow-y-auto p-8 scroll-smooth" id="contentScroll">
+            <div class="flex-grow overflow-y-auto p-4 lg:p-8 scroll-smooth" id="contentScroll">
                 <div class="max-w-3xl mx-auto space-y-6" id="notesContainer">
-                    <div class="flex flex-col items-center justify-center h-full text-slate-300 py-20">
-                        <i class="fas fa-book-open text-6xl mb-4"></i>
-                        <p>請從左側選擇一個單元開始複習</p>
+                    <div class="flex flex-col items-center justify-center h-full text-slate-300 py-10 lg:py-20">
+                        <i class="fas fa-book-open text-4xl lg:text-6xl mb-4"></i>
+                        <p class="text-sm">請從上方(電腦為左側)選擇單元</p>
                     </div>
                 </div>
                 <div class="h-20"></div> 
             </div>
         </div>
-<div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
-        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
-            <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
-            <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="p-6">
-            <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
-            <div class="relative">
-                <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
-                    <option value="國一">國一</option>
-                    <option value="國二">國二</option>
-                    <option value="國三">國三</option>
-                    <hr>
-                    <option value="高一">高一</option>
-                    <option value="高二">高二</option>
-                    <option value="高三">高三</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                    <i class="fas fa-chevron-down"></i>
+
+        <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-[90%] lg:w-full max-w-sm overflow-hidden transform transition-all scale-100">
+                <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                    <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                    <div class="relative">
+                        <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                            <option value="國一">國一</option>
+                            <option value="國二">國二</option>
+                            <option value="國三">國三</option>
+                            <hr>
+                            <option value="高一">高一</option>
+                            <option value="高二">高二</option>
+                            <option value="高三">高三</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                    <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+                    <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                        確認修改
+                    </button>
                 </div>
             </div>
-            <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
         </div>
-
-        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
-            <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
-            <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
-                確認修改
-            </button>
-        </div>
-    </div>
-</div>
     </main>
 
     <script>
@@ -419,93 +419,114 @@ function saveProfile() {
             });
         }
 
-        // 3. 內容生成 (支援真實科目參數)
-        function loadUnitContent(unitName, tagsStr, el, realSubject) {
-            // UI Highlight
-            document.querySelectorAll('.unit-item').forEach(i => i.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'font-bold'));
-            el.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-bold');
+// 3. 內容生成 (支援真實科目參數與動態圖片)
+function loadUnitContent(unitName, tagsStr, el, realSubject) {
+    // UI Highlight
+    document.querySelectorAll('.unit-item').forEach(i => i.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'font-bold'));
+    el.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-bold');
+    
+    // 顯示標題
+    let displaySubject = currentSubject;
+    if (currentSubject === 'science') {
+        displaySubject = realSubject === 'physics' ? '理化 (物理篇)' : '理化 (化學篇)';
+    }
+    
+    document.getElementById('currentUnitTitle').textContent = unitName;
+    document.getElementById('currentUnitSub').textContent = `科目：${displaySubject} | 來源：智慧題庫`;
+
+    const tags = JSON.parse(decodeURIComponent(tagsStr));
+    const container = document.getElementById('notesContainer');
+    
+    container.innerHTML = '<div class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin"></i> AI 正在整理重點...</div>';
+
+    setTimeout(() => {
+        let questions = [];
+        // 呼叫生成引擎
+        if (window.generatePaper) {
+            questions = window.generatePaper({ subject: realSubject || currentSubject, total: 6, tags: tags });
+        }
+
+        if (!questions || questions.length === 0) {
+            container.innerHTML = `
+                <div class="bg-yellow-50 border border-yellow-100 p-8 rounded-xl text-center">
+                    <i class="fas fa-exclamation-circle text-yellow-500 text-3xl mb-3"></i>
+                    <p class="text-yellow-700 font-bold">本單元目前尚無重點資料</p>
+                </div>`;
+            return;
+        }
+
+        let contentHtml = '';
+        
+        questions.forEach((q, idx) => {
+            const concept = q.concept || unitName.split(' ')[0] || '核心觀念';
+            const explain = (q.explanation && q.explanation.length > 0) ? q.explanation.join('<br>') : "觀念應用題";
             
-            // 顯示標題 (如果是合併的理化，這裡顯示子標題比較清楚)
-            let displaySubject = currentSubject;
-            if (currentSubject === 'science') {
-                displaySubject = realSubject === 'physics' ? '理化 (物理篇)' : '理化 (化學篇)';
+            // --- 💡 新增：動態圖片標籤生成邏輯 ---
+            // 判斷當前的實際科目 (優先使用 realSubject，處理國中理化的狀況)
+            const targetSubject = realSubject || currentSubject;
+            let imageVisual = '';
+
+            // 僅針對需要圖像輔助的科目生成圖片佔位符
+            if (['physics', 'chemistry', 'biology', 'earth', 'science'].includes(targetSubject)) {
+                // 根據科目生成特定的查詢字串
+                let queryPrefix = '';
+                switch(targetSubject) {
+                    case 'physics': queryPrefix = 'physics diagram of'; break;
+                    case 'chemistry': queryPrefix = 'chemistry structure of'; break;
+                    case 'biology': queryPrefix = 'biological diagram of'; break;
+                    case 'earth': queryPrefix = 'earth science diagram of'; break;
+                    default: queryPrefix = 'scientific diagram of';
+                }
+                
+                // 這裡模擬圖片標籤，實務上可替換為實際的 img src 或 API 呼叫
+                // 使用 Tailwind 樣式美化圖片佔位符
+                imageVisual = `
+                    <div class="my-3 w-full h-48 bg-slate-100 rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-slate-300 text-slate-400 overflow-hidden relative group">
+                        <i class="fas fa-image text-2xl mb-2"></i>
+                        <span class="text-xs font-mono"></span>
+                        <div class="absolute inset-0 bg-black/5 hidden group-hover:flex items-center justify-center text-xs text-slate-600 font-bold">
+                            點擊放大示意圖
+                        </div>
+                    </div>
+                `;
             }
-            
-            document.getElementById('currentUnitTitle').textContent = unitName;
-            document.getElementById('currentUnitSub').textContent = `科目：${displaySubject} | 來源：智慧題庫`;
+            // ---------------------------------------
 
-            const tags = JSON.parse(decodeURIComponent(tagsStr));
-            const container = document.getElementById('notesContainer');
-            
-            container.innerHTML = '<div class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin"></i> AI 正在整理重點...</div>';
-
-            setTimeout(() => {
-                let questions = [];
-                if (window.generatePaper) {
-                    // ★ 這裡使用 realSubject (例如 'physics') 傳給生成引擎，而不是 'science'
-                    // 因為引擎只認得 'physics' 或 'chemistry' 的模板
-                    questions = window.generatePaper({ subject: realSubject || currentSubject, total: 6, tags: tags });
-                }
-
-                if (!questions || questions.length === 0) {
-                    container.innerHTML = `
-                        <div class="bg-yellow-50 border border-yellow-100 p-8 rounded-xl text-center">
-                            <i class="fas fa-exclamation-circle text-yellow-500 text-3xl mb-3"></i>
-                            <p class="text-yellow-700 font-bold">本單元目前尚無重點資料</p>
-                        </div>`;
-                    return;
-                }
-
-                let contentHtml = '';
-                questions.forEach((q, idx) => {
-                    const concept = q.concept || unitName.split(' ')[0] || '核心觀念';
-                    const explain = (q.explanation && q.explanation.length > 0) ? q.explanation.join('<br>') : "觀念應用題";
+            contentHtml += `
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm fade-in hover:shadow-md transition" style="animation-delay: ${idx * 0.1}s">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="bg-indigo-50 text-indigo-600 text-xs font-bold px-2 py-1 rounded">重點 ${idx + 1}</span>
+                        <span class="text-sm font-bold text-slate-700">${concept}</span>
+                    </div>
                     
-                    // Logic to add a relevant diagram based on realSubject
-                    let imageTag = '';
-                    if (realSubject === 'physics') {
-                        imageTag = `<div class="mb-4 text-center"></div>`;
-                    } else if (realSubject === 'chemistry') {
-                        imageTag = `<div class="mb-4 text-center"></div>`;
-                    } else if (['biology', 'earth'].includes(currentSubject)) {
-                        imageTag = `<div class="mb-4 text-center"></div>`;
-                    }
+                    <div class="mb-4">
+                        <div class="text-xs font-bold text-slate-400 uppercase mb-1">Example</div>
+                        <div class="text-slate-800 font-medium text-lg leading-relaxed font-serif">
+                            ${q.question.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
 
-                    contentHtml += `
-                        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm fade-in hover:shadow-md transition" style="animation-delay: ${idx * 0.1}s">
-                            <div class="flex items-center gap-2 mb-4">
-                                <span class="bg-indigo-50 text-indigo-600 text-xs font-bold px-2 py-1 rounded">重點 ${idx + 1}</span>
-                                <span class="text-sm font-bold text-slate-700">${concept}</span>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <div class="text-xs font-bold text-slate-400 uppercase mb-1">Example</div>
-                                <div class="text-slate-800 font-medium text-lg leading-relaxed">
-                                    ${q.question.replace(/\n/g, '<br>')}
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                <div class="flex gap-3">
-                                    <div class="mt-0.5"><i class="fas fa-lightbulb text-yellow-500"></i></div>
-                                    <div class="w-full">
-                                        <div class="text-xs font-bold text-slate-500 mb-1">觀念解析</div>
-                                        ${imageTag}
-                                        <div class="text-sm text-slate-600 leading-relaxed">
-                                            ${explain}
-                                        </div>
-                                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div class="flex gap-3">
+                            <div class="mt-0.5 flex-shrink-0"><i class="fas fa-lightbulb text-yellow-500"></i></div>
+                            <div class="w-full">
+                                <div class="text-xs font-bold text-slate-500 mb-1">觀念解析</div>
+                                
+                                ${imageVisual} <div class="text-sm text-slate-600 leading-relaxed text-justify">
+                                    ${explain}
                                 </div>
                             </div>
                         </div>
-                    `;
-                });
+                    </div>
+                </div>
+            `;
+        });
 
-                container.innerHTML = contentHtml;
-                if(window.MathJax) MathJax.typesetPromise();
+        container.innerHTML = contentHtml;
+        if(window.MathJax) MathJax.typesetPromise();
 
-            }, 300);
-        }
+    }, 300);
+}
     </script>
 </body>
 </html>
