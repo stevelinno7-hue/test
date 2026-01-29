@@ -389,6 +389,48 @@ function saveProfile() {
 
     // 初始加載
     loadPosts();
+    // ... (上面原本的 Sidebar、Auth、addPost 等程式碼保持不變) ...
+
+    // ==========================================
+    // ✨ 新增功能：偵測是否有來自「錯題本」的提問
+    // ==========================================
+    function checkForumDraft() {
+        const draft = localStorage.getItem('forum_draft');
+        
+        if (draft) {
+            try {
+                const data = JSON.parse(draft);
+                
+                // 1. 強制開啟提問視窗
+                const form = document.getElementById('postForm');
+                if (form.classList.contains('hidden')) {
+                    form.classList.remove('hidden');
+                }
+
+                // 2. 自動填入資料
+                const titleInput = document.getElementById('postTitle');
+                const contentInput = document.getElementById('postContent');
+                
+                titleInput.value = data.title || "";
+                contentInput.value = data.content || "";
+                
+                // 3. 聚焦在內容框，方便學生繼續補充
+                contentInput.focus();
+
+                // 4. 清除草稿 (避免下次重新整理頁面時又跳出來)
+                localStorage.removeItem('forum_draft');
+                
+            } catch (e) {
+                console.error("讀取草稿失敗", e);
+            }
+        }
+    }
+
+    // ==========================================
+    // 初始加載執行
+    // ==========================================
+    loadPosts();       // 原本的加載貼文
+    checkForumDraft(); // ✨ 執行檢查草稿
 </script>
 </body>
 </html>
