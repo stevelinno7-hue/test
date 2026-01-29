@@ -519,8 +519,7 @@
         function closeSubmitModal() { 
             document.getElementById('submitModal').classList.add('hidden'); 
         }
-
-        async function finalSubmit() {
+async function finalSubmit() {
             const submitBtn = document.getElementById('confirmSubmitBtn');
             if (submitBtn.disabled) return; 
             submitBtn.disabled = true;      
@@ -537,6 +536,7 @@
             let wrongList = [];
             let fastCount = 0; 
 
+            // 1. 計算答題狀況
             mockQuestions.forEach((q, idx) => {
                 const userAns = userAnswers[idx];
                 const timeSpent = timeLog[idx] || 0;
@@ -559,6 +559,24 @@
             const finalScore = Math.round((correctCount / mockQuestions.length) * 100);
             const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
 
+            // ==========================================
+            // ✨ 新增：計算並發放經驗值 (XP)
+            // ==========================================
+            // 規則：完成測驗得 20XP (辛苦分) + 每答對一題得 10XP
+            const baseXP = 20; 
+            const bonusXP = correctCount * 10;
+            const totalXP = baseXP + bonusXP;
+            
+            let isLevelUp = false;
+            
+            // 如果不是訪客，就呼叫 Auth 模組加分
+            if (window.Auth && user.username !== 'guest') {
+                // Auth.addXP 會回傳 true(升級) 或 false
+                isLevelUp = Auth.addXP(totalXP);
+                console.log(`獲得 ${totalXP} XP, 升級狀態: ${isLevelUp}`);
+            }
+            // ==========================================
+
             const resultData = {
                 owner: user.username, 
                 id: Date.now(),
@@ -570,6 +588,11 @@
                 totalCount: mockQuestions.length,
                 wrongList,
                 tabSwitches: tabLog.length, 
+                
+                // ✨ 新增：將獲得的 XP 存入結果，讓下一頁(analysis.html)可以顯示動畫
+                xpGained: totalXP,
+                isLevelUp: isLevelUp,
+
                 cheat: {
                     cheatLevel: (fastCount > 3) ? 'HIGH' : ((fastCount > 0) ? 'MEDIUM' : 'NORMAL'),
                     fastCount: fastCount
@@ -583,32 +606,39 @@
                 }
             };
 
+            // 2. 存入 LocalStorage (本次結果)
             localStorage.setItem('examResult', JSON.stringify(resultData));
             
+            // 3. 存入歷史紀錄
             const historyKey = `history_${user.username}`;
             try {
                 let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-                history.push(resultData);
-                const MAX_HISTORY = 20;
-                if (history.length > MAX_HISTORY) {
-                    history = history.slice(-MAX_HISTORY);
+                history.push(resultData); // 新的放後面
+                // 這裡改用 unshift 讓新的在最上面也可以，看你習慣
+                // 如果要保留最新的 20 筆：
+                if (history.length > 50) {
+                    history = history.slice(-20); // 只留最後 20 筆
                 }
                 localStorage.setItem(historyKey, JSON.stringify(history));
             } catch (e) { 
                 console.error("History save failed", e); 
             }
 
+            // 4. 上傳至雲端 (Google Apps Script)
             if (user.username !== 'guest') {
                 try {
+                    // 使用 Promise.race 設定 5 秒超時，避免網路卡住太久
                     await Promise.race([
                         uploadToCloud(user.username, examInfo.title, finalScore, resultData),
                         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
                     ]);
                 } catch (e) {
-                    console.error("雲端上傳異常:", e);
+                    console.error("雲端上傳異常或超時:", e);
+                    // 就算上傳失敗，也不要阻擋使用者看成績，繼續往下執行
                 }
             }
 
+            // 5. 跳轉到分析頁
             setTimeout(() => {
                 window.location.href = "analysis.html?mode=new";
             }, 1000);
