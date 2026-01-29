@@ -11,7 +11,15 @@
     <script src="assets/js/auth.js"></script>
 
     <style>
-        .blob { position: absolute; filter: blur(40px); z-index: -1; opacity: 0.5; }
+       .blob {
+    /* 暫時加上這一行，先把球藏起來 */
+    display: none; 
+
+    /* ...原本的代碼... */
+    position: absolute;
+    filter: blur(40px);
+    /* ... */
+}
         .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #bfdbfe; border-radius: 50%; animation: float 6s infinite ease-in-out; }
         .blob-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #e9d5ff; border-radius: 50%; animation: float 8s infinite ease-in-out reverse; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
@@ -22,10 +30,17 @@
     <style>
        
        /* 建議：直接在這裡確保 html 也是白色的，避免手機下拉回彈時出現黑底 */
-       html, body {
-           background-color: #ffffff;
-           overflow-x: hidden; /* 雙重保險，防止左右滑動 */
-       }
+      /* 請直接替換掉原本 head 裡面的這段 style */
+
+    html, body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden !important; /* 強制執行 */
+        background-color: #ffffff;
+        margin: 0;
+        padding: 0;
+        position: relative; /* 穩定版面 */
+    }
 </style>
 </head>
     
@@ -40,9 +55,9 @@
             <span class="text-2xl font-bold text-gray-800 tracking-wide">雲端學院</span>
         </div>
        <div class="hidden lg:flex gap-8 text-gray-600 font-medium">
+    <a href="#stats" class="hover:text-blue-600 transition">學習成效</a>
     <a href="#features" class="hover:text-blue-600 transition">平台特色</a>
     <a href="#roadmap" class="hover:text-blue-600 transition">平台里程</a>
-    <a href="#stats" class="hover:text-blue-600 transition">學習成效</a>
     <a href="#pricing" class="hover:text-blue-600 transition">方案費用</a>
     <a href="#faq" class="hover:text-blue-600 transition">常見問題</a>
 </div>
@@ -117,7 +132,7 @@
         </div>
     </main>
     
-    <section id="stats" class="py-12 bg-white border-y border-gray-100">
+    <section id="stats" class="scroll-mt-28 py-12 bg-white border-y border-gray-100">
         <div class="max-w-7xl mx-auto px-6">
             <div class="grid grid-cols-2 mx-auto  text-center">
                 <div>
@@ -132,7 +147,7 @@
         </div>
     </section>
 
-    <section id="features" class="py-20 bg-gray-50">
+   <section id="features" class="scroll-mt-28 py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-6">
             <div class="text-center mb-16">
                 <h2 class="text-3xl font-bold text-gray-800">三大核心技術</h2>
@@ -164,7 +179,7 @@
 </div>
         </div>
     </section>
-<section id="roadmap" class="py-20 bg-white border-y border-gray-100 overflow-hidden">
+<section id="roadmap" class="scroll-mt-28 py-20 bg-white border-y border-gray-100 overflow-hidden">
         <div class="max-w-4xl mx-auto px-6 relative">
             
             <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
@@ -274,7 +289,7 @@
         </div>
     
     </section>
-    <section id="pricing" class="py-20 bg-white">
+   <section id="pricing" class="scroll-mt-28 py-20 bg-white overflow-hidden">
         <div class="max-w-7xl mx-auto px-6">
             <div class="text-center mb-16">
                 <h2 class="text-3xl font-bold text-gray-800">選擇適合您的方案</h2>
@@ -341,7 +356,7 @@
         </div>
     </section>
 
-    <section id="faq" class="py-16 bg-gray-50">
+    <section id="faq" class="scroll-mt-28 py-16 bg-gray-50">
         <div class="max-w-4xl mx-auto px-6">
             <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">常見問題</h2>
             <div class="space-y-4">
@@ -422,7 +437,7 @@
             <p>&copy; 2026 學雲端學院. All Rights Reserved.</p>
         </div>
    
-        </main>
+     </footer>
 
     
    <script>
