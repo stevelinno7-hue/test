@@ -12,17 +12,34 @@
         .course-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
         .course-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border-color: #cbd5e1; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        /* 請加入這行 CSS */
+.sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="mockdata/curriculum_integrated.js"></script>
 </head>
-<body class="h-screen flex overflow-hidden">
-    <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
-        <div class="h-16 flex items-center px-6 border-b border-slate-50">
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
+
+    <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
+
         <div class="p-6">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
                 <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
@@ -35,13 +52,15 @@
                 </button>
             </div>
         </div>
-        <nav class="flex-grow px-3 space-y-1">
+
+        <nav class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 錯題補救</a>
             <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
             <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 遊戲場</a>
             <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 解題論壇</a>
         </nav>
+
         <div class="p-4 border-t border-slate-50">
             <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
         </div>
@@ -127,7 +146,21 @@
 // ==========================================
 // ✏️ 個人資料編輯功能
 // ==========================================
-
+// 手機側邊欄開關
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar.classList.contains('-translate-x-full')) {
+        // 開啟
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        // 關閉
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
 // 1. 開啟編輯視窗
 function openProfileModal() {
     const user = Auth.getCurrentUser();
