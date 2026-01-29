@@ -23,33 +23,18 @@
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
-         <div class="bg-white border border-slate-100 rounded-3xl p-5 text-center shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative overflow-hidden group">
-        
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
-
-        <div class="mb-4 relative inline-block">
-            <div class="w-16 h-16 bg-slate-100 rounded-full mx-auto flex items-center justify-center text-3xl shadow-inner mb-2">
-                😀 </div>
-            <h3 class="font-bold text-slate-800 text-lg" id="sideUserName">讀取中...</h3>
-            <div class="text-xs text-slate-400 font-medium bg-slate-50 inline-block px-2 py-0.5 rounded-full border border-slate-100 mt-1" id="sideUserRole">學生</div>
-        </div>
-
-        <div class="mt-2 bg-slate-50 rounded-xl p-3 border border-slate-100">
-            <div class="flex justify-between items-end mb-2">
-                <div class="flex items-baseline gap-1">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Lv.</span>
-                    <span id="displayLevel" class="text-2xl font-black text-blue-600 leading-none">1</span>
+        <div class="p-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
                 </div>
-                <span class="text-[10px] font-bold text-slate-400"><span id="displayXP">0</span>/100 XP</span>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                    <i class="fas fa-pen mr-1"></i> 編輯年級
+                </button>
             </div>
-            
-            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner">
-                <div id="xpBar" class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
-            </div>
-            <p class="text-[10px] text-slate-400 mt-2 text-center">再 <span id="xpToNext" class="text-blue-500 font-bold">100</span> XP 升級</p>
         </div>
-
-    </div>
         <nav class="flex-grow px-3 space-y-1">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 錯題補救</a>
@@ -116,198 +101,153 @@
             </button>
         </div>
     </div>
-             <div id="levelUpModal" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center backdrop-blur-sm">
-            <div class="bg-white rounded-3xl p-8 text-center max-w-sm mx-4 shadow-2xl relative overflow-hidden animate-[bounce_1s_infinite]">
-                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-100/50 to-transparent pointer-events-none"></div>
-                <div class="text-6xl mb-4">🆙</div>
-                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-600 mb-2">LEVEL UP!</h2>
-                <p class="text-gray-500 font-bold mb-6">恭喜升上 <span id="newLevelNum" class="text-2xl text-blue-600">2</span> 等！</p>
-                <button onclick="document.getElementById('levelUpModal').classList.add('hidden')" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">
-                    太棒了！
-                </button>
-            </div>
-        </div>
 </div>
     </main>
 
     <input type="hidden" id="currentStage" value="high_school">
 
    <script>
-    // ==========================================
-    // 🌐 全域變數
-    // ==========================================
-    const XP_PER_LEVEL = 100;
-
-    // ==========================================
-    // 🚀 系統初始化 (window.onload)
-    // ==========================================
-    window.onload = function() {
-        if (typeof Auth === 'undefined') {
-            console.error("Auth module missing");
-            setStage('high_school');
-            return;
-        }
-
-        const user = Auth.getCurrentUser();
-        if (user) {
-            // 1. 更新個人資料
-            document.getElementById('sideUserName').textContent = user.name || user.username;
-            document.getElementById('sideUserRole').textContent = user.grade || "學生";
-            
-            // 2. 自動判斷年級並設定課程
-            if (user.grade && user.grade.includes('國')) {
-                setStage('junior_high');
+        window.onload = function() {
+            // 確保 Auth 物件存在，避免報錯 (如果只測試前端 UI，可以註解掉這塊)
+            if (typeof Auth !== 'undefined') {
+                const user = Auth.getCurrentUser();
+                if(user) {
+                    document.getElementById('sideUserName').textContent = user.name;
+                    document.getElementById('sideUserRole').textContent = user.grade;
+                    if(user.grade && user.grade.includes('國')) setStage('junior_high');
+                    else setStage('high_school');
+                } else {
+                    setStage('high_school');
+                }
             } else {
+                console.warn('Auth module not loaded, defaulting to high school.');
                 setStage('high_school');
             }
-        } else {
-            // 未登入預設
-            if(document.getElementById('sideUserName')) document.getElementById('sideUserName').textContent = "訪客";
-            setStage('high_school');
-        }
+        };
+// ==========================================
+// ✏️ 個人資料編輯功能
+// ==========================================
 
-        // 3. 更新等級顯示
-        updateLevelUI();
-    };
-
-    // ==========================================
-    // 🆙 等級系統 (XP)
-    // ==========================================
-    function loadXP() {
-        const user = Auth.getCurrentUser();
-        if (!user) return 0;
-        const key = `xp_${user.username}`;
-        return parseInt(localStorage.getItem(key) || 0);
+// 1. 開啟編輯視窗
+function openProfileModal() {
+    const user = Auth.getCurrentUser();
+    if (!user) {
+        alert("請先登入！");
+        return;
     }
 
-    function updateLevelUI() {
-        const totalXP = loadXP();
-        const currentLevel = Math.floor(totalXP / XP_PER_LEVEL) + 1;
-        const currentLevelXP = totalXP % XP_PER_LEVEL;
-        const percentage = (currentLevelXP / XP_PER_LEVEL) * 100;
-
-        const elLevel = document.getElementById('displayLevel');
-        const elXP = document.getElementById('displayXP');
-        const elBar = document.getElementById('xpBar');
-        const elNext = document.getElementById('xpToNext');
-
-        if (elLevel) elLevel.innerText = currentLevel;
-        if (elXP) elXP.innerText = currentLevelXP;
-        if (elBar) elBar.style.width = `${percentage}%`;
-        if (elNext) elNext.innerText = XP_PER_LEVEL - currentLevelXP;
+    // 設定下拉選單為目前的年級
+    const select = document.getElementById('editGradeSelect');
+    if (user.grade) {
+        select.value = user.grade;
     }
+    
+    // 顯示視窗
+    document.getElementById('profileModal').classList.remove('hidden');
+}
 
-    // ==========================================
-    // ✏️ 個人資料編輯功能
-    // ==========================================
-    function openProfileModal() {
-        const user = Auth.getCurrentUser();
-        if (!user) { alert("請先登入！"); return; }
+// 2. 關閉編輯視窗
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+// 3. 儲存修改
+function saveProfile() {
+    const newGrade = document.getElementById('editGradeSelect').value;
+    
+    // 呼叫 Auth 模組更新資料庫 (這會同時更新 LocalStorage 和 mockdata)
+    if (Auth.updateUser) {
+        Auth.updateUser('grade', newGrade);
         
-        const select = document.getElementById('editGradeSelect');
-        if (user.grade) select.value = user.grade;
+        // 更新畫面上的文字
+        const roleEl = document.getElementById('sideUserRole');
+        if (roleEl) roleEl.innerText = newGrade;
         
-        document.getElementById('profileModal').classList.remove('hidden');
-    }
-
-    function closeProfileModal() {
-        document.getElementById('profileModal').classList.add('hidden');
-    }
-
-    function saveProfile() {
-        const newGrade = document.getElementById('editGradeSelect').value;
+        // 提示成功
+        alert(`修改成功！目前年級已更新為：${newGrade}`);
+        closeProfileModal();
         
-        if (Auth.updateUser) {
-            Auth.updateUser('grade', newGrade);
+        // 如果是在 dashboard，可能需要重新整理頁面以套用新題庫設定
+        // location.reload(); 
+    } else {
+        console.error("Auth.updateUser 函式不存在，請檢查 auth.js");
+        alert("系統錯誤：無法儲存資料");
+    }
+}
+        function setStage(stage) {
+            document.getElementById('currentStage').value = stage;
+            const btnHigh = document.getElementById('btnHigh');
+            const btnJunior = document.getElementById('btnJunior');
             
-            // 更新畫面文字
-            const roleEl = document.getElementById('sideUserRole');
-            if (roleEl) roleEl.innerText = newGrade;
-            
-            // 根據新年級重新整理課程列表
-            if (newGrade.includes('國')) setStage('junior_high');
-            else setStage('high_school');
-
-            alert(`修改成功！目前年級已更新為：${newGrade}`);
-            closeProfileModal();
-        } else {
-            alert("系統錯誤：無法儲存資料");
+            if (stage === 'high_school') {
+                btnHigh.className = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold";
+                btnJunior.className = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
+            } else {
+                btnHigh.className = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
+                btnJunior.className = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold";
+            }
+            renderCourses();
         }
-    }
 
-    // ==========================================
-    // 📚 課程渲染邏輯
-    // ==========================================
-    function setStage(stage) {
-        document.getElementById('currentStage').value = stage;
-        const btnHigh = document.getElementById('btnHigh');
-        const btnJunior = document.getElementById('btnJunior');
-        
-        if (stage === 'high_school') {
-            btnHigh.className = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold border border-gray-200";
-            btnJunior.className = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
-        } else {
-            btnHigh.className = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
-            btnJunior.className = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold border border-gray-200";
-        }
-        renderCourses();
-    }
+        function renderCourses() {
+            const stage = document.getElementById('currentStage').value;
+            const container = document.getElementById('courseContainer');
+            container.innerHTML = '';
 
-    function renderCourses() {
-        const stage = document.getElementById('currentStage').value;
-        const container = document.getElementById('courseContainer');
-        container.innerHTML = '';
+            // 定義基礎科目 (國高中都有)
+            let subjects = [
+                { id: 'chinese', name: '國文', icon: 'fa-book-open', color: 'red' },
+                { id: 'math', name: '數學', icon: 'fa-calculator', color: 'blue' },
+                { id: 'english', name: '英文', icon: 'fa-language', color: 'purple' },
+            ];
 
-        // 基礎科目
-        let subjects = [
-            { id: 'chinese', name: '國文', icon: 'fa-book-open', color: 'red' },
-            { id: 'math', name: '數學', icon: 'fa-calculator', color: 'blue' },
-            { id: 'english', name: '英文', icon: 'fa-language', color: 'purple' },
-        ];
+            // 依據階段加入不同自然科
+            if (stage === 'junior_high') {
+                // 國中：加入「生物」與「理化」
+                subjects.push(
+                    { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' }, // 國七
+                    { id: 'science', name: '理化', icon: 'fa-flask', color: 'indigo' }, // 國八、九 (物理+化學)
+                    { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' }    // 國九
+                );
+            } else {
+                // 高中：物理、化學、生物、地科 分開
+                subjects.push(
+                    { id: 'physics', name: '物理', icon: 'fa-atom', color: 'indigo' },
+                    { id: 'chemistry', name: '化學', icon: 'fa-vial', color: 'pink' },
+                    { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' },
+                    { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' }
+                );
+            }
 
-        // 自然科 (區分國高中)
-        if (stage === 'junior_high') {
+            // 加入社會科 (國高中都有)
             subjects.push(
-                { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' }, 
-                { id: 'science', name: '理化', icon: 'fa-flask', color: 'indigo' }, 
-                { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' }
+                { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
+                { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
+                { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
             );
-        } else {
-            subjects.push(
-                { id: 'physics', name: '物理', icon: 'fa-atom', color: 'indigo' },
-                { id: 'chemistry', name: '化學', icon: 'fa-vial', color: 'pink' },
-                { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' },
-                { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' }
-            );
+
+            subjects.forEach((sub, idx) => {
+                const linkHref = `course_hub.html?subject=${sub.id}&stage=${stage}&title=${encodeURIComponent(sub.name)}`;
+                
+                // 動態生成 HTML
+                // 注意：style="animation-delay" 搭配上方新增的 CSS @keyframes fadeIn 使用
+                const html = `
+                    <a href="${linkHref}" class="course-card bg-white rounded-xl p-6 flex flex-col items-center text-center hover:bg-${sub.color}-50 group fade-in" style="animation-delay: ${idx * 0.05}s">
+                        <div class="w-16 h-16 rounded-2xl bg-${sub.color}-100 text-${sub.color}-600 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
+                            <i class="fas ${sub.icon}"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${sub.name}</h3>
+                        <p class="text-xs text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border">
+                            ${stage === 'high_school' ? '高中全冊' : '國中全冊'}
+                        </p>
+                        <div class="mt-4 w-full pt-4 border-t border-gray-100 flex justify-center text-${sub.color}-600 font-bold text-sm">
+                            進入課程 <i class="fas fa-arrow-right ml-2 mt-1"></i>
+                        </div>
+                    </a>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
         }
-
-        // 社會科
-        subjects.push(
-            { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
-            { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
-            { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
-        );
-
-        subjects.forEach((sub, idx) => {
-            const linkHref = `course_hub.html?subject=${sub.id}&stage=${stage}&title=${encodeURIComponent(sub.name)}`;
-            
-            const html = `
-                <a href="${linkHref}" class="course-card bg-white rounded-xl p-6 flex flex-col items-center text-center hover:bg-${sub.color}-50 group fade-in" style="animation-delay: ${idx * 0.05}s">
-                    <div class="w-16 h-16 rounded-2xl bg-${sub.color}-100 text-${sub.color}-600 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
-                        <i class="fas ${sub.icon}"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">${sub.name}</h3>
-                    <p class="text-xs text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-                        ${stage === 'high_school' ? '高中全冊' : '國中全冊'}
-                    </p>
-                    <div class="mt-4 w-full pt-4 border-t border-gray-100 flex justify-center text-${sub.color}-600 font-bold text-sm">
-                        進入課程 <i class="fas fa-arrow-right ml-2 mt-1 transition-transform group-hover:translate-x-1"></i>
-                    </div>
-                </a>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
-        });
-    }
-</script>
+    </script>
 </body>
 </html>
