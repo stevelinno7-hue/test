@@ -62,18 +62,35 @@
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
-        <div class="p-6">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
-                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
-                    <i class="fas fa-pen mr-1"></i> 編輯年級
-                </button>
-            </div>
+<div class="px-4 py-6">
+    <div class="bg-white border border-slate-100 rounded-3xl p-5 text-center shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] relative overflow-hidden group">
+        
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
+
+        <div class="mb-4 relative inline-block">
+            <div class="w-16 h-16 bg-slate-100 rounded-full mx-auto flex items-center justify-center text-3xl shadow-inner mb-2">
+                😀 </div>
+            <h3 class="font-bold text-slate-800 text-lg" id="sideUserName">讀取中...</h3>
+            <div class="text-xs text-slate-400 font-medium bg-slate-50 inline-block px-2 py-0.5 rounded-full border border-slate-100 mt-1" id="sideUserRole">學生</div>
         </div>
+
+        <div class="mt-2 bg-slate-50 rounded-xl p-3 border border-slate-100">
+            <div class="flex justify-between items-end mb-2">
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Lv.</span>
+                    <span id="displayLevel" class="text-2xl font-black text-blue-600 leading-none">1</span>
+                </div>
+                <span class="text-[10px] font-bold text-slate-400"><span id="displayXP">0</span>/100 XP</span>
+            </div>
+            
+            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner">
+                <div id="xpBar" class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(99,102,241,0.5)]" style="width: 0%"></div>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2 text-center">再 <span id="xpToNext" class="text-blue-500 font-bold">100</span> XP 升級</p>
+        </div>
+
+    </div>
+</div>
          <nav class="flex-grow px-3 space-y-1">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 錯題補救</a>
@@ -315,8 +332,20 @@
         </div>
     </div>
 </div>
-    </main>
-<script>
+        <div id="levelUpModal" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-8 text-center max-w-sm mx-4 shadow-2xl relative overflow-hidden animate-[bounce_1s_infinite]">
+        <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-100/50 to-transparent pointer-events-none"></div>
+        
+        <div class="text-6xl mb-4">🆙</div>
+        <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-600 mb-2">LEVEL UP!</h2>
+        <p class="text-gray-500 font-bold mb-6">恭喜升上 <span id="newLevelNum" class="text-2xl text-blue-600">2</span> 等！</p>
+        
+        <button onclick="document.getElementById('levelUpModal').classList.add('hidden')" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">
+            太棒了！
+        </button>
+    </div>
+</div>
+    </main><script>
     // ==========================================
     // 🌐 全域變數
     // ==========================================
@@ -325,9 +354,12 @@
     let gameQuestions = [];
     let currentQIdx = 0;
     let timerInterval;
+    
+    // 經驗值設定
+    const XP_PER_LEVEL = 100;
 
     // ==========================================
-    // 🚀 系統初始化 (window.onload)
+    // 🚀 系統初始化 (單一入口)
     // ==========================================
     window.onload = function() {
         // 1. 身分驗證與帳號綁定
@@ -338,47 +370,37 @@
         }
 
         const user = Auth.getCurrentUser();
+        
+        // 檢查登入狀態
         if (!user) {
-            alert("請先登入！");
-            window.location.href = "index.html";
-            return;
+            // 如果是訪客或未登入，顯示預設值 (避免報錯)
+            if(document.getElementById('sideUserName')) document.getElementById('sideUserName').innerText = "訪客";
+            // 若要強制登入請取消註解下行：
+            // alert("請先登入！"); window.location.href = "index.html";
+        } else {
+            // 正常更新使用者名稱與角色
+            if(document.getElementById('sideUserName')) document.getElementById('sideUserName').innerText = user.name || user.username;
+            if(document.getElementById('sideUserRole')) document.getElementById('sideUserRole').innerText = user.grade || (user.role === 'teacher' ? '老師' : '學生');
         }
 
-        // 2. 更新側邊欄資訊
-        const nameEl = document.getElementById('sideUserName');
-        const roleEl = document.getElementById('sideUserRole');
-        if(nameEl) nameEl.innerText = user.name || user.username;
-        if(roleEl) roleEl.innerText = user.grade || (user.role === 'teacher' ? '老師' : '學生');
+        // 2. 初始化金幣與等級介面
+        if (typeof window.loadCoins === 'function') {
+            const coinDisplay = document.getElementById('coinCount');
+            if(coinDisplay) coinDisplay.innerText = window.loadCoins();
+        }
+        
+        if (typeof window.updateLevelUI === 'function') {
+            window.updateLevelUI();
+        }
 
-        // 3. 設定專屬的金幣 Key
-        const COIN_KEY = `coins_${user.username}`; 
-        const coinDisplay = document.getElementById('coinCount');
-
-        // 定義讀取金幣函式 (掛載到 window 以便全域使用)
-        window.loadCoins = function() {
-            const saved = localStorage.getItem(COIN_KEY);
-            return saved ? parseInt(saved) : 0;
-        };
-
-        // 定義儲存金幣函式
-        window.saveCoins = function(amount) {
-            localStorage.setItem(COIN_KEY, amount);
-            if(coinDisplay) coinDisplay.innerText = amount;
-        };
-
-        // 初始化顯示金幣
-        let currentCoins = window.loadCoins();
-        if(coinDisplay) coinDisplay.innerText = currentCoins;
-
-        // 4. 讀取網址參數 (設定科目與年級)
+        // 3. 讀取網址參數 (設定科目與年級)
         const urlParams = new URLSearchParams(window.location.search);
         currentSubject = urlParams.get('subject') || 'math';
         const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
         
         if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') {
             targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
-        } else if (user.grade) {
-            // 如果網址沒參數，自動使用使用者的年級
+        } else if (user && user.grade) {
             targetTags = [user.grade];
         }
         
@@ -387,58 +409,110 @@
     };
 
     // ==========================================
-    // ✏️ 個人資料編輯功能 (必須放在外層)
+    // 💰 金幣與經驗值系統 (核心邏輯)
     // ==========================================
 
-    // 1. 開啟編輯視窗
-    function openProfileModal() {
+    // --- 金幣 ---
+    window.loadCoins = function() {
         const user = Auth.getCurrentUser();
-        if (!user) {
-            alert("請先登入！");
-            return;
-        }
+        const username = user ? user.username : 'guest';
+        const COIN_KEY = `coins_${username}`;
+        return parseInt(localStorage.getItem(COIN_KEY) || 0);
+    };
 
-        // 設定下拉選單為目前的年級
-        const select = document.getElementById('editGradeSelect');
-        if (user.grade) {
-            select.value = user.grade;
+    window.saveCoins = function(amount) {
+        const user = Auth.getCurrentUser();
+        const username = user ? user.username : 'guest';
+        const COIN_KEY = `coins_${username}`;
+        localStorage.setItem(COIN_KEY, amount);
+        
+        const coinDisplay = document.getElementById('coinCount');
+        if(coinDisplay) coinDisplay.innerText = amount;
+    };
+
+    // --- 經驗值 (XP) ---
+    window.loadXP = function() {
+        const user = Auth.getCurrentUser();
+        const username = user ? user.username : 'guest';
+        return parseInt(localStorage.getItem(`xp_${username}`) || 0);
+    };
+
+    window.addXP = function(amount) {
+        const user = Auth.getCurrentUser();
+        const username = user ? user.username : 'guest';
+        const key = `xp_${username}`;
+        
+        let currentXP = window.loadXP();
+        let oldLevel = Math.floor(currentXP / XP_PER_LEVEL) + 1;
+        
+        // 更新並儲存
+        let newXP = currentXP + amount;
+        localStorage.setItem(key, newXP);
+        
+        // 檢查是否升級
+        let newLevel = Math.floor(newXP / XP_PER_LEVEL) + 1;
+        if (newLevel > oldLevel) {
+            showLevelUp(newLevel);
         }
         
-        // 顯示視窗
+        updateLevelUI();
+        console.log(`獲得 ${amount} XP，目前總經驗: ${newXP}`);
+    };
+
+    window.updateLevelUI = function() {
+        const totalXP = window.loadXP();
+        const currentLevel = Math.floor(totalXP / XP_PER_LEVEL) + 1;
+        const currentLevelXP = totalXP % XP_PER_LEVEL;
+        const percentage = (currentLevelXP / XP_PER_LEVEL) * 100;
+
+        const elLevel = document.getElementById('displayLevel');
+        const elXP = document.getElementById('displayXP');
+        const elBar = document.getElementById('xpBar');
+        const elNext = document.getElementById('xpToNext');
+
+        if (elLevel) elLevel.innerText = currentLevel;
+        if (elXP) elXP.innerText = currentLevelXP;
+        if (elBar) elBar.style.width = `${percentage}%`;
+        if (elNext) elNext.innerText = XP_PER_LEVEL - currentLevelXP;
+    };
+
+    function showLevelUp(level) {
+        document.getElementById('newLevelNum').innerText = level;
+        document.getElementById('levelUpModal').classList.remove('hidden');
+    }
+
+    // ==========================================
+    // ✏️ 個人資料編輯功能
+    // ==========================================
+
+    function openProfileModal() {
+        const user = Auth.getCurrentUser();
+        if (!user) { alert("請先登入！"); return; }
+        const select = document.getElementById('editGradeSelect');
+        if (user.grade) select.value = user.grade;
         document.getElementById('profileModal').classList.remove('hidden');
     }
 
-    // 2. 關閉編輯視窗
     function closeProfileModal() {
         document.getElementById('profileModal').classList.add('hidden');
     }
 
-    // 3. 儲存修改
     function saveProfile() {
         const newGrade = document.getElementById('editGradeSelect').value;
-        
-        // 呼叫 Auth 模組更新資料庫
         if (Auth.updateUser) {
             Auth.updateUser('grade', newGrade);
-            
-            // 更新畫面上的文字
             const roleEl = document.getElementById('sideUserRole');
             if (roleEl) roleEl.innerText = newGrade;
-
-            // 更新全域變數，讓遊戲生成器抓到新年級
-            targetTags = [newGrade];
-            
-            // 提示成功
+            targetTags = [newGrade]; // 更新全域變數
             alert(`修改成功！目前年級已更新為：${newGrade}`);
             closeProfileModal();
         } else {
-            console.error("Auth.updateUser 函式不存在，請檢查 auth.js");
             alert("系統錯誤：無法儲存資料");
         }
     }
 
     // ==========================================
-    // ⚙️ 核心功能函式
+    // ⚙️ 遊戲核心功能
     // ==========================================
 
     function getSubjectName(code) {
@@ -446,17 +520,14 @@
         return map[code] || code;
     }
 
-    // 題目生成器
     function generateGameQuestions(subj, count) {
         if (window.generatePaper) {
             let q = window.generatePaper({ 
                 subject: subj, 
                 total: count, 
-                // 優先使用 targetTags (使用者的年級)，如果沒有則回退到科目
                 tags: targetTags.length > 0 ? targetTags : [subj] 
             }).filter(i => i && i.question);
             
-            // 補齊題目防止當機
             if (q.length < count) {
                 const backup = window.generatePaper({ subject: subj, total: count - q.length });
                 q = q.concat(backup);
@@ -525,7 +596,7 @@
     function nextFlashcard() { currentQIdx++; renderFlashcard(); }
 
     // ==========================================
-    // ⏱️ 遊戲 2: 極速挑戰 (含金幣獎勵)
+    // ⏱️ 遊戲 2: 極速挑戰 (★整合 XP)
     // ==========================================
     let mrScore = 0, mrTimer = 60;
     function initMathRush() {
@@ -575,15 +646,18 @@
         document.getElementById('mrFinalScore').textContent = mrScore;
 
         const coinsEarned = Math.floor(mrScore / 100);
+        const xpEarned = Math.floor(mrScore / 10); // ★ 每10分換1XP
+
         if (coinsEarned > 0) {
             let current = window.loadCoins(); 
             window.saveCoins(current + coinsEarned);
-            alert(`時間到！恭喜獲得 ${coinsEarned} 枚金幣！`);
+            window.addXP(xpEarned); // ★ 增加經驗值
+            alert(`時間到！恭喜獲得 ${coinsEarned} 枚金幣 與 ${xpEarned} XP！`);
         }
     }
 
     // ==========================================
-    // 🧠 遊戲 3: 腦力配對
+    // 🧠 遊戲 3: 腦力配對 (★整合 XP)
     // ==========================================
     let mmCards = [], mmFlipped = [], mmLocked = false, mmMatches = 0;
     
@@ -658,6 +732,7 @@
                         document.getElementById('mmGameOver').classList.remove('hidden');
                         let current = window.loadCoins();
                         window.saveCoins(current + 20);
+                        window.addXP(30); // ★ 完成配對給 30 XP
                     }
                 }, 600);
             } else {
@@ -671,7 +746,7 @@
     }
 
     // ==========================================
-    // ⚔️ 遊戲 4: 勇者鬥惡龍
+    // ⚔️ 遊戲 4: 勇者鬥惡龍 (★整合 XP)
     // ==========================================
     let rpgHp = 100, monsterHp = 100;
     function initRPG() {
@@ -686,9 +761,10 @@
         monsterHp = Math.max(0, val);
         document.getElementById('monsterHpBar').style.width = monsterHp + '%';
         if(monsterHp === 0) { 
-            alert("🎉 恭喜！你擊敗了惡龍！獲得 50 金幣！"); 
             let current = window.loadCoins();
             window.saveCoins(current + 50);
+            window.addXP(100); // ★ 打贏惡龍給 100 XP
+            alert("🎉 恭喜！擊敗惡龍！獲得 50 金幣與 100 XP！"); 
             backToMenu(); 
         }
     }
@@ -719,7 +795,7 @@
     }
 
     // ==========================================
-    // 💣 遊戲 5: 拆彈專家
+    // 💣 遊戲 5: 拆彈專家 (★整合 XP)
     // ==========================================
     let bombStreak = 0, bombTarget = 5, bombTimerValue = 10;
     function initDefuseBomb() {
@@ -769,6 +845,7 @@
                         document.getElementById('bombSuccess').classList.remove('hidden'); 
                         let current = window.loadCoins();
                         window.saveCoins(current + 30);
+                        window.addXP(50); // ★ 拆彈成功給 50 XP
                     }
                     else { currentQIdx++; startBombTimer(); renderBombQuestion(); }
                 } else { 
@@ -782,7 +859,7 @@
     }
 
     // ==========================================
-    // 🎯 遊戲 6: 幸運轉盤
+    // 🎯 遊戲 6: 幸運轉盤 (★整合 XP)
     // ==========================================
     let wheelScore = 0, currentMultiplier = 1;
     function initLuckyWheel() {
@@ -823,6 +900,8 @@
                     document.getElementById('wheelScore').textContent = wheelScore;
                     alert(`🎉 答對！獲得 ${points} 分`);
                     
+                    window.addXP(10); // ★ 答對一題給 10 XP
+
                     if(wheelScore % 1000 === 0) {
                             let current = window.loadCoins();
                             window.saveCoins(current + 1);
