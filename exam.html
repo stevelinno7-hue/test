@@ -23,6 +23,8 @@
         .q-dot.normal { background-color: #f1f5f9; color: #94a3b8; }
         .modal-enter { animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        /* 請加入這行 CSS */
+.sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -45,32 +47,72 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-    <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex-shrink-0 z-20">
-        <div class="max-w-7xl mx-auto px-4 h-full flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg">測</div>
+  <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden bg-[#f8fafc]">
+
+    <header class="lg:hidden h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        
+        <div class="p-6 border-b border-slate-50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 border border-blue-100">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
                 <div>
-                    <h1 class="text-sm font-bold text-gray-800" id="examTitle">載入中...</h1>
+                    <div class="text-sm font-bold text-slate-700">考生模式</div>
+                    <div class="text-xs text-slate-400">測驗進行中</div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-grow px-3 space-y-1 mt-4 overflow-y-auto">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-th-large w-5 text-center"></i> 課程總覽</a>
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-first-aid w-5 text-center"></i> 錯題補救</a>
+            <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-book-reader w-5 text-center"></i> 重點複習</a>
+            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-comments w-5 text-center"></i> 解題論壇</a>
+        </nav>
+    </aside>
+
+    <div class="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+
+        <header class="bg-white shadow-sm border-b border-gray-200 h-16 shrink-0 z-20 px-4 flex justify-between items-center">
+             <div class="flex items-center gap-4 min-w-0">
+                <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg shrink-0">測</div>
+                <div class="min-w-0">
+                    <h1 class="text-sm font-bold text-gray-800 truncate" id="examTitle">載入中...</h1>
                     <div class="flex items-center gap-2 text-xs text-gray-500">
-                        <span id="examSubjectTag" class="bg-gray-100 px-1.5 py-0.5 rounded font-bold">科目</span>
-                        <span class="text-blue-600"><i class="fas fa-check-circle"></i> AI 智能生成</span>
+                        <span id="examSubjectTag" class="bg-gray-100 px-1.5 py-0.5 rounded font-bold shrink-0">科目</span>
                     </div>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="flex items-center bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-mono font-bold text-lg border border-slate-200">
+            <div class="flex items-center gap-2 md:gap-4">
+                <div class="flex items-center bg-slate-100 text-slate-600 px-2 md:px-4 py-2 rounded-xl font-mono font-bold text-sm md:text-lg border border-slate-200">
                     <i class="far fa-clock mr-2 text-slate-400"></i>
                     <span id="timer">00:00</span>
                 </div>
-                <button onclick="showSetupModal()" class="text-slate-400 hover:text-blue-600 font-bold px-3 py-2 transition text-sm" title="重新設定">
+                <button onclick="showSetupModal()" class="text-slate-400 hover:text-blue-600 font-bold px-2 py-2 transition text-sm hidden md:block">
                     <i class="fas fa-cog"></i>
                 </button>
-                <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-lg shadow-blue-200 transition transform hover:-translate-y-0.5">
+                <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3 md:px-6 py-2 rounded-xl font-bold text-xs md:text-sm shadow-lg shadow-blue-200 transition">
                     交卷
                 </button>
             </div>
-        </div>
-    </header>
+        </header>
 
     <main class="flex-grow flex bg-[#f8fafc] relative overflow-hidden">
         <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth p-4 md:p-8" id="mainScroll">
@@ -110,14 +152,14 @@
             </div>
         </div>
 
-        <aside class="w-80 bg-white border-l border-slate-200 hidden xl:flex flex-col z-10">
-            <div class="p-6 border-b border-slate-100">
-                <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-th"></i> 答題狀況</h3>
-            </div>
-            <div class="flex-grow overflow-y-auto p-6">
-                <div class="grid grid-cols-5 gap-3" id="questionPalette"></div>
-            </div>
-        </aside>
+        <aside class="w-full lg:w-72 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 flex-shrink-0 flex flex-col z-10 h-48 lg:h-auto order-last">
+                <div class="p-4 border-b border-slate-100 bg-slate-50 lg:bg-white">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-th"></i> 答題狀況</h3>
+                </div>
+                <div class="flex-grow overflow-y-auto p-4">
+                    <div class="grid grid-cols-5 gap-2" id="questionPalette"></div>
+                </div>
+            </aside>
     </main>
 
     <div id="setupModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity">
@@ -208,6 +250,18 @@
     setupRefreshProtection();
     showSetupModal();
 };
+        function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
 
         // ★★★ 核心：防重整保護邏輯 ★★★
         function setupRefreshProtection() {
