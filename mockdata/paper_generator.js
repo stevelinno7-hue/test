@@ -69,20 +69,29 @@
                 const t = repo[tid];
                 if (!t) return;
                 
-                // --- A. 科目寬鬆檢查 ---
-                const tSubject = String(t.subject || "").toLowerCase().trim();
-                let isSubjectMatch = false;
+               
+            // --- A. 科目檢查邏輯 (理化聯集 vs 社會精準) ---
+const tSubject = String(t.subject || "").toLowerCase().trim();
+let isSubjectMatch = false;
 
-                if (subject === 'science') {
-                    if (['physics', 'chemistry', 'science', '理化', '物理', '化學'].some(s => tSubject.includes(s))) isSubjectMatch = true;
-                } else if (subject === 'social') {
-                    if (['history', 'geography', 'civics', 'social', '歷史', '地理', '公民', '社會'].some(s => tSubject.includes(s))) isSubjectMatch = true;
-                } else if (tSubject.includes(subject) || subject.includes(tSubject)) {
-                    isSubjectMatch = true;
-                }
+// 1. 理化聯集池 (因為理化題可能標註為 physics 或 chemistry)
+const sciencePool = ['physics', 'chemistry', 'science', '理化', '物理', '化學', '自然'];
 
-                if (!isSubjectMatch) return;
+if (subject === 'science') {
+    // 理化維持聯集：只要題目屬於理化池，或標籤有理化關鍵字就放行
+    if (sciencePool.some(s => tSubject.includes(s))) {
+        isSubjectMatch = true;
+    } else {
+        const rawTagsForSub = normalizeTags(t.tags || t.meta || []);
+        if (rawTagsForSub.some(tag => ['理化', '化學', '物理'].includes(tag))) isSubjectMatch = true;
+    }
+} 
+// 2. 社會科與其他科目：採用精準比對，不再使用聯集池
+else if (tSubject.includes(subject) || subject.includes(tSubject)) {
+    isSubjectMatch = true;
+}
 
+if (!isSubjectMatch) return;
                 // --- B. 標籤暴力比對 ---
                 let score = 0;
                 // 這裡做這件事：把題庫裡各種怪異格式的 tags 全部洗成乾淨的陣列
