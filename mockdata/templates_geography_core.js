@@ -205,10 +205,16 @@
 
     const options = Utils.shuffle([a, distractors[0], distractors[1], distractors[2]]);
 
-    const tags = ["geography", "地理", ...unit.t];
-    const grade = Utils.pick(["國七","國八","國九","高一","高二","高三"]);
+   const tags = ["geography", "地理", ...unit.t];
+    
+    // 修正：使用 unit 傳進來的 grade，而不是 Utils.pick
+    const grade = unit.grade || "通用"; 
     if (!tags.includes(grade)) tags.push(grade);
 
+    // 在題目後方的括號也改為正確年級
+    if (Math.random() < 0.25) {
+      q = `${qBase}（適用：${grade}）`;
+    }
     return {
       id: Utils.uid('geo'),
       question: `【地理】${q}`,
@@ -257,10 +263,12 @@
         variant.answer = opts.indexOf(variant.explanation[0].replace('正確答案：',''));
       }
 
-      bank.push(variant);
-      idx++;
-      if (idx > targetCount * 20) break; // safety
-    }
+      bank.push(makeVariant(entry.item, { 
+    unitId: entry.unitId, 
+    unitName: entry.unitName, 
+    grade: entry.unitGrade, // <--- 確保這裡有傳入年級
+    t: entry.t 
+}));
 
     return bank.slice(0, targetCount);
   }
