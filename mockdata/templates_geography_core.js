@@ -169,113 +169,76 @@
     "溫帶海洋性","地中海型","熱帶雨林","溫帶季風","高緯度","低緯度",
     "城市化","工業化","農業化","全球化","資源枯竭","生物多樣性"
   ];
-
-  // -------------------------
-  // 變體生成器（保留正答，產生語句變體與干擾）
-  // -------------------------
-  function makeVariant(baseItem, unit) {
+function makeVariant(baseItem, unit) {
     const qBase = baseItem.q;
     const a = baseItem.a;
     const oList = (baseItem.o || []).slice();
 
-    // 題幹變體：加入情境、年級或應用字眼
     let q = qBase;
-    const variants = ["（例題）","（應用）","（延伸）","（判斷）","（比較）"];
-    if (Math.random() < 0.45) {
-      q = `${qBase} ${Utils.pick(variants)}`;
-    } else if (Math.random() < 0.25) {
-      q = `${qBase}（適用：${Utils.pick(["國七","國八","國九","高一","高二","高三"])})`;
+    const grade = unit.grade || "通用"; // 取得該單元的正確年級
+
+    // 隨機決定是否在題幹標註年級
+    if (Math.random() < 0.3) {
+      const variantLabel = Utils.pick(["（例題）", "（應用）", "（延伸）"]);
+      q = `${qBase} ${variantLabel}（適用：${grade}）`;
     }
 
-    // 補足干擾選項到 3 個
     const distractors = oList.slice();
     while (distractors.length < 3) {
       const cand = Utils.pick(extraDistractors);
       if (cand !== a && !distractors.includes(cand)) distractors.push(cand);
     }
 
-    // 若干擾與正答相同或重複，替換
-    for (let i=0;i<distractors.length;i++){
-      if (distractors[i] === a) {
-        let repl = Utils.pick(extraDistractors);
-        while (repl === a || distractors.includes(repl)) repl = Utils.pick(extraDistractors);
-        distractors[i] = repl;
-      }
-    }
+    const options = Utils.shuffle([a, ...distractors.slice(0, 3)]);
+    const tags = ["geography", "地理", grade, ...unit.t];
 
-    const options = Utils.shuffle([a, distractors[0], distractors[1], distractors[2]]);
-
-   const tags = ["geography", "地理", ...unit.t];
-    
-    // 修正：使用 unit 傳進來的 grade，而不是 Utils.pick
-    const grade = unit.grade || "通用"; 
-    if (!tags.includes(grade)) tags.push(grade);
-
-    // 在題目後方的括號也改為正確年級
-    if (Math.random() < 0.25) {
-      q = `${qBase}（適用：${grade}）`;
-    }
     return {
       id: Utils.uid('geo'),
       question: `【地理】${q}`,
       options: options,
       answer: options.indexOf(a),
-      explanation: [`正確答案：${a}`, `單元：${unit.unitName}`],
+      explanation: [`正確答案：${a}`, `單元：${unit.unitName}`, `難度設定：${grade}`],
       subject: "geography",
       tags: tags
     };
   }
 
-  // -------------------------
-  // 產生題庫（目標數量）
-  // -------------------------
   function generateGeographyBank(targetCount = 500) {
     const bank = [];
     const baseList = [];
+
     basePools.forEach(unit => {
       unit.items.forEach(item => {
-        baseList.push({ unitId: unit.unitId, unitName: unit.unitName, t: unit.t.slice(), item });
+        // 確保將 grade 傳入 baseList
+        baseList.push({
+          unitId: unit.unitId,
+          unitName: unit.unitName,
+          grade: unit.grade,
+          t: unit.t,
+          item: item
+        });
       });
     });
 
     if (baseList.length === 0) return bank;
 
-    // 先加入每個基底題（確保原題保留）
-    baseList.forEach(entry => {
-      bank.push(makeVariant(entry.item, { unitId: entry.unitId, unitName: entry.unitName, t: entry.t }));
-    });
-
-    // 以變體方式擴充直到達到目標數量
     let idx = 0;
     while (bank.length < targetCount) {
       const entry = baseList[idx % baseList.length];
-      const variant = makeVariant(entry.item, { unitId: entry.unitId, unitName: entry.unitName, t: entry.t });
+      // 這裡將正確的單元資訊（含年級）傳給生成器
+      const variant = makeVariant(entry.item, {
+        unitId: entry.unitId,
+        unitName: entry.unitName,
+        grade: entry.grade,
+        t: entry.t
+      });
 
-      // 小機率產生反向題（哪一項不是...）以增加題型多樣性
-      if (Math.random() < 0.12) {
-        // 嘗試把題幹改為「哪一項不是...」，並調整選項（保留語意）
-        variant.question = variant.question.replace('？', '，下列何者不是？');
-        // 若原正答仍合理，則隨機交換選項以保持題目有效
-        const opts = variant.options.slice();
-        const swap = (variant.answer + 1) % 4;
-        [opts[variant.answer], opts[swap]] = [opts[swap], opts[variant.answer]];
-        variant.options = opts;
-        variant.answer = opts.indexOf(variant.explanation[0].replace('正確答案：',''));
-      }
-
-      bank.push(makeVariant(entry.item, { 
-    unitId: entry.unitId, 
-    unitName: entry.unitName, 
-    grade: entry.unitGrade, // <--- 確保這裡有傳入年級
-    t: entry.t 
-}));
-
-    return bank.slice(0, targetCount);
+      bank.push(variant);
+      idx++;
+    }
+    return bank;
   }
 
-  // -------------------------
-  // 注入到 window.__GEOGRAPHY_REPO__
-  // -------------------------
   function injectToRepo(bank) {
     bank.forEach((item, i) => {
       const id = `geo_q_${i}`;
@@ -294,16 +257,14 @@
     });
   }
 
-  // 產生並注入
   const TARGET = 500;
   const bank = generateGeographyBank(TARGET);
   injectToRepo(bank);
+
   global.__GEOGRAPHY_BANK__ = bank;
-
-  console.log(`✅ Geography bank generated: ${bank.length} items. Injected into window.__GEOGRAPHY_REPO__.`);
-
-  // 對外暴露以便後續使用
   global.generateGeographyBank = generateGeographyBank;
-  global.__GEOGRAPHY_BANK__ = bank;
+
+  console.log(`✅ 修正成功！共產生 ${bank.length} 題。`);
+  console.log(`📌 年級分配檢查：`, bank[0].tags); // 觀察第一個產出的標籤是否包含正確年級
 
 })(window);
