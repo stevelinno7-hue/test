@@ -3,156 +3,349 @@
     window.__CHEMISTRY_REPO__ = window.__CHEMISTRY_REPO__ || {};
 
     const Utils = {
-        shuffle: (arr) => arr.sort(() => Math.random() - 0.5),
+        shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5),
         rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
         pick: (arr) => arr[Utils.rnd(0, arr.length-1)]
     };
 
-    // 簡單題型模板集（可擴充）
-    const atomPool = [
-        {s:'H', w:1}, {s:'C', w:12}, {s:'N', w:14}, {s:'O', w:16},
-        {s:'Na', w:23}, {s:'S', w:32}, {s:'Cl', w:35.5}, {s:'Ca', w:40},
-        {s:'K', w:39}, {s:'Mg', w:24}
-    ];
+    // --- 擴充化學知識大數據庫 (The Chemical Matrix) ---
+    const DB = {
+        atoms: [
+            {s:'H', w:1}, {s:'He', w:4}, {s:'Li', w:7}, {s:'Be', w:9}, {s:'B', w:11},
+            {s:'C', w:12}, {s:'N', w:14}, {s:'O', w:16}, {s:'F', w:19}, {s:'Ne', w:20},
+            {s:'Na', w:23}, {s:'Mg', w:24}, {s:'Al', w:27}, {s:'Si', w:28}, {s:'P', w:31},
+            {s:'S', w:32}, {s:'Cl', w:35.5}, {s:'K', w:39}, {s:'Ca', w:40}, {s:'Fe', w:56},
+            {s:'Cu', w:64}, {s:'Zn', w:65}, {s:'Ag', w:108}, {s:'I', w:127}, {s:'Au', w:197},
+            {s:'Pb', w:207}, {s:'Hg', w:201}
+        ],
+        substances: [
+            {n:"食鹽", f:"NaCl", ph:7, e:true, g:"國八", t:"鹽類"},
+            {n:"鹽酸", f:"HCl", ph:1, e:true, g:"國八", t:"強酸"},
+            {n:"氫氧化鈉", f:"NaOH", ph:14, e:true, g:"國八", t:"強鹼"},
+            {n:"醋酸", f:"CH3COOH", ph:4, e:true, g:"國八", t:"有機酸"},
+            {n:"酒精", f:"C2H5OH", ph:7, e:false, g:"國八", t:"醇類"},
+            {n:"小蘇打", f:"NaHCO3", ph:9, e:true, g:"國八", t:"鹽類"},
+            {n:"氨水", f:"NH3", ph:11, e:true, g:"國八", t:"弱鹼"},
+            {n:"蔗糖", f:"C12H22O11", ph:7, e:false, g:"國八", t:"醣類"},
+            {n:"硫酸", f:"H2SO4", ph:1, e:true, g:"國八", t:"強酸"},
+            {n:"氫氧化鈣", f:"Ca(OH)2", ph:12, e:true, g:"國八", t:"強鹼"},
+            {n:"葡萄糖", f:"C6H12O6", ph:7, e:false, g:"國八", t:"醣類"},
+            {n:"氯化銨", f:"NH4Cl", ph:6, e:true, g:"國八", t:"鹽類"},
+            {n:"過氧化氫", f:"H2O2", ph:6, e:false, g:"國八", t:"氧化劑"},
+            {n:"碳酸鈣", f:"CaCO3", ph:8, e:true, g:"國八", t:"鹽類"}
+        ],
+        indicators: [
+            {n:"石蕊試紙", a:"紅色", b:"藍色"},
+            {n:"酚酞指示劑", a:"無色", b:"紅色"},
+            {n:"廣用試劑", a:"紅橙色", b:"藍紫色"},
+            {n:"甲基橙", a:"紅色", b:"黃色"},
+            {n:"溴百里酚藍", a:"黃色", b:"藍色"}
+        ],
+        mixtures: [
+            {q:"空氣", a:"均相混合物"}, {q:"泥沙水", a:"非均相混合物"},
+            {q:"食鹽水", a:"溶液"}, {q:"黃金", a:"元素"}, {q:"純水", a:"化合物"},
+            {q:"牛奶", a:"非均相混合物"}, {q:"合金鋼", a:"均相混合物"}, {q:"二氧化碳", a:"化合物"}
+        ]
+    };
 
-    const phExamples = [1,2,3,4,5,6,7,8,9,10,11,12,13,14];
-    const conceptPool = [
-        {q:"原子核中不帶電的粒子是？", a:"中子", o:["質子","電子","離子"], t:"原子結構"},
-        {q:"空氣中含量最多的氣體是？", a:"氮氣", o:["氧氣","氬氣","二氧化碳"], t:"氣體"},
-        {q:"燃燒反應屬於哪一種類型？", a:"氧化反應", o:["還原反應","中和反應","物理變化"], t:"反應"},
-        {q:"將鹽酸與氫氧化鈉混合，會產生？", a:"鹽類與水", o:["酸氣","沉澱物","氫氣"], t:"酸鹼中和"},
-        {q:"下列何者屬於有機化合物？", a:"酒精 (C2H5OH)", o:["食鹽 (NaCl)","水 (H2O)","硫酸 (H2SO4)"], t:"有機化學"},
-        {q:"乾冰昇華是什麼變化？", a:"物理變化", o:["化學變化","核反應","燃燒"], t:"物質變化"},
-        {q:"肥皂去汙的原理是？", a:"親油端吸油，親水端拉入水中", o:["酸鹼中和","氧化還原","產生酵素"], t:"生活化學"}
-    ];
+    // --- 生成單一題目的函式（含原本 12 引擎 + 12 新引擎） ---
+    function generateCase(i) {
+        const engineType = i % 24; // 現在 24 大引擎循環（0..23）
+        let p = { question: "", options: [], answer: 0, explanation: [], tags: ["理化", "化學", "自動生成"] };
 
-    const stoichTemplates = [
-        {q:"若 1 mol 的 A 與 2 mol 的 B 完全反應生成 1 mol 的 C，若有 3 mol A 與 4 mol B，限制試劑為何？", a:"B", o:["A","C","無限制試劑"], t:"化學計量"},
-        {q:"1 mol 氣體在標準狀態（STP）體積約為多少？", a:"22.4 L", o:["11.2 L","44.8 L","1 L"], t:"氣體定律"},
-        {q:"若 0.5 mol NaCl 溶於 0.5 L 水中，濃度為多少 mol/L？", a:"1.0 M", o:["0.5 M","0.25 M","2.0 M"], t:"濃度計算"}
-    ];
+        switch(engineType) {
+            case 0: // 原子量題（變體）
+                {
+                    const a = Utils.pick(DB.atoms);
+                    const n = Utils.rnd(2, 5);
+                    const mw = a.w * n;
+                    p.question = `【原子量】已知 ${a.s}=${a.w}，請問分子 ${a.s}${n} 的分子量為多少？`;
+                    p.options = Utils.shuffle([mw, mw + n, Math.max(1, mw - 1), mw + Utils.rnd(2,5)]);
+                    p.answer = p.options.indexOf(mw);
+                    p.tags.push("國八", "分子量");
+                }
+                break;
 
-    const gasLawTemplates = [
-        {q:"玻意耳定律描述壓力與體積的關係為何？", a:"P 與 V 成反比", o:["P 與 V 成正比","P 與 T 成反比","V 與 T 無關"], t:"氣體定律"},
-        {q:"查理定律指出在壓力不變下，氣體體積與何者成正比？", a:"絕對溫度 (K)", o:["壓力","摩爾數","分子量"], t:"氣體定律"}
-    ];
+            case 1: // 指示劑顏色
+                {
+                    const ind = Utils.pick(DB.indicators);
+                    const sub = Utils.pick(DB.substances);
+                    const correctColor = sub.ph < 7 ? ind.a : (sub.ph > 7 ? ind.b : "原色");
+                    p.question = `【酸鹼】將 ${ind.n} 加入 ${sub.n} 溶液中，顏色應呈現？`;
+                    p.options = Utils.shuffle([correctColor, "黑色", "黃色", "白色"]);
+                    p.answer = p.options.indexOf(correctColor);
+                    p.tags.push("國八", "指示劑");
+                }
+                break;
 
-    const titrationTemplates = [
-        {q:"滴定曲線中等當點附近 pH 變化劇烈，等當點代表什麼？", a:"酸與鹼當量相等", o:["溶液中無離子","溶液完全中性化","溶液濃度為 1M"], t:"酸鹼滴定"},
-        {q:"緩衝溶液的主要功能是？", a:"抵抗 pH 變化", o:["增加溶液導電度","降低溶液溫度","促進沉澱"], t:"緩衝溶液"}
-    ];
+            case 2: // 電解質性質
+                {
+                    const eSub = Utils.pick(DB.substances);
+                    const correctE = eSub.e ? "可導電，是電解質" : "不導電，非電解質";
+                    p.question = `【電解質】關於「${eSub.n}」溶於水後的敘述，何者正確？`;
+                    p.options = Utils.shuffle([correctE, "固態時可導電", "是混合物", "會產生爆炸"]);
+                    p.answer = p.options.indexOf(correctE);
+                    p.tags.push("國八", "電解質");
+                }
+                break;
 
-    const redoxTemplates = [
-        {q:"氧化數增加代表何種反應？", a:"被氧化", o:["被還原","中和反應","沉澱反應"], t:"氧化還原"},
-        {q:"在氧化還原反應中，電子由何者流向何者？", a:"由還原劑流向氧化劑", o:["由氧化劑流向還原劑","由酸流向鹼","由陰極流向陽極"], t:"電化學"}
-    ];
+            case 3: // 物質分類
+                {
+                    const mix = Utils.pick(DB.mixtures);
+                    p.question = `【物質分類】「${mix.q}」在化學分類上屬於？`;
+                    p.options = Utils.shuffle([mix.a, "原子", "中子", "電解質"]);
+                    p.answer = p.options.indexOf(mix.a);
+                    p.tags.push("國八", "物質性質");
+                }
+                break;
 
-    const organicTemplates = [
-        {q:"下列哪一個是羧酸的官能基？", a:"-COOH", o:["-OH","-NH2","-CHO"], t:"有機官能基"},
-        {q:"烯類分子中含有哪種鍵？", a:"碳碳雙鍵", o:["碳碳三鍵","碳碳單鍵不存在","碳氫雙鍵"], t:"有機化學"}
-    ];
+            case 4: // 化學平衡
+                {
+                    const factor = Utils.pick(["升高溫度", "增加反應物濃度", "減少產物", "加入催化劑"]);
+                    const result = factor === "加入催化劑" ? "不移動平衡" : "向正反應方向移動";
+                    p.question = `【化學平衡】在一平衡系統中，若「${factor}」，平衡將如何移動？`;
+                    p.options = Utils.shuffle([result, "向逆反應方向移動", "反應停止", "顏色變深"]);
+                    p.answer = p.options.indexOf(result);
+                    p.tags.push("國八", "化學平衡");
+                }
+                break;
 
-    const labSafety = [
-        {q:"實驗室中若遇到化學品濺到皮膚，第一步應該做什麼？", a:"用大量水沖洗", o:["用紙巾擦拭","立即用酒精消毒","等待老師處理"], t:"實驗安全"},
-        {q:"使用 Bunsen 瓦斯時應注意什麼？", a:"確認無瓦斯外漏並點火後調整火焰", o:["直接用手觸摸火焰","將易燃物放在火源旁","關閉通風"], t:"實驗安全"}
-    ];
+            case 5: // 有機官能基辨識
+                {
+                    const oSub = Utils.pick(DB.substances.filter(x => x.g === "國九" || x.t));
+                    p.question = `【有機化學】「${oSub.n} (${oSub.f})」屬於哪一類？`;
+                    p.options = Utils.shuffle([oSub.t || "有機化合物", "烴類", "聚合物", "無機酸"]);
+                    p.answer = p.options.indexOf(oSub.t || "有機化合物");
+                    p.tags.push("國八", "有機化合物");
+                }
+                break;
 
-    // 計算目前已有題目數（以 key 數量計）
-    const existingKeys = Object.keys(window.__CHEMISTRY_REPO__);
-    let currentCount = existingKeys.length;
+            case 6: // 莫耳濃度計算
+                {
+                    const m = Utils.rnd(1, 5), v = Utils.rnd(1, 5);
+                    const conc = (m / v).toFixed(2);
+                    p.question = `【莫耳濃度】將 ${m} mol 溶質溶於 ${v} L 溶液中，莫耳濃度為多少 M？`;
+                    p.options = Utils.shuffle([conc + " M", (m*v) + " M", (m+v) + " M", "10 M"]);
+                    p.answer = p.options.indexOf(conc + " M");
+                    p.tags.push("國八", "濃度計算");
+                }
+                break;
 
-    // 目標題數
-    const TARGET = 150;
-    let genIndex = 0;
+            case 7: // 氧化還原活性比較
+                {
+                    const act = Utils.pick([{m:"鉀", l:"高"}, {m:"金", l:"低"}, {m:"碳", l:"常用還原劑"}]);
+                    p.question = `【氧化還原】關於元素「${act.m}」的活性敘述何者正確？`;
+                    p.options = Utils.shuffle(["對氧活性極" + act.l, "活性適中", "不具氧化性", "是唯一的液態金屬"]);
+                    p.answer = p.options.indexOf("對氧活性極" + act.l);
+                    p.tags.push("國八", "活性");
+                }
+                break;
 
-    // 生成器函式：根據類型產生題目物件
-    function makeMWQuestion(i) {
-        const a1 = Utils.pick(atomPool);
-        const a2 = Utils.pick(atomPool);
-        const n1 = Utils.rnd(1,3);
-        const n2 = Utils.rnd(1,4);
-        const mw = (a1.w * n1) + (a2.w * n2);
-        const formula = `${a1.s}${n1>1? n1:''}${a2.s}${n2>1? n2:''}`;
-        const distractors = [Math.round(mw + Utils.rnd(2,12)), Math.round(Math.abs(mw - Utils.rnd(1,8))), Math.round(mw * (1 + (Utils.rnd(1,3)/10)))];
-        const opts = Utils.shuffle([mw, ...distractors]);
-        return {
-            question: `【分子量】已知原子量：${a1.s}=${a1.w}, ${a2.s}=${a2.w}。求分子 ${formula} 的分子量？`,
-            options: opts,
-            answer: opts.indexOf(mw),
-            explanation: [`計算：(${a1.w} × ${n1}) + (${a2.w} × ${n2}) = ${mw}`],
-            subject: "chemistry",
-            tags: ["chemistry","分子量","自動生成"]
-        };
-    }
+            case 8: // 原子結構粒子
+                {
+                    const part = Utils.pick([{p:"質子", f:"決定原子序"}, {p:"電子", f:"決定化學性質"}, {p:"中子", f:"不帶電"}]);
+                    p.question = `【原子結構】原子中哪種粒子「${part.f}」？`;
+                    p.options = Utils.shuffle([part.p, "原子核", "夸克", "離子"]);
+                    p.answer = p.options.indexOf(part.p);
+                    p.tags.push("國八", "原子結構");
+                }
+                break;
 
-    function makePHQuestion(ph) {
-        const type = ph < 7 ? "酸性" : (ph > 7 ? "鹼性" : "中性");
-        const opts = Utils.shuffle(["酸性","中性","鹼性","無法判斷"]);
-        return {
-            question: `【酸鹼】某水溶液測得 pH 值為 ${ph}，試問其性質為何？`,
-            options: opts,
-            answer: opts.indexOf(type),
-            explanation: [`pH < 7 為酸性，pH = 7 為中性，pH > 7 為鹼性`],
-            subject: "chemistry",
-            tags: ["chemistry","酸鹼","自動生成"]
-        };
-    }
+            case 9: // 生活化學 - 皂化與酯化
+                {
+                    const react = Utils.pick([{n:"酯化", a:"酸+醇"}, {n:"皂化", a:"油脂+鹼"}]);
+                    p.question = `【生活化學】關於「${react.n}反應」的原料敘述何者正確？`;
+                    p.options = Utils.shuffle([react.a, "酸+鹼", "鹽+水", "糖+醇"]);
+                    p.answer = p.options.indexOf(react.a);
+                    p.tags.push("國八", "有機反應");
+                }
+                break;
 
-    function makeFromTemplate(tpl) {
-        const opts = Utils.shuffle([tpl.a, ...tpl.o]);
-        return {
-            question: `【${tpl.t}】${tpl.q}`,
-            options: opts,
-            answer: opts.indexOf(tpl.a),
-            explanation: [`正確答案：${tpl.a}`],
-            subject: "chemistry",
-            tags: ["chemistry", tpl.t, "自動生成"]
-        };
-    }
+            case 10: // 氣體製備現象
+                {
+                    const gas = Utils.pick([{n:"二氧化碳", a:"澄清石灰水變混濁"}, {n:"氧氣", a:"使線香復燃"}]);
+                    p.question = `【氣體】檢驗實驗室製得的「${gas.n}」，正確現象為？`;
+                    p.options = Utils.shuffle([gas.a, "產生爆鳴聲", "顏色變紅", "味道刺鼻"]);
+                    p.answer = p.options.indexOf(gas.a);
+                    p.tags.push("國八", "氣體");
+                }
+                break;
 
-    // 主要生成迴圈：依序產生不同類型題目直到達標
-    while (currentCount < TARGET) {
-        const id = `chem_auto_${genIndex++}`;
-        let payload;
+            case 11: // 實驗安全
+                {
+                    p.question = `【實驗安全】關於濃硫酸稀釋的敘述，何者正確？`;
+                    p.options = Utils.shuffle(["酸緩慢加入水中", "水快速加入酸中", "兩者隨便混合", "戴上手套就不必加水"]);
+                    p.answer = p.options.indexOf("酸緩慢加入水中");
+                    p.tags.push("國八", "實驗安全");
+                }
+                break;
 
-        // 決定題型分布：多樣化比例
-        const r = genIndex % 10;
-        if (r === 0 || r === 1 || r === 2) {
-            // 分子量題（約 30%）
-            payload = makeMWQuestion(genIndex);
-        } else if (r === 3 || r === 4) {
-            // pH 題（約 20%）
-            const ph = Utils.pick(phExamples);
-            payload = makePHQuestion(ph);
-        } else if (r === 5) {
-            // 概念題（從 conceptPool）
-            payload = makeFromTemplate(Utils.pick(conceptPool));
-        } else if (r === 6) {
-            // 計量/莫耳/氣體題
-            payload = makeFromTemplate(Utils.pick(stoichTemplates));
-        } else if (r === 7) {
-            // 氣體定律或滴定
-            payload = makeFromTemplate(Utils.pick(gasLawTemplates.concat(titrationTemplates)));
-        } else if (r === 8) {
-            // 氧化還原或有機
-            payload = makeFromTemplate(Utils.pick(redoxTemplates.concat(organicTemplates)));
-        } else {
-            // 實驗安全或其他生活化學
-            payload = makeFromTemplate(Utils.pick(labSafety));
+            // --- 新增引擎 12-23（共 12 類新題型） ---
+            case 12: // 化學方程式配平（簡單）
+                {
+                    const eqs = [
+                        {q:"H2 + O2 → H2O", a:"2H2 + O2 → 2H2O"},
+                        {q:"N2 + H2 → NH3", a:"N2 + 3H2 → 2NH3"},
+                        {q:"C + O2 → CO2", a:"C + O2 → CO2"}
+                    ];
+                    const sel = Utils.pick(eqs);
+                    p.question = `【配平】配平下列反應：${sel.q}，哪一個為正確配平式？`;
+                    p.options = Utils.shuffle([sel.a, "H2 + O2 → 2H2O", "2H2 + O2 → H2O", "無法配平"]);
+                    p.answer = p.options.indexOf(sel.a);
+                    p.tags.push("國八", "配平");
+                }
+                break;
+
+            case 13: // 氣體用途判斷
+                {
+                    const gasUses = [
+                        {n:"氧氣", a:"助燃"}, {n:"氮氣", a:"惰性保護"}, {n:"二氧化碳", a:"滅火或製造碳酸飲料"}
+                    ];
+                    const sel = Utils.pick(gasUses);
+                    p.question = `【氣體用途】下列哪一項是「${sel.n}」的常見用途？`;
+                    p.options = Utils.shuffle([sel.a, "作為溶劑", "作為酸化劑", "作為催化劑"]);
+                    p.answer = p.options.indexOf(sel.a);
+                    p.tags.push("國八", "氣體用途");
+                }
+                break;
+
+            case 14: // 日常化學應用
+                {
+                    const daily = Utils.pick([
+                        {q:"小蘇打在烘焙中的作用？", a:"釋放 CO2 使麵糰膨鬆"},
+                        {q:"漂白水主要成分？", a:"次氯酸鹽（含氯化合物）"},
+                        {q:"洗碗精的主要功能？", a:"去油、乳化"}
+                    ]);
+                    p.question = `【生活化學】${daily.q}`;
+                    p.options = Utils.shuffle([daily.a, "增加甜味", "降低 pH", "使顏色變深"]);
+                    p.answer = p.options.indexOf(daily.a);
+                    p.tags.push("國八", "生活化學");
+                }
+                break;
+
+            case 15: // 酸鹼中和產物
+                {
+                    const pair = Utils.pick([
+                        {a:"HCl", b:"NaOH", prod:"NaCl + H2O"},
+                        {a:"H2SO4", b:"KOH", prod:"K2SO4 + H2O"}
+                    ]);
+                    p.question = `【中和反應】${pair.a} 與 ${pair.b} 中和後主要生成物為何？`;
+                    p.options = Utils.shuffle([pair.prod, "CO2 + H2O", "H2 + O2", "無反應"]);
+                    p.answer = p.options.indexOf(pair.prod);
+                    p.tags.push("國八", "中和");
+                }
+                break;
+
+            case 16: // 酸鹼強弱判斷（pH 題）
+                {
+                    const s = Utils.pick(DB.substances);
+                    const desc = s.ph <= 2 ? "強酸" : (s.ph >= 12 ? "強鹼" : (s.ph > 7 ? "弱鹼或中性偏鹼" : (s.ph < 7 ? "弱酸或中性偏酸" : "中性")));
+                    p.question = `【pH 判斷】${s.n} 的 pH 約為 ${s.ph}，可判定為？`;
+                    p.options = Utils.shuffle([desc, "鹽類", "氧化劑", "還原劑"]);
+                    p.answer = p.options.indexOf(desc);
+                    p.tags.push("國八", "酸鹼");
+                }
+                break;
+
+            case 17: // 溶解度與沉澱
+                {
+                    const combos = [
+                        {a:"AgNO3", b:"NaCl", res:"生成白色沉澱 AgCl"},
+                        {a:"BaCl2", b:"Na2SO4", res:"生成白色沉澱 BaSO4"}
+                    ];
+                    const sel = Utils.pick(combos);
+                    p.question = `【沉澱反應】將 ${sel.a} 與 ${sel.b} 混合，會發生何事？`;
+                    p.options = Utils.shuffle([sel.res, "生成氣體", "溶液變藍", "溶液變酸"]);
+                    p.answer = p.options.indexOf(sel.res);
+                    p.tags.push("國八", "沉澱");
+                }
+                break;
+
+            case 18: // 能量與反應速率（簡單判斷）
+                {
+                    const cond = Utils.pick(["升高溫度", "增加催化劑", "降低濃度"]);
+                    const res = cond === "降低濃度" ? "速率下降" : "速率上升";
+                    p.question = `【反應速率】若${cond}，反應速率會如何變化？`;
+                    p.options = Utils.shuffle([res, "速率不變", "反應停止", "生成新物質"]);
+                    p.answer = p.options.indexOf(res);
+                    p.tags.push("國八", "反應速率");
+                }
+                break;
+
+            case 19: // 同位素與原子量（判斷題）
+                {
+                    p.question = `【同位素】若某元素有質量數 12 與 13 的同位素，哪一項敘述正確？`;
+                    p.options = Utils.shuffle(["質子數相同，中子數不同", "質子數不同，中子數相同", "電子數不同，質子數不同", "原子序不同"]);
+                    p.answer = p.options.indexOf("質子數相同，中子數不同");
+                    p.tags.push("國八", "同位素");
+                }
+                break;
+
+            case 20: // 電子排布（基礎）
+                {
+                    const el = Utils.pick([{s:"H", e:"1s1"}, {s:"He", e:"1s2"}, {s:"O", e:"1s2 2s2 2p4"}]);
+                    p.question = `【電子排布】元素 ${el.s} 的基態電子排布為何？`;
+                    p.options = Utils.shuffle([el.e, "1s2 2s2", "2s2 2p6", "無電子"]);
+                    p.answer = p.options.indexOf(el.e);
+                    p.tags.push("國八", "電子排布");
+                }
+                break;
+
+            case 21: // 酸鹼指示劑範圍（判斷）
+                {
+                    const ind2 = Utils.pick(DB.indicators);
+                    p.question = `【指示劑範圍】若某溶液使 ${ind2.n} 由 ${ind2.a} 變為 ${ind2.b}，此溶液可能是？`;
+                    p.options = Utils.shuffle(["酸性", "鹼性", "中性", "氧化性"]);
+                    // 若 a->b 是酸變色到鹼色，判斷依 a/b 常識：簡化處理：若 a 為紅色且 b 為藍色，酸性->鹼性，則溶液為鹼性
+                    const guess = (ind2.a === "紅色" && ind2.b === "藍色") ? "鹼性" : "酸性";
+                    p.answer = p.options.indexOf(guess);
+                    p.tags.push("國八", "指示劑");
+                }
+                break;
+
+            case 22: // 聚合物與單體（基礎）
+                {
+                    const poly = Utils.pick([{m:"乙烯", p:"聚乙烯"}, {m:"丙烯腈", p:"聚丙烯腈"}]);
+                    p.question = `【高分子】下列哪一項是由單體 ${poly.m} 聚合而成？`;
+                    p.options = Utils.shuffle([poly.p, "聚苯乙烯", "蛋白質", "澱粉"]);
+                    p.answer = p.options.indexOf(poly.p);
+                    p.tags.push("國八", "高分子");
+                }
+                break;
+
+            case 23: // 化學史或發現（簡單常識）
+                {
+                    p.question = `【化學史】下列哪一項與化學家或化學發現有關？`;
+                    p.options = Utils.shuffle(["拉瓦節發現氧氣", "牛頓發現萬有引力", "愛因斯坦發明電池", "哥白尼發現細胞"]);
+                    p.answer = p.options.indexOf("拉瓦節發現氧氣");
+                    p.tags.push("國八", "化學史");
+                }
+                break;
+
+            default:
+                p.question = "錯誤：未定義的引擎";
+                p.options = ["錯誤"];
+                p.answer = 0;
+                break;
         }
 
-        // 封裝成 func 與 metadata，與既有格式一致
-        window.__CHEMISTRY_REPO__[id] = {
-            func: (() => {
-                const p = payload;
-                return () => p;
-            })(),
-            tags: payload.tags || ["chemistry","自動生成"],
-            subject: "chemistry"
-        };
-
-        currentCount = Object.keys(window.__CHEMISTRY_REPO__).length;
+        return p;
     }
 
-    console.log(`✅ 已自動生成題庫，總題數達到 ${Object.keys(window.__CHEMISTRY_REPO__).length} 題（目標 ${TARGET} 題）。`);
+    // --- 執行生成：原本 210 + 新增 200 = 410 Case 產出 ---
+    const ORIGINAL = 210; // 保留原本數量（若你要從 0 開始可改為 0）
+    const ADDITIONAL = 200; // 新增 200 題
+    const TOTAL_CASES = ORIGINAL + ADDITIONAL; // 410
+
+    for(let i=0; i < TOTAL_CASES; i++) {
+        const id = `chem_case_${i}`;
+        const payload = generateCase(i);
+        window.__CHEMISTRY_REPO__[id] = {
+            func: (() => { const res = payload; return () => res; })(),
+            tags: payload.tags,
+            subject: "chemistry"
+        };
+    }
+
+    console.log(`✅ [Chemistry Matrix] 已成功生成 ${TOTAL_CASES} 個題目 Case！（原 ${ORIGINAL} + 新增 ${ADDITIONAL}）`);
 })(window);
