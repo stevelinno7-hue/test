@@ -332,20 +332,21 @@
         return p;
     }
 
-    // --- 執行生成：原本 210 + 新增 200 = 410 Case 產出 ---
-    const ORIGINAL = 210; // 保留原本數量（若你要從 0 開始可改為 0）
-    const ADDITIONAL = 200; // 新增 200 題
-    const TOTAL_CASES = ORIGINAL + ADDITIONAL; // 410
-
+    // --- 註冊到全域變數 ---
+    const TOTAL_CASES = 400; 
     for(let i=0; i < TOTAL_CASES; i++) {
-        const id = `chem_case_${i}`;
+        const id = `chem_${i}`;
         const payload = generateCase(i);
+        
+        // ✨ 關鍵：這裡標註 subject 為 chemistry
         window.__CHEMISTRY_REPO__[id] = {
-            func: (() => { const res = payload; return () => res; })(),
+            func: () => payload, // 簡化寫法
             tags: payload.tags,
-            subject: "chemistry"
+            subject: "chemistry", // 這是讓產生器識別的關鍵
+            difficulty: "medium"
         };
     }
+    
+    console.log(`✅ 化學題庫載入完成：共 ${TOTAL_CASES} 題`);
 
-    console.log(`✅ [Chemistry Matrix] 已成功生成 ${TOTAL_CASES} 個題目 Case！（原 ${ORIGINAL} + 新增 ${ADDITIONAL}）`);
 })(window);
