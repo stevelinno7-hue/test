@@ -25,13 +25,12 @@
             } 
         };
     }
-
-    // ✨✨✨ 關鍵修改：標籤清洗與同義詞擴充 ✨✨✨
+// ✨✨✨ 關鍵修改：標籤清洗與同義詞擴充 ✨✨✨
     function normalizeTags(raw) {
         if (!raw) return [];
         
         let tags = [];
-        // 1. 初步解析 (字串切分或陣列處理)
+        // 1. 初步解析
         if (typeof raw === 'string') {
             tags = raw.split(/[,，\s]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
         } else if (Array.isArray(raw)) {
@@ -39,36 +38,31 @@
         }
 
         // 2. 同義詞擴充 (Synonym Expansion)
-        // 讓 "國七" 能對應 "七年級"，"高一" 能對應 "十年級" 等
         const expandedTags = [];
         
         tags.forEach(t => {
             expandedTags.push(t); // 加入原始標籤
 
-            // 國中同義詞
-            if (t === '國七' || t === '七年級' || t === 'grade7') {
-                expandedTags.push('國七', '七年級', 'grade7');
-            }
-            if (t === '國八' || t === '八年級' || t === 'grade8') {
-                expandedTags.push('國八', '八年級', 'grade8');
-            }
-            if (t === '國九' || t === '九年級' || t === 'grade9') {
-                expandedTags.push('國九', '九年級', 'grade9');
-            }
+            // A. 單一年級互通
+            if (t === '國七' || t === '七年級' || t === 'grade7') expandedTags.push('國七', '七年級', 'grade7');
+            if (t === '國八' || t === '八年級' || t === 'grade8') expandedTags.push('國八', '八年級', 'grade8');
+            if (t === '國九' || t === '九年級' || t === 'grade9') expandedTags.push('國九', '九年級', 'grade9');
+            
+            if (t === '高一' || t === '十年級' || t === 'grade10') expandedTags.push('高一', '十年級', 'grade10');
+            if (t === '高二' || t === '十一年級' || t === 'grade11') expandedTags.push('高二', '十一年級', 'grade11');
+            if (t === '高三' || t === '十二年級' || t === 'grade12') expandedTags.push('高三', '十二年級', 'grade12');
 
-            // 高中同義詞
-            if (t === '高一' || t === '十年級' || t === 'grade10') {
-                expandedTags.push('高一', '十年級', 'grade10');
+            // B. ✨ 關鍵：階段統稱互通 (解決 "亂出" 的保底機制)
+            // 如果請求是 "junior_high" 或 "國中"，就自動擴充包含所有國中年級
+            // 這樣至少能保證國中生不會寫到高中題
+            if (['junior_high', '國中', 'junior', '国中'].includes(t)) {
+                expandedTags.push('國七', '國八', '國九', '七年級', '八年級', '九年級');
             }
-            if (t === '高二' || t === '十一年級' || t === 'grade11') {
-                expandedTags.push('高二', '十一年級', 'grade11');
-            }
-            if (t === '高三' || t === '十二年級' || t === 'grade12') {
-                expandedTags.push('高三', '十二年級', 'grade12');
+            if (['high_school', 'senior_high', '高中', 'senior', '高中'].includes(t)) {
+                expandedTags.push('高一', '高二', '高三', '十年級', '十一年級', '十二年級');
             }
         });
 
-        // 3. 去除重複 (使用 Set)
         return [...new Set(expandedTags)];
     }
 
