@@ -2,9 +2,8 @@
     'use strict';
 
     // ------------------------------------------------------------------
-    //  Paper Generator V9.9.9 (Universal Adapter)
-    //  修正：專門解決「題庫明明有，但系統卻說 0 題」的靈異現象
-    //  功能：暴力清洗標籤格式 (字串/陣列/空白通吃) + 詳細診斷 Log
+    //  Paper Generator V10.0 (Smart Adapter)
+    //  新增功能：同義詞自動擴充 (國七 <=> 七年級)
     // ------------------------------------------------------------------
 
     if (!Array.prototype.shuffle) {
@@ -27,17 +26,50 @@
         };
     }
 
+    // ✨✨✨ 關鍵修改：標籤清洗與同義詞擴充 ✨✨✨
     function normalizeTags(raw) {
         if (!raw) return [];
-        // 如果是字串 (例如 "math, grade7")，切開變成陣列
+        
+        let tags = [];
+        // 1. 初步解析 (字串切分或陣列處理)
         if (typeof raw === 'string') {
-            return raw.split(/[,，\s]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
+            tags = raw.split(/[,，\s]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
+        } else if (Array.isArray(raw)) {
+            tags = raw.map(t => String(t).trim().toLowerCase()).filter(Boolean);
         }
-        // 如果是陣列，轉小寫並去空白
-        if (Array.isArray(raw)) {
-            return raw.map(t => String(t).trim().toLowerCase()).filter(Boolean);
-        }
-        return [];
+
+        // 2. 同義詞擴充 (Synonym Expansion)
+        // 讓 "國七" 能對應 "七年級"，"高一" 能對應 "十年級" 等
+        const expandedTags = [];
+        
+        tags.forEach(t => {
+            expandedTags.push(t); // 加入原始標籤
+
+            // 國中同義詞
+            if (t === '國七' || t === '七年級' || t === 'grade7') {
+                expandedTags.push('國七', '七年級', 'grade7');
+            }
+            if (t === '國八' || t === '八年級' || t === 'grade8') {
+                expandedTags.push('國八', '八年級', 'grade8');
+            }
+            if (t === '國九' || t === '九年級' || t === 'grade9') {
+                expandedTags.push('國九', '九年級', 'grade9');
+            }
+
+            // 高中同義詞
+            if (t === '高一' || t === '十年級' || t === 'grade10') {
+                expandedTags.push('高一', '十年級', 'grade10');
+            }
+            if (t === '高二' || t === '十一年級' || t === 'grade11') {
+                expandedTags.push('高二', '十一年級', 'grade11');
+            }
+            if (t === '高三' || t === '十二年級' || t === 'grade12') {
+                expandedTags.push('高三', '十二年級', 'grade12');
+            }
+        });
+
+        // 3. 去除重複 (使用 Set)
+        return [...new Set(expandedTags)];
     }
 
     function generatePaper(config) {
@@ -47,11 +79,11 @@
 
         const subject = (config.subject || 'math').toLowerCase();
         
-        // 1. 清洗使用者請求的標籤
+        // 1. 清洗使用者請求的標籤 (現在會自動擴充同義詞)
         const requestTags = normalizeTags(config.tags);
 
-        console.log(`🔒 [Gen V9.9.9] 萬能轉接模式 | 科目: ${subject}`);
-        console.log(`🎯 您請求的標籤 (已清洗):`, requestTags);
+        console.log(`🔒 [Gen V10.0] 智慧匹配模式 | 科目: ${subject}`);
+        console.log(`🎯 請求標籤 (含同義詞):`, requestTags);
 
         // 2. 收集所有題目來源
         const repos = [
@@ -61,7 +93,7 @@
         ];
 
         let candidates = [];
-        let debugTagPool = new Set(); // 診斷用：收集系統到底看到了什麼標籤
+        let debugTagPool = new Set(); 
 
         repos.forEach(repo => {
             if(!repo) return;
@@ -69,36 +101,35 @@
                 const t = repo[tid];
                 if (!t) return;
                 
-               
-            // --- A. 科目檢查邏輯 (理化聯集 vs 社會精準) ---
-const tSubject = String(t.subject || "").toLowerCase().trim();
-let isSubjectMatch = false;
+                // --- A. 科目檢查邏輯 ---
+                const tSubject = String(t.subject || "").toLowerCase().trim();
+                let isSubjectMatch = false;
 
-// 1. 理化聯集池 (因為理化題可能標註為 physics 或 chemistry)
-const sciencePool = ['physics', 'chemistry', 'science', '理化', '物理', '化學', '自然'];
+                // 理化聯集池
+                const sciencePool = ['physics', 'chemistry', 'science', '理化', '物理', '化學', '自然'];
 
-if (subject === 'science') {
-    // 理化維持聯集：只要題目屬於理化池，或標籤有理化關鍵字就放行
-    if (sciencePool.some(s => tSubject.includes(s))) {
-        isSubjectMatch = true;
-    } else {
-        const rawTagsForSub = normalizeTags(t.tags || t.meta || []);
-        if (rawTagsForSub.some(tag => ['理化', '化學', '物理'].includes(tag))) isSubjectMatch = true;
-    }
-} 
-// 2. 社會科與其他科目：採用精準比對，不再使用聯集池
-else if (tSubject.includes(subject) || subject.includes(tSubject)) {
-    isSubjectMatch = true;
-}
+                if (subject === 'science') {
+                    if (sciencePool.some(s => tSubject.includes(s))) {
+                        isSubjectMatch = true;
+                    } else {
+                        const rawTagsForSub = normalizeTags(t.tags || t.meta || []);
+                        if (rawTagsForSub.some(tag => ['理化', '化學', '物理'].includes(tag))) isSubjectMatch = true;
+                    }
+                } 
+                // 其他科目精準比對
+                else if (tSubject.includes(subject) || subject.includes(tSubject)) {
+                    isSubjectMatch = true;
+                }
 
-if (!isSubjectMatch) return;
-                // --- B. 標籤暴力比對 ---
+                if (!isSubjectMatch) return;
+
+                // --- B. 標籤智慧比對 ---
                 let score = 0;
-                // 這裡做這件事：把題庫裡各種怪異格式的 tags 全部洗成乾淨的陣列
+                
+                // 題目的標籤也經過同樣的清洗與擴充
                 const rawTags = t.tags || t.meta || (t.func && t.func.tags) || [];
                 const metaTags = normalizeTags(rawTags).concat([tSubject]);
 
-                // (診斷用) 將這個題目的標籤加入清單
                 metaTags.forEach(mt => debugTagPool.add(mt));
 
                 if (requestTags.length === 0) {
@@ -106,8 +137,8 @@ if (!isSubjectMatch) return;
                 } else {
                     let hitCount = 0;
                     requestTags.forEach(rt => {
-                        // 雙向寬鬆比對 (只要包含就算對)
-                        if (metaTags.some(mt => mt.includes(rt) || rt.includes(mt))) {
+                        // 只要有任何一個標籤對上即可
+                        if (metaTags.includes(rt)) {
                             hitCount++;
                         }
                     });
@@ -125,7 +156,7 @@ if (!isSubjectMatch) return;
                         tid: tid, 
                         score: score + Math.random(), 
                         func: t.func,
-                        debugTags: metaTags // 讓 Log 印出來看
+                        debugTags: metaTags 
                     });
                 }
             });
@@ -136,16 +167,12 @@ if (!isSubjectMatch) return;
 
         console.log(`📊 篩選結果: 找到 ${candidates.length} 題符合條件`);
         
-        // 4. 診斷報告 (如果找不到題目，告訴使用者系統到底看到了什麼)
+        // 4. 診斷報告
         if (candidates.length === 0) {
-            console.error("❌ 依然找不到題目！");
-            console.warn("🧐 系統在題庫中只看到以下標籤 (請檢查是否有對應的關鍵字):");
-            console.warn(Array.from(debugTagPool).join(", "));
-            
-            // 這裡不再亂抓，直接回傳空，但請務必看上面的 Log
+            console.error("❌ 找不到題目！");
+            console.warn("🧐 題庫中現有的標籤:", Array.from(debugTagPool).join(", "));
             return [];
         } else {
-            // 如果有找到，印出第一題的標籤證明沒抓錯
             console.log("✅ 成功抓取！第一題的標籤是:", candidates[0].debugTags);
         }
 
@@ -155,6 +182,6 @@ if (!isSubjectMatch) return;
     }
 
     window.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V9.9.9 (Universal Adapter) 已載入 - 標籤強力匹配版");
+    console.log("✅ Paper Generator V10.0 (Smart Adapter) 已載入 - 支援年級同義詞互通");
 
 })(window);
