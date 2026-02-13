@@ -13,7 +13,652 @@
     // 📚 英文文法資料庫 (完全對應 curriculum_integrated.js)
     // ==========================================
     const grammarDB = [
-        // ----------------------------------------------------
+        // --- 單字與片語 (Vocabulary & Phrases) ---
+      { 
+        q: "I used to ______ this store, but I sold it when business started going down.", 
+        a: "own", 
+        o: ["pass", "visit", "buy"], 
+        t: ["英文", "九年級", "單字", "動詞"] 
+      },
+      { 
+        q: "I saw a ______ bug in the garden. It had bright colors and a funny shape. I've never seen anything like it before.", 
+        a: "strange", 
+        o: ["wrong", "difficult", "blank"], 
+        t: ["英文", "九年級", "單字", "形容詞"] 
+      },
+      { 
+        q: "Doris: How was your date with Johnny?\nStella: It couldn't be worse. I don't ______ want to talk about it.", 
+        a: "even", 
+        o: ["never", "also", "then"], 
+        t: ["英文", "九年級", "副詞", "對話"] 
+      },
+      { 
+        q: "I ______ my homework at home. I had to go back to get it before class started.", 
+        a: "left", 
+        o: ["grew", "dried", "broke"], 
+        t: ["英文", "九年級", "單字", "動詞"] 
+      },
+      { 
+        q: "The little girl shouted, \"That's not your toy car! It's ______!\"", 
+        a: "mine", 
+        o: ["that", "there", "it"], 
+        t: ["英文", "九年級", "代名詞", "所有格代名詞"] 
+      },
+      { 
+        q: "The Japanese built the ______ castle more than one ______ ago.", 
+        a: "century", 
+        o: ["inch", "soldier", "age"], 
+        t: ["英文", "九年級", "單字", "名詞"] 
+      },
+      { 
+        q: "I was so happy when my parents gave me a puppy as a birthday ______. I never thought I could have a pet.", 
+        a: "surprise", 
+        o: ["snack", "chance", "service"], 
+        t: ["英文", "九年級", "單字", "名詞"] 
+      },
+      { 
+        q: "Ben: Do you know what happened at school today?\nAmy: No. Tell me the ______! I can't wait to hear it.", 
+        a: "news", 
+        o: ["type", "area", "reason"], 
+        t: ["英文", "九年級", "單字", "名詞"] 
+      },
+      { 
+        q: "In Taiwan, it's very ______ to see people riding scooters on the street. It's the main way for people to get from place to place.", 
+        a: "common", 
+        o: ["angry", "successful", "national"], 
+        t: ["英文", "九年級", "單字", "形容詞"] 
+      },
+      { 
+        q: "Jack: We have three desserts today: ice cream, cake, and fruit. Which one is your ______?\nCindy: I'd like ice cream because it's my favorite.", 
+        a: "choice", 
+        o: ["choose", "island", "tip"], 
+        t: ["英文", "九年級", "單字", "名詞"] 
+      },
+
+      // --- 文法與時態 (Grammar & Tenses) ---
+      { 
+        q: "She will wait until I ______ at the station. Then, we will take the train together.", 
+        a: "arrive", 
+        o: ["will arrive", "arrived", "am arriving"], 
+        t: ["英文", "九年級", "文法", "連接詞與時態"] 
+      },
+      { 
+        q: "When I saw the boy, he ______ basketball happily with his friends at the park.", 
+        a: "was playing", 
+        o: ["played", "will play", "is playing"], 
+        t: ["英文", "九年級", "文法", "過去進行式"] 
+      },
+      { 
+        q: "______ a new language, he practices speaking with his friends every day.", 
+        a: "To learn", 
+        o: ["Learn", "Learning", "Learns"], 
+        t: ["英文", "九年級", "文法", "不定詞"] 
+      },
+      { 
+        q: "Paul forgot ______ the book last Friday, and he bought the same book again today.", 
+        a: "buying", 
+        o: ["to buy", "buy", "bought"], 
+        t: ["英文", "九年級", "文法", "動名詞"] 
+      },
+      { 
+        q: "Wearing a face mask ______ you from getting sick easily.", 
+        a: "keeps", 
+        o: ["to keep", "keep", "keeping"], 
+        t: ["英文", "九年級", "文法", "動詞"] 
+      },
+      { 
+        q: "Lily has ______ finished her homework. She is watching TV now.", 
+        a: "already", 
+        o: ["yet", "ever", "never"], 
+        t: ["英文", "九年級", "文法", "現在完成式"] 
+      },
+      { 
+        q: "My brother has never ______ France one day.", 
+        a: "been to", 
+        o: ["gone to", "been", "gone"], 
+        t: ["英文", "九年級", "文法", "現在完成式"] 
+      },
+      { 
+        q: "Nancy: ______ have you studied at this school?\nPaul: I've studied here since 2022.", 
+        a: "How long", 
+        o: ["How often", "When", "What time"], 
+        t: ["英文", "九年級", "文法", "疑問詞"] 
+      },
+      { 
+        q: "Leo: ______ you ever eaten stinky tofu?\nRyan: No, but I will try it next week.", 
+        a: "Have", 
+        o: ["Has", "Did", "Will"], 
+        t: ["英文", "九年級", "文法", "現在完成式"] 
+      },
+      { 
+        q: "Andy ______ in Kaohsiung three years ago, but now he ______ to Taipei. He works in a big company near Taipei Train Station.", 
+        a: "lived; has moved", 
+        o: ["has lived; moved", "lived; moved", "has lived; has moved"], 
+        t: ["英文", "九年級", "文法", "時態比較"] 
+      },
+      { 
+        q: "This story is really ______. I couldn't stop reading it, and I am never ______ with it.", 
+        a: "interesting; bored", 
+        o: ["interesting; boring", "interested; boring", "interested; bored"], 
+        t: ["英文", "九年級", "文法", "情緒形容詞"] 
+      },
+      { 
+        q: "Although Tom didn't pass the driving test several times, he believed he ______ it one day.", 
+        a: "would pass", 
+        o: ["passed", "has passed", "is passing"], 
+        t: ["英文", "九年級", "文法", "助動詞"] 
+      },
+      { 
+        q: "Everyone was surprised ______ his high score on the test and thought he might cheat(作弊) on tests.", 
+        a: "at", 
+        o: ["in", "with", "about"], 
+        t: ["英文", "九年級", "文法", "介系詞"] 
+      },
+      { 
+        q: "From the weather chart, we know ______ will be heavy rain by the end of the week, so we should bring umbrellas.", 
+        a: "there", 
+        o: ["that", "it", "we"], 
+        t: ["英文", "九年級", "文法", "存在句"] 
+      },
+      { 
+        q: "I think ______ meeting new people is ______ because you can learn new things and hear different ideas.", 
+        a: "that; exciting", 
+        o: ["when; exciting", "when; excited", "that; excited"], 
+        t: ["英文", "九年級", "文法", "子句與形容詞"] 
+      },
+        // ==========================================
+      // 【第二次段考】單字、文法、被動語態
+      // ==========================================
+      { 
+        q: "There was heavy ______ on the road this morning, so I was late for work.", 
+        a: "traffic", 
+        o: ["time", "area", "ground"], 
+        t: ["英文", "九年級", "第二次段考", "單字"] 
+      },
+      { 
+        q: "Ben always uses his birthday as a(n) ______ to ask Dad to buy him something expensive.", 
+        a: "excuse", 
+        o: ["rule", "action", "prize"], 
+        t: ["英文", "九年級", "第二次段考", "單字"] 
+      },
+      { 
+        q: "They sold their house, so they ______ to a new apartment next month.", 
+        a: "are moving", 
+        o: ["would move", "were going to move", "moved"], 
+        t: ["英文", "九年級", "第二次段考", "時態"] 
+      },
+      { 
+        q: "Penny: How much does it cost ______ in this area?\nJoyce: Twenty NT dollars an hour.", 
+        a: "to park", 
+        o: ["parking", "park", "cost"], 
+        t: ["英文", "九年級", "第二次段考", "不定詞"] 
+      },
+      { 
+        q: "Sam lives near the metro station. He ______ the metro to school every day.", 
+        a: "takes", 
+        o: ["rides", "drives", "rows"], 
+        t: ["英文", "九年級", "第二次段考", "動詞"] 
+      },
+      { 
+        q: "The beach near our town is a very ______ place. Every summer at least one kid dies there.", 
+        a: "dangerous", 
+        o: ["exciting", "popular", "lonely"], 
+        t: ["英文", "九年級", "第二次段考", "單字"] 
+      },
+      { 
+        q: "The movie was ______ than I expected. I almost fell asleep during the second hour.", 
+        a: "a lot longer", 
+        o: ["very long", "less long", "the longest"], 
+        t: ["英文", "九年級", "第二次段考", "比較級"] 
+      },
+      { 
+        q: "This blanket feels ______. It's great for a cold winter night.", 
+        a: "so warm", 
+        o: ["terribly", "well", "a cute cat"], 
+        t: ["英文", "九年級", "第二次段考", "感官動詞"] 
+      },
+      { 
+        q: "Both of my brothers are teachers. One teaches English, and ______ teaches math.", 
+        a: "the other", 
+        o: ["another", "the second", "the next"], 
+        t: ["英文", "九年級", "第二次段考", "代名詞"] 
+      },
+      { 
+        q: "Our daughter is already a grown-up and able to take care of ______.", 
+        a: "herself", 
+        o: ["her", "hers", "she"], 
+        t: ["英文", "九年級", "第二次段考", "反身代名詞"] 
+      },
+      { 
+        q: "The story about three little pigs ______ more than ten times, so each of us knows it very well.", 
+        a: "has been told", 
+        o: ["told", "has told", "were told"], 
+        t: ["英文", "九年級", "第二次段考", "被動語態"] 
+      },
+      { 
+        q: "Paul: There's going to be a party to welcome new workers, ______?", 
+        a: "isn't there", 
+        o: ["hasn't there", "is there", "has there"], 
+        t: ["英文", "九年級", "第二次段考", "附加問句"] 
+      },
+      { 
+        q: "The bus is arriving in town soon. We have to leave now, ______?", 
+        a: "don't we", 
+        o: ["haven't we", "have we", "do we"], 
+        t: ["英文", "九年級", "第二次段考", "附加問句"] 
+      },
+      { 
+        q: "To keep it cold and fresh, the milk should ______ in the fridge after you get home.", 
+        a: "be put", 
+        o: ["puts", "put", "be putting"], 
+        t: ["英文", "九年級", "第二次段考", "被動語態"] 
+      },
+      { 
+        q: "Mandy: Who's going to finish all this cleaning?\nRobert: Don't worry. All of the housework ______ by someone later.", 
+        a: "will be done", 
+        o: ["does", "is going to do", "were done"], 
+        t: ["英文", "九年級", "第二次段考", "被動語態"] 
+      },
+      { 
+        q: "If you ______ to Taiwan, please let me know. I need to check if I will have time to pick you up.", 
+        a: "come", 
+        o: ["will come", "came", "are coming"], 
+        t: ["英文", "九年級", "第二次段考", "條件句"] 
+      },
+      { 
+        q: "Tom: Do you know ______ the city buses run on the weekend?\nRachel: Yes, they run every 20 minutes.", 
+        a: "how often", 
+        o: ["how long", "what time", "how"], 
+        t: ["英文", "九年級", "第二次段考", "疑問詞"] 
+      },
+      { 
+        q: "I have no idea ______ in this area? I want to find out as soon as possible.", 
+        a: "what happened to Vicky", 
+        o: ["how to do", "who the letter sent", "how do I get to the museum"], 
+        t: ["英文", "九年級", "第二次段考", "間接問句"] 
+      },
+      { 
+        q: "The girl ______ the white dress is my sister. She loves to ______ by her friends.", 
+        a: "in; be cheered", 
+        o: ["in; cheer", "with; cheer", "with; be cheered"], 
+        t: ["英文", "九年級", "第二次段考", "介系詞與被動"] 
+      },
+      { 
+        q: "This new library is very ______. It has computers, smart screens, and you can even meet a robot.", 
+        a: "modern", 
+        o: ["stupid", "blind", "mad"], 
+        t: ["英文", "九年級", "第二次段考", "單字"] 
+      },
+      { 
+        q: "Reading stories before bed is a great ______ because it makes them feel safe and ready to sleep.", 
+        a: "pleasure", 
+        o: ["interview", "ending", "sentence"], 
+        t: ["英文", "九年級", "第二次段考", "單字"] 
+      },
+      { 
+        q: "Vincent: Who did you ______ to win first place in last week's race?\nSteven: Lucy. But to my surprise, Mary won instead.", 
+        a: "expect", 
+        o: ["except", "define", "explain"], 
+        t: ["英文", "九年級", "第二次段考", "單字"] 
+      },
+      { 
+        q: "Jeffery broke the expensive vase ______ while he was reaching for the milk on the table.", 
+        a: "by accident", 
+        o: ["thank goodness", "to be honest", "on the other hand"], 
+        t: ["英文", "九年級", "第二次段考", "片語"] 
+      },
+      { 
+        q: "Cindy felt ______ when she lost her phone in a foreign city and didn't know what to do.", 
+        a: "helpless", 
+        o: ["powerful", "lovely", "limited"], 
+        t: ["英文", "九年級", "第二次段考", "形容詞"] 
+      },
+        { 
+        q: "She had to make a difficult ______ between two good jobs. One job was close to her home, but the other was more interesting.", 
+        a: "choice", 
+        o: ["chance", "change", "file"], 
+        t: ["英文", "九年級", "第三次段考", "單字"] 
+      },
+      { 
+        q: "The knife doesn't cut very well. It's not as ______ as before.", 
+        a: "sharp", 
+        o: ["quick", "bright", "heavy"], 
+        t: ["英文", "九年級", "第三次段考", "單字"] 
+      },
+      { 
+        q: "If it ______ rain tomorrow, we will play basketball at the park.", 
+        a: "doesn't", 
+        o: ["didn't", "won't", "isn't"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "假設語氣"] 
+      },
+      { 
+        q: "Judy is the best dancer in our school. She dances ______ than all the other students.", 
+        a: "more beautifully", 
+        o: ["more beautiful", "beautiful", "the most beautifully"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "比較級"] 
+      },
+      { 
+        q: "He saw a monkey take a banana ______ it up when I went hiking in the mountains.", 
+        a: "and eat", 
+        o: ["eat", "ate", "and ate"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "感官動詞"] 
+      },
+      { 
+        q: "It's hard to clearly ______ what love is. You can't see or touch it. You can only feel it.", 
+        a: "define", 
+        o: ["learn", "buy", "reach"], 
+        t: ["英文", "九年級", "第三次段考", "單字"] 
+      },
+      { 
+        q: "I didn't ______ to meet Louis, one of my old friends, on the street. I felt very excited.", 
+        a: "expect", 
+        o: ["appear", "happen", "invite"], 
+        t: ["英文", "九年級", "第三次段考", "單字"] 
+      },
+      { 
+        q: "You have finished a drawing for the art class, ______ you?", 
+        a: "haven't", 
+        o: ["don't", "didn't", "won't"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "附加問句"] 
+      },
+      { 
+        q: "We heard from the news ______ there will be heavy rain tomorrow, so we decided not to go hiking in the mountains.", 
+        a: "that", 
+        o: ["which", "what", "where"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "名詞子句"] 
+      },
+      { 
+        q: "Mom: Have you done ______ of your homework? Lydia: Sure. I finished it yesterday.", 
+        a: "all", 
+        o: ["each", "both", "a few"], 
+        t: ["英文", "九年級", "第三次段考", "片語"] 
+      },
+      { 
+        q: "I want to buy that big white house ______ a garden full of red roses.", 
+        a: "which has", 
+        o: ["that with", "who has", "in"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "關係代名詞"] 
+      },
+      { 
+        q: "The noisy children ______ playing games in the park behind the school are very happy.", 
+        a: "that are", 
+        o: ["that is", "whose", "which is"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "關係代名詞"] 
+      },
+      { 
+        q: "The movie ______ interests my younger brother is Toy Story 2.", 
+        a: "which", 
+        o: ["whose", "X", "who"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "關係代名詞"] 
+      },
+      { 
+        q: "The expensive old books that ______ by my grandmother many years ago are kept in the study room.", 
+        a: "were bought", 
+        o: ["bought", "were buying", "buy"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "被動語態"] 
+      },
+      { 
+        q: "Look at the cute dog ______ ears are much longer than its head. Do you know who it belongs to?", 
+        a: "whose", 
+        o: ["who", "which", "X"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "關係代名詞"] 
+      },
+      { 
+        q: "The old woman that Jack met in America last week ______ worked here for 20 years, and we all like her very much.", 
+        a: "has", 
+        o: ["have", "is", "are"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "現在完成式"] 
+      },
+      { 
+        q: "Is that the girl ______ at the party?", 
+        a: "you were talking to", 
+        o: ["that you were talking", "you were talking to her", "which are talking"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "關係代名詞"] 
+      },
+      { 
+        q: "Should the homework the math teacher gave us yesterday ______ by this Friday?", 
+        a: "be finished", 
+        o: ["finished", "finish", "was finished"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "被動語態"] 
+      },
+      { 
+        q: "Tom falls in love with the girl ______.", 
+        a: "whose bag is on the chair", 
+        o: ["who live near the school", "who sitting next to the door", "that are very kind"], 
+        t: ["英文", "九年級", "第三次段考", "文法", "關係代名詞"] 
+      },
+        // --- 單字 (Vocabulary) ---
+      { 
+        q: "I used to ______ this store, but I sold it when business started going down.", 
+        a: "own", 
+        o: ["pass", "visit", "buy"], 
+        t: ["英文", "九年級", "第一次段考", "單字"] 
+      },
+      { 
+        q: "I saw a ______ bug in the garden. It had bright colors and a funny shape. I've never seen anything like it before.", 
+        a: "strange", 
+        o: ["wrong", "difficult", "blank"], 
+        t: ["英文", "九年級", "第一次段考", "單字"] 
+      },
+      { 
+        q: "Doris: How was your date with Johnny? Stella: It couldn't be worse. I don't ______ want to talk about it.", 
+        a: "even", 
+        o: ["never", "also", "then"], 
+        t: ["英文", "九年級", "第一次段考", "副詞"] 
+      },
+      { 
+        q: "I ______ my homework at home. I had to go back to get it before class started.", 
+        a: "left", 
+        o: ["grew", "dried", "broke"], 
+        t: ["英文", "九年級", "第一次段考", "單字"] 
+      },
+      { 
+        q: "The little girl shouted, \"That's not your toy car! It's ______!\"", 
+        a: "mine", 
+        o: ["me", "my", "I"], 
+        t: ["英文", "九年級", "第一次段考", "所有格代名詞"] 
+      },
+      
+      // --- 文法 (Grammar) ---
+      { 
+        q: "If you ______ to Taiwan, please let me know. I need to check if ______ time to pick you up at the airport.", 
+        a: "come; have", 
+        o: ["will come; will have", "will come; have", "come; will have"], 
+        t: ["英文", "九年級", "第一次段考", "文法", "連接詞 if"] 
+      },
+      { 
+        q: "Although Tom didn't pass the driving test several times, he believed he ______ it one day.", 
+        a: "would pass", 
+        o: ["passed", "has passed", "is passing"], 
+        t: ["英文", "九年級", "第一次段考", "文法", "時態一致性"] 
+      },
+      { 
+        q: "Everyone was surprised ______ his high score on the test and thought he might cheat on tests.", 
+        a: "at", 
+        o: ["in", "with", "about"], 
+        t: ["英文", "九年級", "第一次段考", "片語", "介系詞"] 
+      },
+        // --- 單選題 (Grammar & Vocabulary) ---
+      { 
+        q: "It's ______ and ______ in December in New York.", 
+        a: "snowy; windy", 
+        o: ["snowy; wind", "snow; windy", "snow; wind"], 
+        t: ["英文", "八年級", "第一次段考", "天氣"] 
+      },
+      { 
+        q: "______ the weather ______ ______ December?", 
+        a: "What's; like; in", 
+        o: ["How's; like; on", "How's; x; on", "What's; x; at"], 
+        t: ["英文", "八年級", "第一次段考", "天氣"] 
+      },
+      { 
+        q: "Let's ______ that topic. I don't want to talk about it anymore.", 
+        a: "drop", 
+        o: ["daily", "meaning", "open"], 
+        t: ["英文", "八年級", "第一次段考", "片語"] 
+      },
+      { 
+        q: "A: ______ toy car is this? B: It's ______.", 
+        a: "Whose; mine", 
+        o: ["Who; my", "Who; mine", "Whose; my"], 
+        t: ["英文", "八年級", "第一次段考", "所有格代名詞"] 
+      },
+      { 
+        q: "______ an umbrella with you when it is cloudy.", 
+        a: "Take", 
+        o: ["To take", "Taking", "Took"], 
+        t: ["英文", "八年級", "第一次段考", "祈使句"] 
+      },
+
+      // --- 克漏字測驗 (Cloze) ---
+      { 
+        q: "Tim decided ______ a club last year.", 
+        a: "to join", 
+        o: ["join", "joining", "joins"], 
+        t: ["英文", "八年級", "第一次段考", "克漏字", "不定詞"] 
+      },
+      { 
+        q: "There were many different clubs at his school, but he thought the movie club ______ the most interesting.", 
+        a: "was", 
+        o: ["were", "is", "are"], 
+        t: ["英文", "八年級", "第一次段考", "克漏字", "時態"] 
+      },
+      { 
+        q: "He enjoyed ______ to the club every week.", 
+        a: "going", 
+        o: ["go", "went", "goes"], 
+        t: ["英文", "八年級", "第一次段考", "克漏字", "動名詞"] 
+      },
+      { 
+        q: "He was very ______ in making movies.", 
+        a: "interested", 
+        o: ["interesting", "interest", "interests"], 
+        t: ["英文", "八年級", "第一次段考", "克漏字", "情緒形容詞"] 
+      },
+      { 
+        q: "He practiced ______ movies with his friends.", 
+        a: "making", 
+        o: ["make", "makes", "made"], 
+        t: ["英文", "八年級", "第一次段考", "克漏字", "動名詞"] 
+      },
+
+      // --- 文意字彙 (Vocabulary in Context) ---
+      { 
+        q: "Mom was m______d because Tom played online games on the cellphone for five hours and didn't do his homework.", 
+        a: "mad", 
+        o: ["mud", "mid", "bad"], 
+        t: ["英文", "八年級", "第一次段考", "文意字彙"] 
+      },
+      { 
+        q: "My uncle designs computer games in a big company. He is a game e______er.", 
+        a: "engineer", 
+        o: ["energy", "engine", "enjoy"], 
+        t: ["英文", "八年級", "第一次段考", "文意字彙"] 
+      },
+      { 
+        q: "There are four s______ns in a year like spring and summer.", 
+        a: "seasons", 
+        o: ["sessions", "sons", "seas"], 
+        t: ["英文", "八年級", "第一次段考", "文意字彙"] 
+      },
+      { 
+        q: "Drinking water and exercising every day are good for your h______th.", 
+        a: "health", 
+        o: ["heart", "heat", "wealth"], 
+        t: ["英文", "八年級", "第一次段考", "文意字彙"] 
+      },
+      { 
+        q: "Amy: I would like to o______er some cookies and hot chocolate, please.", 
+        a: "order", 
+        o: ["other", "offer", "odor"], 
+        t: ["英文", "八年級", "第一次段考", "文意字彙"] 
+      },
+        { 
+        q: "The boy ______ falling asleep on the stairs when he waited for his mom. He said he was tired.", 
+        a: "remembered", 
+        o: ["allowed", "decided", "checked"], 
+        t: ["英文", "八年級", "第二次段考", "動名詞", "remember"] 
+      },
+      { 
+        q: "There isn't ______ water in the bottle for everyone, so we need to buy some.", 
+        a: "much", 
+        o: ["many", "few", "a few"], 
+        t: ["英文", "八年級", "第二次段考", "數量詞", "不可數名詞"] 
+      },
+      { 
+        q: "Shohei Ohtani is a world-famous ______ player from Japan.", 
+        a: "baseball", 
+        o: ["basketball", "soccer", "tennis"], 
+        t: ["英文", "八年級", "第二次段考", "閱讀測驗", "名詞"] 
+      },
+      { 
+        q: "Ohtani wanted to be good at both pitching and ______.", 
+        a: "swinging", 
+        o: ["singing", "swimming", "sleeping"], 
+        t: ["英文", "八年級", "第二次段考", "閱讀測驗", "動名詞"] 
+      },
+
+      // --- 文意字彙 (Vocabulary in Context) ---
+      // 原題為填充題，此處改編為選擇題以利練習
+      { 
+        q: "Mom was m______d because Tom played online games on the cellphone for five hours and didn't do his homework.", 
+        a: "mad", 
+        o: ["mud", "map", "mat"], 
+        t: ["英文", "八年級", "第二次段考", "單字", "情緒"] 
+      },
+      { 
+        q: "My uncle designs computer games in a big company. He is a game e______er.", 
+        a: "engineer", 
+        o: ["elevator", "eraser", "easier"], 
+        t: ["英文", "八年級", "第二次段考", "單字", "職業"] 
+      },
+      { 
+        q: "There are four s______ns in a year like spring and summer.", 
+        a: "seasons", 
+        o: ["sons", "sessions", "lessons"], 
+        t: ["英文", "八年級", "第二次段考", "單字", "時間"] 
+      },
+      { 
+        q: "Drinking water and exercising every day are good for your h______th.", 
+        a: "health", 
+        o: ["heart", "heat", "wealth"], 
+        t: ["英文", "八年級", "第二次段考", "單字", "健康"] 
+      },
+      { 
+        q: "Amy: I would like to o______er some cookies and hot chocolate, please.", 
+        a: "order", 
+        o: ["offer", "older", "other"], 
+        t: ["英文", "八年級", "第二次段考", "單字", "動詞"] 
+      },
+        // --- 題組：環保議題 Upcycling (Reading Comprehension) ---
+      { 
+        q: "Thomas got the idea of 'Upcycling' from a talk show. He ______ it last week and found it great.", 
+        a: "listened to", 
+        o: ["walked around", "looked for", "shouted at"], 
+        t: ["英文", "八年級", "第三次段考", "閱讀", "感官動詞"] 
+      },
+      { 
+        q: "According to the dialogue, what is 'Upcycling'?", 
+        a: "Turning old things into something better and useful.", 
+        o: ["Making things cost less money.", "Throwing away old jeans.", "Buying new plant pots."], 
+        t: ["英文", "八年級", "第三次段考", "閱讀", "主旨理解"] 
+      },
+      { 
+        q: "Thomas thinks upcycling is good because it helps us use new things with a ______ cost to the environment.", 
+        a: "less", 
+        o: ["more", "heavy", "dirty"], 
+        t: ["英文", "八年級", "第三次段考", "閱讀", "比較級"] 
+      },
+      { 
+        q: "Abe thought turning water bottles into plant pots is upcycling, but Thomas said it is ______ because it just makes things cost less.", 
+        a: "downcycling", 
+        o: ["recycling", "bicycling", "shopping"], 
+        t: ["英文", "八年級", "第三次段考", "閱讀", "文意推測"] 
+      },
+
+      // --- 題組：地圖與生活應用 (Map Reading) ---
+     
+    // ----------------------------------------------------
         // [國七上] Unit 1: Be Verbs (be動詞)
         // ----------------------------------------------------
         { q: "I _____ a student.", a: "am", o: ["is", "are", "be"], tag: ["國七", "be動詞"] },
