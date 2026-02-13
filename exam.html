@@ -382,43 +382,59 @@
         }
 
         function prepareExam(count) {
-            const urlParams = new URLSearchParams(window.location.search);
-            let subject = urlParams.get('subject') || 'math';
-            const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
-            const title = rawTitle.trim();
-            const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
+    const urlParams = new URLSearchParams(window.location.search);
+    let subject = urlParams.get('subject') || 'math';
+    const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
+    const title = rawTitle.trim();
+    const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
 
-            if (subject === 'earth_science') subject = 'earth';
-            if (subject === 'social') subject = 'history';
+    if (subject === 'earth_science') subject = 'earth';
+    if (subject === 'social') subject = 'history';
 
-            let targetTags = [];
-            if (urlGrade && urlGrade !== 'undefined' && urlGrade !== 'null' && urlGrade.trim() !== '') {
-                targetTags = urlGrade.split(',').filter(t => t.trim() !== '');
-            } else {
-                targetTags = [subject];
-            }
-            
-            document.getElementById('examTitle').textContent = title;
-            document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
+    let targetTags = [];
+    if (urlGrade && urlGrade !== 'undefined' && urlGrade !== 'null' && urlGrade.trim() !== '') {
+        targetTags = urlGrade.split(',').filter(t => t.trim() !== '');
+    } else {
+        targetTags = [subject];
+    }
+    
+    document.getElementById('examTitle').textContent = title;
+    document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
 
-            if (window.generatePaper) {
-                mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
-            } else {
-                alert("系統錯誤：題庫引擎未載入");
-                return;
-            }
+    // 1. 呼叫產生器取得題目
+    if (window.generatePaper) {
+        mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
+    } else {
+        alert("系統錯誤：題庫引擎未載入");
+        return;
+    }
 
-            if (!mockQuestions || mockQuestions.length === 0) {
-                alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！`);
-                return;
-            }
+    if (!mockQuestions || mockQuestions.length === 0) {
+        alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！`);
+        return;
+    }
 
-            examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: mockQuestions.length * 120 };
-            timeLeft = examInfo.timeLimit;
-
-            initGame();
+    // 🚀 2. 關鍵修正：初始化答案結構 (解決題組沒反應的問題)
+    // 如果是 group，答案必須是 [null, null...] 陣列；單題則是 null
+    userAnswers = mockQuestions.map(item => {
+        if (item.type === 'group') {
+            return new Array(item.questions.length).fill(null);
         }
+        return null;
+    });
 
+    // 3. 初始化時間與紀錄陣列
+    timeLog = new Array(mockQuestions.length).fill(0);
+    examInfo = { 
+        subject: subject.toUpperCase(), 
+        title: title, 
+        timeLimit: mockQuestions.length * 120 
+    };
+    timeLeft = examInfo.timeLimit;
+
+    // 4. 啟動遊戲/測驗介面
+    initGame(); 
+}
         function initGame() {
             currentQIndex = 0;
             // 初始化答案，題組存陣列，單題存 null
