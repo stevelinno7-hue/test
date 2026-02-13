@@ -67,42 +67,39 @@
         candidates.sort((a, b) => b.score - a.score);
         const selected = candidates.slice(0, config.total || 10);
 
-        return selected.map(c => {
-            const t = c.rawData;
-            if (c.isGroup) {
-                // --- 題組處理邏輯 ---
+        // 在 generatePaper 函數最後的 return selected.map(...) 處
+    return selected.map(c => {
+    const t = c.rawData; // 這是從 Repo 抓出來的原始資料
+
+    // 判斷是否為題組 (您的格式中 type 為 "group")
+    if (t.type === 'group' || c.isGroup) {
+        return {
+            type: 'group',
+            context: t.context, // 這裡會抓到您的 <div class="group-context-box">
+            concept: t.concept || (t.questions[0].t ? t.questions[0].t[0] : "地科題組"),
+            questions: t.questions.map(subQ => {
+                // 將您的 {q, a, o} 格式轉換為 exam.html 認識的 {question, options, answer}
+                const shuffledOptions = [subQ.a, ...subQ.o].sort(() => Math.random() - 0.5);
                 return {
-                    type: 'group',
-                    context: t.context, // 保留您的 HTML 區塊
-                    concept: t.concept || "閱讀題組",
-                    questions: t.questions.map(subQ => {
-                        // 1. 合併正確答案 a 與 錯誤選項 o
-                        // 2. 打散選項
-                        const shuffledOptions = [subQ.a, ...subQ.o].shuffle();
-                        return {
-                            question: subQ.q,
-                            options: shuffledOptions,
-                            // 3. 找出正確答案在打散後的位置 (這才是 exam.html 要的 answer)
-                            answer: shuffledOptions.indexOf(subQ.a),
-                            concept: subQ.t ? subQ.t[0] : "子題目",
-                            image: subQ.image || null
-                        };
-                    })
+                    question: subQ.q,
+                    options: shuffledOptions,
+                    answer: shuffledOptions.indexOf(subQ.a), // 必須是數字索引
+                    concept: subQ.t ? subQ.t[subQ.t.length - 1] : "子題目"
                 };
-            } else {
-                // --- 單題處理邏輯 (呼叫 func) ---
-                const data = t.func();
-                return {
-                    type: 'normal',
-                    question: data.question,
-                    options: data.options,
-                    answer: data.answer,
-                    concept: (t.tags && t.tags[0]) || "一般題型",
-                    image: data.image || null
-                };
-            }
-        });
+            })
+        };
+    } else {
+        // 一般題：執行您在 core.js 定義的 func()
+        const data = t.func();
+        return {
+            type: 'normal',
+            question: data.question,
+            options: data.options,
+            answer: data.answer,
+            concept: (t.tags && t.tags[t.tags.length - 1]) || "一般題型"
+        };
     }
+});
 
     global.generatePaper = generatePaper;
     console.log("✅ Paper Generator V11.5 已針對自定義格式優化完成");
