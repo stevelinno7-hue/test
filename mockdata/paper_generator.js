@@ -2,8 +2,8 @@
     'use strict';
 
     // ==============================
-    // Paper Generator V11.0
-    // 完全支援單題 + 題組 + 年級智慧匹配
+    // Paper Generator V11.2 (Exam.html Adapter)
+    // 支援：題組保持完整、年級同義詞、多 repo 檢索
     // ==============================
 
     if (!Array.prototype.shuffle) {
@@ -16,162 +16,126 @@
         };
     }
 
-    if (!window.RigorousGenerator) {
-        window.RigorousGenerator = {
-            _templates: {},
-            registerTemplate: function(id, f, t){
-                this._templates[id] = {func:f, tags:t, subject: f.subject || 'misc'};
-            }
-        };
-    }
-
     // ===== 標籤清洗與同義詞擴充 =====
     function normalizeTags(raw) {
         if (!raw) return [];
-        let tags = [];
-        if (typeof raw === 'string') {
-            tags = raw.split(/[,，\s]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
-        } else if (Array.isArray(raw)) {
-            tags = raw.map(t => String(t).trim().toLowerCase()).filter(Boolean);
-        }
+        let tags = Array.isArray(raw) ? raw : String(raw).split(/[,，\s]+/).filter(Boolean);
+        tags = tags.map(t => String(t).trim().toLowerCase());
 
-        const expandedTags = [];
+        const expanded = new Set();
+        const synonymMap = {
+            '國七': ['國七', '七年級', 'grade7', 'j1'],
+            '國八': ['國八', '八年級', 'grade8', 'j2'],
+            '國九': ['國九', '九年級', 'grade9', 'j3'],
+            '高一': ['高一', '十年級', 'grade10', 's1'],
+            '高二': ['高二', '十一年級', 'grade11', 's2'],
+            '高三': ['高三', '十二年級', 'grade12', 's3'],
+            'junior': ['junior_high', '國中', 'junior', '国中'],
+            'senior': ['high_school', 'senior_high', '高中', 'senior']
+        };
+
         tags.forEach(t => {
-            expandedTags.push(t);
-
-            if (['國七','七年級','grade7'].includes(t)) expandedTags.push('國七','七年級','grade7');
-            if (['國八','八年級','grade8'].includes(t)) expandedTags.push('國八','八年級','grade8');
-            if (['國九','九年級','grade9'].includes(t)) expandedTags.push('國九','九年級','grade9');
-            if (['高一','十年級','grade10'].includes(t)) expandedTags.push('高一','十年級','grade10');
-            if (['高二','十一年級','grade11'].includes(t)) expandedTags.push('高二','十一年級','grade11');
-            if (['高三','十二年級','grade12'].includes(t)) expandedTags.push('高三','十二年級','grade12');
-
-            if (['junior_high','國中','junior','国中'].includes(t)) {
-                expandedTags.push('國七','國八','國九','七年級','八年級','九年級');
-            }
-            if (['high_school','senior_high','高中','senior'].includes(t)) {
-                expandedTags.push('高一','高二','高三','十年級','十一年級','十二年級');
+            expanded.add(t);
+            for (let key in synonymMap) {
+                if (synonymMap[key].includes(t)) {
+                    synonymMap[key].forEach(val => expanded.add(val));
+                    // 國中/高中大範圍擴充
+                    if (key === 'junior') ['國七','國八','國九'].forEach(g => expanded.add(g));
+                    if (key === 'senior') ['高一','高二','高三'].forEach(g => expanded.add(g));
+                }
             }
         });
-
-        return [...new Set(expandedTags)];
+        return [...expanded];
     }
 
     // ===== 出題核心 =====
     function generatePaper(config) {
-        let G = window.RigorousGenerator;
-        if (!G) G = window.RigorousGenerator = { _templates: {} };
-        if (!G.getTemplateIds) G.getTemplateIds = () => Object.keys(G._templates || {});
-
         const subject = (config.subject || 'math').toLowerCase();
         const requestTags = normalizeTags(config.tags || []);
-
-        console.log(`🔒 [Gen V11.0] 科目: ${subject}`);
-        console.log(`🎯 請求標籤 (含同義詞):`, requestTags);
-
+        
         const repos = [
             window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__,
             window.__BIOLOGY_REPO__, window.__EARTH_SCI_REPO__, window.__CHINESE_REPO__,
             window.__ENGLISH_REPO__, window.__HISTORY_REPO__, window.__CIVICS_REPO__, window.__GEOGRAPHY_REPO__
-        ];
+        ].filter(Boolean);
 
         let candidates = [];
         let debugTagPool = new Set();
 
         repos.forEach(repo => {
-            if (!repo) return;
             Object.keys(repo).forEach(tid => {
                 const t = repo[tid];
                 if (!t) return;
 
                 const tSubject = String(t.subject || "").toLowerCase().trim();
+                const sciencePool = ['physics', 'chemistry', 'science', '理化', '物理', '化學', '自然', 'earth_science', '地科'];
+                
+                // 1. 科目比對邏輯
+                let isMatch = (tSubject.includes(subject) || subject.includes(tSubject));
+                if (subject === 'science' && sciencePool.some(s => tSubject.includes(s))) isMatch = true;
+                
+                if (!isMatch) return;
 
-                let isSubjectMatch = false;
-
-                const sciencePool = ['physics', 'chemistry', 'science', '理化', '物理', '化學', '自然'];
-                if (subject === 'science') {
-                    if (sciencePool.some(s => tSubject.includes(s))) isSubjectMatch = true;
-                    else {
-                        const rawTagsForSub = normalizeTags(t.tags || t.meta || []);
-                        if (rawTagsForSub.some(tag => ['理化','物理','化學'].includes(tag))) isSubjectMatch = true;
-                    }
-                } else if (tSubject.includes(subject) || subject.includes(tSubject)) {
-                    isSubjectMatch = true;
-                }
-
-                if (!isSubjectMatch) return;
-
-                // ===== 支援題組 =====
-                if (t.type === "group" && Array.isArray(t.questions)) {
-                    t.questions.forEach((qItem, qIdx) => {
-                        const qTags = normalizeTags(qItem.t || []);
-                        const metaTags = qTags.concat([tSubject]);
-                        debugTagPool = new Set([...debugTagPool, ...metaTags]);
-
-                        let hitCount = 0;
-                        requestTags.forEach(rt => { if (metaTags.includes(rt)) hitCount++; });
-                        if (hitCount > 0 || requestTags.length === 0) {
-                            candidates.push({
-                                tid: tid + "_" + qIdx,
-                                score: 10 + hitCount + Math.random(),
-                                func: () => {
-                                    const opts = [qItem.a, ...qItem.o].shuffle();
-                                    return {
-                                        question: t.context + "<br><br>" + qItem.q,
-                                        options: opts,
-                                        answer: opts.indexOf(qItem.a),
-                                        explanation: [`✅ 正確答案：${qItem.a}`],
-                                        subject: subject,
-                                        tags: qTags
-                                    };
-                                }
-                            });
-                        }
-                    });
-                    return;
-                }
-
-                // ===== 單題 =====
-                const rawTags = t.tags || t.meta || (t.func && t.func.tags) || [];
-                const metaTags = normalizeTags(rawTags).concat([tSubject]);
-                metaTags.forEach(mt => debugTagPool.add(mt));
+                // 2. 標籤與評分
+                const itemTags = normalizeTags(t.tags || t.meta || []);
+                itemTags.forEach(mt => debugTagPool.add(mt));
 
                 let score = 0;
-                if (requestTags.length === 0) score = 1;
-                else {
-                    let hitCount = 0;
-                    requestTags.forEach(rt => { if (metaTags.includes(rt)) hitCount++; });
+                if (requestTags.length === 0) {
+                    score = 1;
+                } else {
+                    const hitCount = requestTags.filter(rt => itemTags.includes(rt)).length;
                     if (hitCount > 0) score = 10 + hitCount;
                 }
 
+                // 3. 收集候選 (區分單題與題組)
                 if (score > 0) {
                     candidates.push({
                         tid: tid,
                         score: score + Math.random(),
-                        func: t.func,
-                        debugTags: metaTags
+                        isGroup: (t.type === "group"),
+                        rawData: t
                     });
                 }
-
             });
         });
 
-        candidates.sort((a,b) => b.score - a.score);
+        // 排序
+        candidates.sort((a, b) => b.score - a.score);
+        const selected = candidates.slice(0, config.total || 10);
 
-        console.log(`📊 篩選結果: 找到 ${candidates.length} 題符合條件`);
-        if (candidates.length === 0) {
-            console.error("❌ 找不到題目！");
-            console.warn("🧐 題庫中現有的標籤:", Array.from(debugTagPool).join(", "));
-            return [];
-        } else {
-            console.log("✅ 第一題標籤:", candidates[0].debugTags);
-        }
-
-        const total = config.total || 10;
-        return candidates.slice(0,total).map(c => c.func());
+        // 4. 格式化輸出 (適配 exam.html 的平坦化函數)
+        return selected.map(c => {
+            const t = c.rawData;
+            if (c.isGroup) {
+                return {
+                    type: 'group',
+                    context: t.context,
+                    concept: t.concept || "綜合題組",
+                    questions: t.questions.map(q => ({
+                        question: q.q,
+                        options: [q.a, ...q.o].shuffle(),
+                        answerKey: q.a, // 這裡存正確答案文字，讓 HTML 端去 indexOf
+                        concept: q.t ? q.t[0] : (t.concept || "題組題"),
+                        image: q.image || null
+                    }))
+                };
+            } else {
+                // 單題，直接執行 func() 並確保格式一致
+                const data = t.func();
+                return {
+                    type: 'normal',
+                    question: data.question,
+                    options: data.options,
+                    answer: data.answer,
+                    concept: (t.tags && t.tags[0]) || "一般題型",
+                    image: data.image || null
+                };
+            }
+        });
     }
 
-    window.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V11.0 已載入 - 支援題組 + 年級同義詞互通");
+    global.generatePaper = generatePaper;
+    console.log("✅ Paper Generator V11.2 載入成功 (支援題組完整輸出)");
 
 })(window);
