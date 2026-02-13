@@ -5,7 +5,17 @@
   if (!window.__PHYSICS_REPO__) window.__PHYSICS_REPO__ = {};
   console.log("🚀 [Physics Core] 固定題庫載入中...");
  const fixedQuestions = [
-
+// 2. 定義工具函數 (解決 Utils is not defined 問題)
+  const Utils = {
+      shuffle: (arr) => {
+          let newArr = [...arr];
+          for (let i = newArr.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+          }
+          return newArr;
+      }
+  };
   { q: "3. 下列有關位移與路徑長的敘述何者正確?", o: ["路徑長的大小必定≦位移的大小","路徑長的方向一定等於位移的方向","路徑長必定是有折返及彎曲的,位移一定是直線的"], a: "路徑長的大小必定≧位移的大小", t: ["理化","國九","運動學","位移與路徑長"] },
   { q: "4. 下列有關物體位置的完整描述何者最為正確?", o: ["藍鳥正飛在南港路上","老高正在研究院路上212站牌等小茉","我家在自說自話總裁家的旁邊第五間"], a: "颱風中心位置現在北緯 24.438 度,東經 127.691 度的海面上", t: ["理化","國九","測量與定位"] },
   { q: "23. 有關等速度運動與等速率運動的分別下列敘述何者錯誤?", o: ["等速度運動必定是直線運動","等速度運動必定是等速率運動","宇宙中最接近等速度運動的是不受阻礙的光線"], a: "等速率運動必定是繞圓心旋轉的圓周運動", t: ["理化","國九","運動學","概念辨析"] },
@@ -1598,61 +1608,56 @@ const advancedPhysicsGroups = [
         ]
     }
 ];
-
 // ===============================================================
-// 🚀 物理題庫註冊邏輯 (統一標準化)
-// ===============================================================
+  // 🚀 C. 註冊邏輯 (統一標準化)
+  // ===============================================================
 
-// 1. 定義註冊函數 (補上 subject 與 tags)
-const registerPhysicsGroup = (g) => {
-    if (!g || !g.id) return;
+  // 定義註冊函數
+  const registerPhysicsGroup = (g) => {
+      if (!g || !g.id) return;
 
-    // 💡 關鍵：補上產生器需要的欄位
-    // 注意：根據您的系統，物理可能是 "physics" 或 "physical_science"
-    // 這裡我們設定為 "physics" 並在 tags 加入 "理化" 以確保雙向兼容
-    g.subject = "physics"; 
+      g.subject = "physics"; 
+      const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["理化"];
+      
+      // 強制補上 "理化" 與 "閱讀題組"
+      // 使用 Set 來去除重複標籤，避免 ["理化", "理化"] 的情況
+      const tagSet = new Set(["physics", "理化", "閱讀題組", ...baseTags]);
+      g.tags = Array.from(tagSet);
 
-    // 自動抓取第一題的標籤
-    const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["理化"];
-    
-    // 合併標籤：確保包含 "physics", "理化", "閱讀題組"
-    g.tags = ["physics", "理化", "閱讀題組", ...baseTags];
+      g.type = "group";
+      window.__PHYSICS_REPO__[g.id] = g;
+  };
 
-    // 標註類型
-    g.type = "group";
+  // 註冊所有高階題組
+  if (typeof advancedPhysicsGroups !== 'undefined') {
+      advancedPhysicsGroups.forEach(registerPhysicsGroup);
+      console.log(`✅ 高階題組註冊完成：${advancedPhysicsGroups.length} 組`);
+  }
 
-    // 存入全域 Repo
-    window.__PHYSICS_REPO__[g.id] = g;
-};
+  // 註冊一般題 (將單選題轉為產生器格式)
+  if (typeof fixedQuestions !== 'undefined') {
+      fixedQuestions.forEach((item, idx) => {
+          const id = `phy_core_${idx}`;
+          // 確保標籤包含 "理化"
+          const tagSet = new Set(["physics", "理化", ...(item.t || [])]);
+          const tags = Array.from(tagSet);
+          
+          const func = () => {
+              const opts = Utils.shuffle([item.a, ...item.o]);
+              return {
+                  question: item.q,
+                  options: opts,
+                  answer: opts.indexOf(item.a),
+                  explanation: [`✅ 正確答案：${item.a}`, `🏷️ 範圍：${tags.join(" / ")}`],
+                  subject: "physics",
+                  tags: tags
+              };
+          };
+          window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
+      });
+      console.log(`✅ 一般試題註冊完成：${fixedQuestions.length} 題`);
+  }
 
-// 2. 註冊所有高階題組
-if (typeof advancedPhysicsGroups !== 'undefined') {
-    advancedPhysicsGroups.forEach(registerPhysicsGroup);
-}
-
-// 3. 註冊一般題 (維持原本的 fixedQuestions 邏輯)
-// 確保一般題也掛載到 window.__PHYSICS_REPO__ 並帶有正確標籤
-if (typeof fixedQuestions !== 'undefined') {
-    fixedQuestions.forEach((item, idx) => {
-        const id = `phy_core_${idx}`;
-        const tags = ["physics", "理化", ...item.t];
-        
-        // 包裝成產生器格式
-        const func = () => {
-            const opts = Utils.shuffle([item.a, ...item.o]);
-            return {
-                question: item.q,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                explanation: [`✅ 正確答案：${item.a}`, `🏷️ 範圍：${item.t.join(" / ")}`],
-                subject: "physics",
-                tags: tags
-            };
-        };
-        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
-    });
-}
-
-console.log(`✅ 物理題庫(含高階活用題組)載入完成！共 ${Object.keys(window.__PHYSICS_REPO__).length} 題。`);
+  console.log(`🎉 全部物理題庫載入完畢！總題數：${Object.keys(window.__PHYSICS_REPO__).length}`);
 
 })(window);
