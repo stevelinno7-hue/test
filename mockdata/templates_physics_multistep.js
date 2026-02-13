@@ -1662,3 +1662,57 @@ const advancedPhysicsGroups = [
   console.log(`🎉 全部物理題庫載入完畢！總題數：${Object.keys(window.__PHYSICS_REPO__).length}`);
 
 })(window);
+// ===============================================================
+// 🔧 萬用連結補丁：強制串連「理化」與「物理/化學」
+// 請貼在檔案最末端
+// ===============================================================
+(function() {
+    setTimeout(() => {
+        console.log("🔧 正在執行「理化」科目對齊修復...");
+
+        // 1. 定義要修復的倉庫列表
+        const repos = [
+            window.__PHYSICS_REPO__,   // 物理倉庫
+            window.__CHEMISTRY_REPO__  // 化學倉庫
+        ];
+
+        let fixCount = 0;
+
+        repos.forEach(repo => {
+            if (!repo) return;
+
+            Object.values(repo).forEach(q => {
+                // 修正 A: 強制科目名稱統一為 "science" (對應課綱的 'nature' 或 'science')
+                // 這樣無論選單選 "理化" 還是 "自然"，都找得到
+                q.subject = "science"; 
+
+                // 修正 B: 確保標籤包含 "理化"
+                if (!q.tags) q.tags = [];
+                
+                // 補上 "理化" (如果沒有的話)
+                if (!q.tags.includes("理化")) q.tags.push("理化");
+                
+                // 補上 "自然" (保險起見)
+                if (!q.tags.includes("自然")) q.tags.push("自然");
+
+                // 修正 C: 如果是國八/國九，確保有年級標籤
+                // (這裡簡單判斷：如果有 '物理' 或 '化學'，通常是國八以上)
+                if (!q.tags.includes("國七") && !q.tags.includes("國八") && !q.tags.includes("國九")) {
+                    q.tags.push("國八"); // 預設補國八，增加被搜到的機率
+                }
+
+                fixCount++;
+            });
+        });
+
+        // 2. 將物理與化學倉庫，同時備份到 __SCIENCE_REPO__ (如果系統是用這個名字找的話)
+        if (!window.__SCIENCE_REPO__) window.__SCIENCE_REPO__ = {};
+        
+        if (window.__PHYSICS_REPO__) Object.assign(window.__SCIENCE_REPO__, window.__PHYSICS_REPO__);
+        if (window.__CHEMISTRY_REPO__) Object.assign(window.__SCIENCE_REPO__, window.__CHEMISTRY_REPO__);
+
+        console.log(`✅ 修復完成！已強制對齊 ${fixCount} 道題目。`);
+        console.log("👉 現在請重新整理網頁，並在選單選擇「理化」或「自然」，應該就能看到題目了！");
+
+    }, 2000); // 延遲 2 秒執行，確保所有題庫都已載入
+})();
