@@ -811,7 +811,8 @@
         // ----------------------------------------------------
         { q: "He is a _____ boy.", a: "ten-year-old", o: ["ten-years-old", "ten years old", "ten-year old"], tag: ["高二", "複合形容詞"] },
         { q: "This is a _____ map.", a: "hand-made", o: ["hand-make", "hand-making", "making-hand"], tag: ["高二", "複合形容詞"] }
-    ];grammarDB.forEach((item, idx) => {
+    ];
+    grammarDB.forEach((item, idx) => {
     const id = `eng_aligned_${idx}`;
     
     const rawTags = item.tag || item.t || [];
