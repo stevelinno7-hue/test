@@ -811,40 +811,37 @@
         // ----------------------------------------------------
         { q: "He is a _____ boy.", a: "ten-year-old", o: ["ten-years-old", "ten years old", "ten-year old"], tag: ["高二", "複合形容詞"] },
         { q: "This is a _____ map.", a: "hand-made", o: ["hand-make", "hand-making", "making-hand"], tag: ["高二", "複合形容詞"] }
-    ];
+    ];grammarDB.forEach((item, idx) => {
+    const id = `eng_aligned_${idx}`;
+    
+    const rawTags = item.tag || item.t || [];
+    const tags = ["english", "eng", "英文", "文法", ...rawTags];
 
-    // 4. 自動註冊工廠
-    grammarDB.forEach((item, idx) => {
-        const id = `eng_aligned_${idx}`;
-        
-        // ★ 這裡很重要：我們要把 curriculum_integrated.js 裡用到的標籤全部塞進去
-        // 這樣不管系統用哪個標籤來撈，都撈得到。
-        const tags = ["english", "eng", "英文", "文法", ...item.tag];
+    const generatorFunc = () => {
+        const allOpts = [item.a, ...item.o];
+        const shuffledOpts = Utils.shuffle(allOpts);
 
-        const generatorFunc = () => {
-            const allOpts = [item.a, ...item.o];
-            const shuffledOpts = Utils.shuffle(allOpts);
-
-            return {
-                question: `Complete the sentence: "${item.q}"`,
-                options: shuffledOpts,
-                answer: shuffledOpts.indexOf(item.a),
-                concept: item.tag[1] || "Grammar", 
-                explanation: [`Correct answer: **${item.a}**`, `} example]`],
-                subject: "english",
-                tags: tags
-            };
+        return {
+            question: `Complete the sentence: "${item.q}"`,
+            options: shuffledOpts,
+            answer: shuffledOpts.indexOf(item.a),
+            concept: rawTags[1] || "Grammar",
+            explanation: [`Correct answer: ${item.a}`],
+            subject: "english",
+            tags: tags
         };
+    };
 
-        generatorFunc.subject = "english";
-        generatorFunc.tags = tags;
-        
-        window.__ENGLISH_REPO__[id] = {
-            func: generatorFunc,
-            tags: tags,
-            subject: "english"
-        };
-    });
+    generatorFunc.subject = "english";
+    generatorFunc.tags = tags;
+    
+    window.__ENGLISH_REPO__[id] = {
+        func: generatorFunc,
+        tags: tags,
+        subject: "english"
+    };
+});
+
 
     console.log(`✅ [English] 已成功載入 ${grammarDB.length} 題精準對齊標籤的題目。`);
 
