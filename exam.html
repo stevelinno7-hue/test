@@ -429,75 +429,110 @@
             startTimer();
         }
 
-        function renderQuestion() {
-            recordTime(); 
-            questionStartTime = Date.now();
+       function renderQuestion() {
+    recordTime(); 
+    questionStartTime = Date.now();
 
-            const item = mockQuestions[currentQIndex];
-            
-            document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
-            document.getElementById('currentQIdx').textContent = currentQIndex + 1;
-            document.getElementById('totalQCount').textContent = mockQuestions.length;
-            document.getElementById('conceptBadge').textContent = item.concept || (item.type === 'group' ? "閱讀題組" : "綜合");
-            document.getElementById('progressBar').style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
+    const item = mockQuestions[currentQIndex];
+    if (!item) return;
 
-            const container = document.getElementById('optionsContainer');
-            const questionTextBox = document.getElementById('questionText');
-            container.innerHTML = '';
+    // --- 1. 更新頂部 UI 資訊 ---
+    document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
+    document.getElementById('currentQIdx').textContent = currentQIndex + 1;
+    document.getElementById('totalQCount').textContent = mockQuestions.length;
+    
+    // 顯示分類：優先顯示題組概念，若無則顯示一般概念
+    document.getElementById('conceptBadge').textContent = item.concept || (item.type === 'group' ? "閱讀題組" : "一般題型");
+    document.getElementById('progressBar').style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
+
+    const container = document.getElementById('optionsContainer');
+    const questionTextBox = document.getElementById('questionText');
+    
+    // 清空舊內容
+    container.innerHTML = '';
+    
+    // --- 2. 判斷模式：題組 vs 單題 ---
+    if (item.type === 'group') {
+        // 【題組模式】
+        // 渲染引文區塊 (支援 HTML 格式，如你的表格與列表)
+        questionTextBox.innerHTML = `
+            <div class="bg-blue-50 p-5 rounded-2xl border-l-8 border-blue-400 mb-6 text-slate-700 leading-relaxed shadow-sm fade-in">
+                <div class="font-bold text-blue-600 mb-2 flex items-center">
+                    <i class="fas fa-book-reader mr-2"></i> 閱讀引文
+                </div>
+                <div class="group-context-content">
+                    ${item.context}
+                </div>
+            </div>
+        `;
+
+        // 循環渲染題組內的所有子題目
+        item.questions.forEach((subQ, subIdx) => {
+            const subCard = document.createElement('div');
+            subCard.className = "mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-md fade-in";
             
-            if (item.type === 'group') {
-                // 題組模式
-                questionTextBox.innerHTML = `
-                    <div class="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-500 mb-6 text-slate-700 leading-relaxed shadow-sm">
-                        <div class="font-bold text-blue-600 mb-2"><i class="fas fa-file-alt mr-2"></i>閱讀引文</div>
-                        ${item.context.replace(/\n/g, '<br>')}
+            // 產生選項 HTML
+            let optionsHtml = subQ.options.map((opt, optIdx) => {
+                // 檢查 userAnswers[目前題號][子題號] 是否等於目前選項索引
+                const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][subIdx] === optIdx);
+                
+                return `
+                    <div onclick="selectAnswer(${currentQIndex}, ${optIdx}, ${subIdx})" 
+                         class="option-card w-full p-3 rounded-xl flex items-center gap-3 mt-2 cursor-pointer transition-all ${isSelected ? 'selected' : 'bg-slate-50 border border-slate-100 hover:border-blue-300'}">
+                        <div class="w-7 h-7 rounded-full border flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-400 border-slate-300'}">
+                            ${String.fromCharCode(65 + optIdx)}
+                        </div>
+                        <div class="text-slate-700 font-medium">${opt}</div>
                     </div>
                 `;
+            }).join('');
 
-                item.questions.forEach((subQ, subIdx) => {
-                    const subDiv = document.createElement('div');
-                    subDiv.className = "mb-8 p-4 bg-white rounded-xl border border-slate-100 shadow-sm";
-                    
-                    let optionsHtml = subQ.options.map((opt, optIdx) => {
-                        const isSelected = userAnswers[currentQIndex][subIdx] === optIdx;
-                        return `
-                            <div onclick="selectAnswer(${currentQIndex}, ${optIdx}, ${subIdx})" 
-                                 class="option-card w-full p-3 rounded-lg flex items-center gap-3 mt-2 cursor-pointer transition-all ${isSelected ? 'selected' : 'bg-slate-50 border border-slate-200'}">
-                                <div class="w-6 h-6 rounded-full border flex items-center justify-center font-bold text-xs ${isSelected ? 'bg-blue-500 text-white' : 'bg-white text-slate-400'}">
-                                    ${String.fromCharCode(65+optIdx)}
-                                </div>
-                                <div class="text-sm font-medium">${opt}</div>
-                            </div>
-                        `;
-                    }).join('');
+            subCard.innerHTML = `
+                <div class="font-bold text-slate-800 mb-4 text-lg">
+                    <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-lg mr-2">${subIdx + 1}</span>
+                    ${highlightKeywords(subQ.question)}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${optionsHtml}
+                </div>
+            `;
+            container.appendChild(subCard);
+        });
 
-                    subDiv.innerHTML = `
-                        <div class="font-bold text-slate-800 mb-3"><span class="text-blue-500 mr-2">${subIdx + 1}.</span>${highlightKeywords(subQ.question)}</div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">${optionsHtml}</div>
-                    `;
-                    container.appendChild(subDiv);
-                });
+    } else {
+        // 【單題模式】
+        // 顯示一般題目文字
+        questionTextBox.innerHTML = `
+            <div class="text-2xl font-bold text-slate-800 mb-4 fade-in">
+                ${highlightKeywords(item.question)}
+            </div>
+        `;
 
-            } else {
-                // 單題模式
-                questionTextBox.innerHTML = highlightKeywords(item.question.replace(/\n/g, '<br>'));
-                item.options.forEach((opt, idx) => {
-                    const isSelected = userAnswers[currentQIndex] === idx;
-                    const optDiv = document.createElement('div');
-                    optDiv.className = `option-card w-full p-4 rounded-xl flex items-center gap-4 cursor-pointer transition-all ${isSelected ? 'selected' : 'bg-white border border-slate-100 text-slate-600 shadow-sm'}`;
-                    optDiv.innerHTML = `
-                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-200 text-slate-400'}">${String.fromCharCode(65+idx)}</div>
-                        <div class="flex-grow font-medium text-lg">${opt}</div>
-                    `;
-                    optDiv.onclick = () => selectAnswer(currentQIndex, idx);
-                    container.appendChild(optDiv);
-                });
-            }
+        item.options.forEach((opt, idx) => {
+            const isSelected = userAnswers[currentQIndex] === idx;
+            const optDiv = document.createElement('div');
+            optDiv.className = `option-card w-full p-4 rounded-2xl flex items-center gap-4 cursor-pointer transition-all mb-4 fade-in ${isSelected ? 'selected' : 'bg-white border border-slate-100 text-slate-700 shadow-sm hover:border-blue-300'}`;
+            
+            optDiv.innerHTML = `
+                <div class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-300 text-slate-400'}">
+                    ${String.fromCharCode(65 + idx)}
+                </div>
+                <div class="flex-grow font-medium text-lg">${opt}</div>
+            `;
+            
+            optDiv.onclick = () => selectAnswer(currentQIndex, idx);
+            container.appendChild(optDiv);
+        });
+    }
 
-            if (window.MathJax) MathJax.typesetPromise();
-            updateNavButtons();
-            updatePalette();
-        }
+    // --- 3. 處理 MathJax 與 介面更新 ---
+    if (window.MathJax) {
+        MathJax.typesetPromise().catch((err) => console.log('MathJax error: ', err.message));
+    }
+    
+    updateNavButtons();
+    updatePalette();
+}
 
         window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
             if (subIdx !== null) {
