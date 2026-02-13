@@ -1321,21 +1321,32 @@ const group_river_profile = {
                 { q: "河流搬運的泥沙量大於海浪侵蝕時，海岸線會如何變化？", a: "向海延伸 (前移)", o: ["向陸退縮", "保持不變", "消失"], t: ["地科", "九年級", "海岸變化"] }
             ]
         }
-    ];
+    ];// ==========================================
+    // 🚀 修正後的註冊邏輯：確保所有題組都能被搜尋到
+    // ==========================================
+
+    // 統一處理函數：確保題組帶有與一般題相同的搜尋身分證
+    const registerGroup = (g) => {
+        if (!g || !g.id) return;
+        
+        // 💡 關鍵修正：補上產生器需要的欄位
+        g.subject = "earth_science"; 
+        
+        // 抓取子題目的標籤作為題組標籤 (如：國九、地質、天文)
+        const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["地科"];
+        g.tags = ["earth_science", "地科", "閱讀題組", ...baseTags];
+        
+        // 標註類型
+        g.type = "group";
+        
+        window.__EARTH_SCI_REPO__[g.id] = g;
+    };
 
     // 註冊至全域庫
-    conceptGroups.forEach(g => {
-        window.__EARTH_SCI_REPO__[g.id] = g;
-    });
+    conceptGroups.forEach(registerGroup);
+    visualGroups.forEach(registerGroup);
 
-    // 註冊所有題組到全域 Repo
-    visualGroups.forEach(g => {
-        window.__EARTH_SCI_REPO__[g.id] = g;
-    });
-// ==========================================
-    // 🚀 修正後的生成邏輯 (解決年級混亂問題)
-    // ==========================================
-const allGroups = [
+    const allGroups = [
         group_river_profile, 
         group_rock_cycle, 
         group_geo_history, 
@@ -1344,27 +1355,24 @@ const allGroups = [
         group_tides
     ];
 
-    allGroups.forEach(g => {
-        // 直接掛載到全域物件
-        window.__EARTH_SCI_REPO__[g.id] = g;
-    });
-    // 生成一般題
+    allGroups.forEach(registerGroup);
+
+    // ==========================================
+    // 生成一般題 (維持原本邏輯)
+    // ==========================================
     earthDB.forEach((item, idx) => {
         const id = `earth_core_${idx}`;
-        
-        // ❌ 舊的錯誤寫法： const tags = ["earth_science", "地科", item.t, "國九"];
-        // ✅ 修正寫法：使用 ...item.t 自動抓取題目設定的年級 (國九/高一/高二)
         const tags = ["earth_science", "地科", ...item.t]; 
         
         const func = () => {
             const opts = Utils.shuffle([item.a, ...item.o]);
             return {
-                question: `【${item.t[0]}】${item.q}`, // 顯示分類 (如：天文)
+                question: `【${item.t[0]}】${item.q}`, 
                 options: opts,
                 answer: opts.indexOf(item.a),
                 explanation: [
                     `✅ 正確答案：${item.a}`, 
-                    `🏷️ 範圍：${item.t.join(" / ")}` // 顯示年級以便確認
+                    `🏷️ 範圍：${item.t.join(" / ")}`
                 ],
                 subject: "earth_science", 
                 tags: tags
@@ -1373,9 +1381,5 @@ const allGroups = [
         window.__EARTH_SCI_REPO__[id] = { func, tags, subject: "earth_science" };
     });
 
-   
-
-    console.log(`✅ 地科題庫載入完成！共 ${Object.keys(window.__EARTH_SCI_REPO__).length} 題。`);
-    console.log("👉 修正：已區分 國九 / 高一 / 高二 / 高三，不再混雜。");
-
-})(window);
+    console.log(`✅ 地科題庫載入完成！共 ${Object.keys(window.__EARTH_SCI_REPO__).length} 題 (含閱讀題組)。`);
+    })(window);
