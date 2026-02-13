@@ -1,11 +1,11 @@
-(function(global){
+(function(global) {
     'use strict';
-    console.log("🧬 [Biology V9.0] 生物核心題庫 (細胞/生理/遺傳/生態) 啟動...");
-
+    
+    // 確保倉庫存在
     window.__BIOLOGY_REPO__ = window.__BIOLOGY_REPO__ || {};
-    const Utils = { shuffle: (arr) => arr.sort(() => Math.random() - 0.5) };
 
-    const bioDB = [
+    console.log("🚀 [Bio Exam Pack] 113-114學年度 段考精選題庫 (隨機版) 載入中...");
+   const examQuestions = [
     // 1-10 細胞與顯微鏡
     {q:"植物細胞特有，能進行光合作用的構造？", a:"葉綠體", o:["粒線體","細胞壁","液泡"], t:"細胞"},
     {q:"被稱為細胞的能量工廠，負責呼吸作用的是？", a:"粒線體", o:["核糖體","高基氏體","葉綠體"], t:"細胞"},
@@ -1137,45 +1137,48 @@
   }
 ];
 
+// 2. 隨機洗牌工具函數
+    const shuffleArray = (array) => {
+        const newArr = [...array];
+        for (let i = newArr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+        }
+        return newArr;
+    };
 
-
-
-
-    // 為每題生成 2 種變體，總計 30 題以上
-    bioDB.forEach((item, idx) => {
-        const id = `bio_core_${idx}`;
-        const tags = ["biology", "生物", item.t, "國七"];
+    // 3. 自動註冊到系統
+    examQuestions.forEach((item, index) => {
+        // 產生唯一 ID，例如: bio_exam_0, bio_exam_1...
+        const uniqueId = `bio_exam_${index}`;
         
-        const func = () => {
-            const opts = Utils.shuffle([item.a, ...item.o]);
-            return {
-                question: `【${item.t}】${item.q}`,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                explanation: [`正確答案：${item.a}`, ``],
-                subject: "biology", tags: tags
-            };
-        };
-        window.__BIOLOGY_REPO__[id] = { func, tags, subject: "biology" };
-    });
-
-    // 額外生成配對題
-    bioDB.forEach((item, idx) => {
-        const id = `bio_match_${idx}`;
-        const tags = ["biology", "生物", item.t, "國七"];
-        window.__BIOLOGY_REPO__[id] = {
+        // 定義該題目的生成邏輯
+        window.__BIOLOGY_REPO__[uniqueId] = {
+            tags: item.t,
+            subject: "biology",
+            // 這個 func 每次被呼叫時，都會重新洗牌選項
             func: () => {
-                const others = Utils.shuffle(bioDB.filter(x=>x.a!==item.a)).slice(0,3).map(x=>x.a);
-                const opts = Utils.shuffle([item.q, ...others.map(a=>bioDB.find(x=>x.a===a).q)]); // 這是把題目當選項
+                // 將正確答案(a)與干擾選項(o)合併
+                const allOptions = [item.a, ...item.o];
+                
+                // 隨機打亂
+                const shuffledOptions = shuffleArray(allOptions);
+                
+                // 找出正確答案在打亂後的新位置索引 (0, 1, 2, 3)
+                const correctIndex = shuffledOptions.indexOf(item.a);
+
                 return {
-                    question: `【${item.t}】關於「${item.a}」的敘述，下列何者正確？`,
-                    options: opts,
-                    answer: opts.indexOf(item.q),
-                    explanation: [`${item.a}: ${item.q}`, ``],
-                    subject: "biology", tags: tags
+                    question: item.q,             // 題目
+                    options: shuffledOptions,     // 已打亂的選項陣列
+                    answer: correctIndex,         // 正確答案的索引值
+                    explanation: `正確答案：${item.a}`, // 簡易詳解
+                    subject: "biology",
+                    tags: item.t
                 };
-            }, tags, subject: "biology"
+            }
         };
     });
 
-})(window);
+    console.log(`✅ 已成功註冊 ${examQuestions.length} 題段考精選題至題庫系統。`);
+
+})(this);
