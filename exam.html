@@ -37,6 +37,40 @@
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        /* --- 新增樣式：題組與圖片支援 --- */
+.group-context-box {
+    background-color: #f8fafc; /* 淺灰背景 */
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #3b82f6; /* 左側藍線強調 */
+    padding: 16px;
+    margin-bottom: 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #334155;
+}
+
+.group-tag {
+    display: inline-block;
+    background: #3b82f6;
+    color: white;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.exam-image {
+    max-width: 100%;
+    max-height: 300px;
+    height: auto;
+    display: block;
+    margin: 16px 0;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
 /* 隱藏橫向捲動軸但保留功能 */
 .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -342,7 +376,31 @@
             document.getElementById('setupModal').classList.add('hidden');
             prepareExam(selectedCount);
         }
-
+// --- 核心邏輯：將題組資料攤平為單題列表 ---
+function flattenExamData(rawData) {
+    let flattened = [];
+    
+    rawData.forEach(item => {
+        if (item.type === 'group') {
+            // 如果是題組，將 context (文章/圖表) 賦予底下的每一小題
+            if (item.questions && item.questions.length > 0) {
+                item.questions.forEach(subQ => {
+                    // 複製子題，並加上 groupContext 屬性
+                    flattened.push({
+                        ...subQ,
+                        groupContext: item.context, // 共用的文章/圖片 HTML
+                        concept: subQ.concept || item.concept || "題組"
+                    });
+                });
+            }
+        } else {
+            // 如果是原本的單題，直接加入
+            flattened.push(item);
+        }
+    });
+    
+    return flattened;
+}
         function prepareExam(count) {
             const urlParams = new URLSearchParams(window.location.search);
             let subject = urlParams.get('subject') || 'math';
@@ -379,7 +437,30 @@
             timeLeft = examInfo.timeLimit;
 
             initGame();
-        }
+       // 1. 取得原始題目資料
+    let rawQuestions = [];
+    if (window.generatePaper) {
+        rawQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
+    } else {
+        alert("系統錯誤：題庫引擎未載入");
+        return;
+    }
+
+    if (!rawQuestions || rawQuestions.length === 0) {
+        alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！`);
+        return;
+    }
+
+    // 2. ★ 關鍵修改：執行資料攤平
+    // 這會把 "題組" 拆開成單題，但保留文章內容在 groupContext 欄位
+    mockQuestions = flattenExamData(rawQuestions);
+
+    // 3. 設定考試資訊 (使用攤平後的長度計算時間)
+    examInfo = { subject: subject.toUpperCase(), title: title, timeLimit: mockQuestions.length * 2 * 60 }; // 稍微增加一點時間給閱讀題
+    timeLeft = examInfo.timeLimit;
+
+    initGame();
+}
 
         function initGame() {
             currentQIndex = 0;
@@ -391,46 +472,71 @@
         }
 
         function renderQuestion() {
-            recordTime(); 
-            questionStartTime = Date.now();
+    recordTime(); 
+    questionStartTime = Date.now();
 
-            const q = mockQuestions[currentQIndex];
-            
-            document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
-            document.getElementById('currentQIdx').textContent = currentQIndex + 1;
-            document.getElementById('totalQCount').textContent = mockQuestions.length;
-            document.getElementById('conceptBadge').textContent = q.concept || "綜合";
-            
-            const qText = q.question.replace(/\n/g, '<br>');
-            document.getElementById('questionText').innerHTML = qText;
-            
-            document.getElementById('progressBar').style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
+    const q = mockQuestions[currentQIndex];
+    
+    // 更新題號與標籤
+    document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
+    document.getElementById('currentQIdx').textContent = currentQIndex + 1;
+    document.getElementById('totalQCount').textContent = mockQuestions.length;
+    document.getElementById('conceptBadge').textContent = q.concept || "綜合";
+    
+    // 計算進度條
+    document.getElementById('progressBar').style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
 
-            const container = document.getElementById('optionsContainer');
-            container.innerHTML = '';
-            
-            q.options.forEach((opt, idx) => {
-                const isSelected = userAnswers[currentQIndex] === idx;
-                const optDiv = document.createElement('div');
-                optDiv.className = `option-card w-full p-3 md:p-4 rounded-xl flex items-center gap-3 md:gap-4 ${isSelected ? 'selected' : 'bg-white text-slate-600'}`;
-                optDiv.innerHTML = `
-                    <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm flex-shrink-0 ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-200 text-slate-400'}">${String.fromCharCode(65+idx)}</div>
-                    <div class="flex-grow font-medium text-base md:text-lg">${opt}</div>
-                `;
-                optDiv.onclick = () => { 
-                    userAnswers[currentQIndex] = idx; 
-                    renderQuestion(); 
-                };
-                container.appendChild(optDiv);
-            });
+    // --- ★ 關鍵修改：組裝題目 HTML ---
+    let contentHtml = '';
 
-            if (window.MathJax) {
-                MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
-            }
+    // 1. 如果有題組文章/共用圖表 (Group Context)
+    if (q.groupContext) {
+        contentHtml += `
+            <div class="group-context-box fade-in">
+                <span class="group-tag">題組 / 閱讀測驗</span>
+                <div>${q.groupContext}</div>
+            </div>
+        `;
+    }
 
-            updateNavButtons();
-            updatePalette();
-        }
+    // 2. 題目文字
+    contentHtml += `<h2 class="text-lg md:text-2xl font-bold text-slate-800 leading-relaxed break-words">${q.question.replace(/\n/g, '<br>')}</h2>`;
+
+    // 3. 如果單題有附圖 (Image)
+    if (q.image) {
+        contentHtml += `<img src="${q.image}" class="exam-image fade-in" alt="Question Image">`;
+    }
+
+    // 更新 DOM
+    document.getElementById('questionText').innerHTML = contentHtml; // 注意：這裡要把原本的 h2 替換掉，或者像上面一樣包在 innerHTML 裡
+
+    // --- 渲染選項 (保留原本邏輯) ---
+    const container = document.getElementById('optionsContainer');
+    container.innerHTML = '';
+    
+    q.options.forEach((opt, idx) => {
+        const isSelected = userAnswers[currentQIndex] === idx;
+        const optDiv = document.createElement('div');
+        // ... (選項渲染程式碼保留不變) ...
+        optDiv.className = `option-card w-full p-3 md:p-4 rounded-xl flex items-center gap-3 md:gap-4 ${isSelected ? 'selected' : 'bg-white text-slate-600'}`;
+        optDiv.innerHTML = `
+            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm flex-shrink-0 ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-200 text-slate-400'}">${String.fromCharCode(65+idx)}</div>
+            <div class="flex-grow font-medium text-base md:text-lg">${opt}</div>
+        `;
+        optDiv.onclick = () => { 
+            userAnswers[currentQIndex] = idx; 
+            renderQuestion(); 
+        };
+        container.appendChild(optDiv);
+    });
+
+    if (window.MathJax) {
+        MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
+    }
+
+    updateNavButtons();
+    updatePalette();
+}
 
         function updateNavButtons() {
             const nextBtn = document.getElementById('nextBtn');
