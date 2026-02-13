@@ -376,30 +376,33 @@
             document.getElementById('setupModal').classList.add('hidden');
             prepareExam(selectedCount);
         }
-// --- 核心邏輯：將題組資料攤平為單題列表 ---
-function flattenExamData(rawData) {
-    let flattened = [];
-    
-    rawData.forEach(item => {
+// 在 exam.html 啟動測驗的地方
+const rawQuestions = window.generatePaper({ subject: 'science', tags: ['國九'], total: 10 });
+
+// 必須經過這個平坦化處理
+const examQuestions = flattenExamData(rawQuestions);
+
+function flattenExamData(data) {
+    let result = [];
+    data.forEach(item => {
         if (item.type === 'group') {
-            // 如果是題組，將 context (文章/圖表) 賦予底下的每一小題
-            if (item.questions && item.questions.length > 0) {
-                item.questions.forEach(subQ => {
-                    // 複製子題，並加上 groupContext 屬性
-                    flattened.push({
-                        ...subQ,
-                        groupContext: item.context, // 共用的文章/圖片 HTML
-                        concept: subQ.concept || item.concept || "題組"
-                    });
+            // 如果是題組，將每一小題拆開，但「注入」共同背景 context
+            item.questions.forEach(q => {
+                result.push({
+                    question: q.question,
+                    options: q.options,
+                    // 重要：因為 generator 給的是 answerKey 文字，這裡轉成索引
+                    answer: q.options.indexOf(q.answerKey),
+                    concept: q.concept,
+                    image: q.image,
+                    groupContext: item.context // 讓 HTML 知道這題有背景描述
                 });
-            }
+            });
         } else {
-            // 如果是原本的單題，直接加入
-            flattened.push(item);
+            result.push(item);
         }
     });
-    
-    return flattened;
+    return result;
 }
         function prepareExam(count) {
             const urlParams = new URLSearchParams(window.location.search);
