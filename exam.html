@@ -471,7 +471,7 @@ function flattenExamData(rawData) {
             startTimer();
         }
 
-      function renderQuestion() {
+        function renderQuestion() {
     recordTime(); 
     questionStartTime = Date.now();
 
@@ -483,72 +483,52 @@ function flattenExamData(rawData) {
     document.getElementById('totalQCount').textContent = mockQuestions.length;
     document.getElementById('conceptBadge').textContent = q.concept || "綜合";
     
+    // 計算進度條
     document.getElementById('progressBar').style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
 
-    const questionTextContainer = document.getElementById('questionText');
-    const optionsContainer = document.getElementById('optionsContainer');
-    
-    // 清空舊內容
-    questionTextContainer.innerHTML = '';
-    optionsContainer.innerHTML = '';
+    // --- ★ 關鍵修改：組裝題目 HTML ---
+    let contentHtml = '';
 
-    // 1. 渲染題幹 (Group Context / Image)
-    let contextHtml = '';
+    // 1. 如果有題組文章/共用圖表 (Group Context)
     if (q.groupContext) {
-        contextHtml += `
-            <div class="group-context-box mb-6 p-4 bg-slate-50 border-l-4 border-blue-500 rounded-r-xl">
-                <span class="inline-block px-2 py-1 mb-2 text-xs font-bold bg-blue-500 text-white rounded">題組標記</span>
-                <div class="text-slate-700 leading-relaxed">${q.groupContext}</div>
-                ${q.image ? `<img src="${q.image}" class="mt-4 max-w-full h-auto mx-auto rounded shadow-sm">` : ''}
+        contentHtml += `
+            <div class="group-context-box fade-in">
+                <span class="group-tag">題組 / 閱讀測驗</span>
+                <div>${q.groupContext}</div>
             </div>
         `;
     }
-    questionTextContainer.innerHTML = contextHtml;
 
-    // 2. 判斷是否為題組並渲染
-    if (q.isGroup && q.subQuestions) {
-        // --- 題組渲染模式 ---
-        q.subQuestions.forEach((sub, subIdx) => {
-            // 建立小題標題
-            const subTitle = document.createElement('h2');
-            subTitle.className = "text-lg font-bold text-slate-800 mt-6 mb-3";
-            subTitle.innerHTML = sub.q.replace(/\n/g, '<br>');
-            optionsContainer.appendChild(subTitle);
+    // 2. 題目文字
+    contentHtml += `<h2 class="text-lg md:text-2xl font-bold text-slate-800 leading-relaxed break-words">${q.question.replace(/\n/g, '<br>')}</h2>`;
 
-            // 建立該題的選項容器
-            const subOptionsDiv = document.createElement('div');
-            subOptionsDiv.className = "grid grid-cols-1 gap-2 mb-8";
-
-            sub.o.forEach((opt, optIdx) => {
-                // 檢查該小題是否已選 (假設 userAnswers[currentQIndex] 變成一個陣列或物件)
-                const isSelected = userAnswers[currentQIndex] && userAnswers[currentQIndex][subIdx] === optIdx;
-                
-                const optCard = document.createElement('div');
-                optCard.className = `option-card w-full p-3 rounded-xl flex items-center gap-3 border-2 transition-all cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-white bg-white text-slate-600 hover:border-slate-200'}`;
-                
-                optCard.innerHTML = `
-                    <div class="w-8 h-8 rounded-full border flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-500 text-white border-blue-500' : 'border-slate-200 text-slate-400'}">${String.fromCharCode(65+optIdx)}</div>
-                    <div class="flex-grow font-medium">${opt}</div>
-                `;
-
-                optCard.onclick = () => {
-                    if (!userAnswers[currentQIndex]) userAnswers[currentQIndex] = {};
-                    userAnswers[currentQIndex][subIdx] = optIdx; // 儲存：第n大題的第m小題答案
-                    renderQuestion(); // 重新渲染以更新 UI
-                };
-                subOptionsDiv.appendChild(optCard);
-            });
-            optionsContainer.appendChild(subOptionsDiv);
-        });
-    } else {
-        // --- 一般單題模式 (原本的邏輯) ---
-        const singleTitle = document.createElement('h2');
-        singleTitle.className = "text-lg md:text-2xl font-bold text-slate-800 leading-relaxed mb-4";
-        singleTitle.innerHTML = q.question.replace(/\n/g, '<br>');
-        optionsContainer.appendChild(singleTitle);
-
-        // ... 此處放置您原本的單題 options 渲染代碼 ...
+    // 3. 如果單題有附圖 (Image)
+    if (q.image) {
+        contentHtml += `<img src="${q.image}" class="exam-image fade-in" alt="Question Image">`;
     }
+
+    // 更新 DOM
+    document.getElementById('questionText').innerHTML = contentHtml; // 注意：這裡要把原本的 h2 替換掉，或者像上面一樣包在 innerHTML 裡
+
+    // --- 渲染選項 (保留原本邏輯) ---
+    const container = document.getElementById('optionsContainer');
+    container.innerHTML = '';
+    
+    q.options.forEach((opt, idx) => {
+        const isSelected = userAnswers[currentQIndex] === idx;
+        const optDiv = document.createElement('div');
+        // ... (選項渲染程式碼保留不變) ...
+        optDiv.className = `option-card w-full p-3 md:p-4 rounded-xl flex items-center gap-3 md:gap-4 ${isSelected ? 'selected' : 'bg-white text-slate-600'}`;
+        optDiv.innerHTML = `
+            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm flex-shrink-0 ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-200 text-slate-400'}">${String.fromCharCode(65+idx)}</div>
+            <div class="flex-grow font-medium text-base md:text-lg">${opt}</div>
+        `;
+        optDiv.onclick = () => { 
+            userAnswers[currentQIndex] = idx; 
+            renderQuestion(); 
+        };
+        container.appendChild(optDiv);
+    });
 
     if (window.MathJax) {
         MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
