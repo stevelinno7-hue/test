@@ -1,7 +1,7 @@
 (function(global){
     'use strict';
 
-    // 1. 擴充陣列隨機排序功能
+    // 1. 陣列隨機工具
     if (!Array.prototype.shuffle) {
         Array.prototype.shuffle = function() {
             let arr = this.slice();
@@ -13,36 +13,29 @@
         };
     }
 
-    // 2. 標籤正規化
+    // 2. 標籤清洗
     function normalizeTags(raw) {
         if (!raw) return [];
         let tags = Array.isArray(raw) ? raw : String(raw).split(/[,，\s]+/).filter(Boolean);
         return tags.map(t => String(t).trim().toLowerCase());
     }
 
-    // 3. 核心生成邏輯
+    // 3. 核心生成函數
     function generatePaper(config) {
-        const inputSubject = (config.subject || '').toLowerCase();
+        const inputSub = (config.subject || '').toLowerCase();
         const requestTags = normalizeTags(config.tags || []);
         
-        // 💡 關鍵修正：科目對照表 (讓「理化」能對應到 「physics」)
+        // 💡 關鍵：科目對照表 (Alias)
+        // 解決「理化」找不到「physics」的問題
         const subjectAlias = {
-            '理化': 'physics',
-            '物理': 'physics',
-            '化學': 'chemistry',
-            '地科': 'earth_science',
-            '地球科學': 'earth_science',
-            '生物': 'biology',
-            '歷史': 'history',
-            '地理': 'geography',
-            '公民': 'civics',
-            '數學': 'math',
-            '英文': 'english',
-            '國文': 'chinese'
+            '理化': 'physics', '物理': 'physics', '化學': 'chemistry',
+            '地科': 'earth_science', '地球科學': 'earth_science',
+            '生物': 'biology', '歷史': 'history', '地理': 'geography',
+            '公民': 'civics', '數學': 'math', '英文': 'english', '國文': 'chinese'
         };
-        const mappedSubject = subjectAlias[inputSubject] || inputSubject;
+        const mappedSub = subjectAlias[inputSub] || inputSub;
 
-        // 收集所有已載入的倉庫
+        // 收集所有 Repo
         const repos = [
             window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__,
             window.__BIOLOGY_REPO__, window.__EARTH_SCI_REPO__, window.__CHINESE_REPO__,
@@ -56,66 +49,66 @@
                 const t = repo[tid];
                 if (!t) return;
 
-                // A. 科目匹配邏輯 (比對原始輸入或轉換後的 ID)
-                const tSubject = String(t.subject || "").toLowerCase();
-                let isMatch = (tSubject === inputSubject || tSubject === mappedSubject || 
-                               tSubject.includes(inputSubject) || inputSubject.includes(tSubject));
+                // A. 改良後的科目過濾
+                const tSub = String(t.subject || "").toLowerCase();
+                let isMatch = (tSub === inputSub || tSub === mappedSub || 
+                               tSub.includes(inputSub) || inputSub.includes(tSub));
                 
                 if (!isMatch) return;
 
-                // B. 標籤與分數計算
+                // B. 標籤計分
                 const itemTags = normalizeTags(t.tags || t.meta || []);
                 let score = 0;
-                
                 if (requestTags.length === 0) {
-                    score = 1; // 沒選標籤則全選
+                    score = 1; 
                 } else {
                     const hitCount = requestTags.filter(rt => itemTags.includes(rt)).length;
-                    if (hitCount > 0) score = 10 + hitCount; 
+                    if (hitCount > 0) score = 10 + hitCount;
                 }
 
                 if (score > 0) {
                     candidates.push({
                         tid: tid,
-                        score: score + Math.random(), // 加入亂數避免每次題目順序一樣
+                        score: score + Math.random(),
                         rawData: t
                     });
                 }
             });
         });
 
-        // 排序並取指定題數
+        // 排序
         candidates.sort((a, b) => b.score - a.score);
         const selected = candidates.slice(0, config.total || 10);
 
         if (selected.length === 0) {
-            console.warn("❌ 找不到符合條件的題目！請檢查科目與標籤設定。");
+            console.error("❌ 找不到符合條件的題目！請檢查科目設定。");
             return [];
         }
 
-        // C. 格式化輸出 (相容 函數型、單題、題組)
+        // C. 格式化輸出
         return selected.map(c => {
             const t = c.rawData;
+            
+            // 判斷是否為題組 (Group)
             const isGroup = (t.type === 'group' || (t.questions && Array.isArray(t.questions)));
 
             if (isGroup) {
-                // --- 處理題組 (Group) ---
                 return {
                     type: 'group',
-                    context: t.context || t.q || "請閱讀以下內容並回答問題：",
-                    concept: t.concept || (t.tags ? t.tags[t.tags.length-1] : "閱讀題組"),
-                    questions: t.questions.map(subQ => {
-                        const opts = [subQ.a, ...(subQ.o || [])].shuffle();
+                    context: t.context || t.q || "請根據以下內容回答問題：",
+                    concept: t.concept || (t.tags ? t.tags[t.tags.length - 1] : "閱讀題組"),
+                    questions: t.questions.map(sq => {
+                        const opts = [sq.a, ...(sq.o || [])].shuffle();
                         return {
-                            question: subQ.q,
+                            question: sq.q,
                             options: opts,
-                            answer: opts.indexOf(subQ.a),
-                            concept: subQ.t ? subQ.t[subQ.t.length-1] : "子題"
+                            answer: opts.indexOf(sq.a),
+                            concept: sq.t ? sq.t[sq.t.length - 1] : "子題"
                         };
                     })
                 };
             } else {
-                // --- 處理單題 (Normal / Func) ---
+                // 一般題或函數題
                 let data;
                 if (typeof t.func === 'function') {
                     data = t.func();
@@ -127,7 +120,6 @@
                         answer: opts.indexOf(t.a)
                     };
                 }
-                
                 return {
                     type: 'normal',
                     question: data.question,
@@ -140,6 +132,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V12.0 (多學科優化版) 已載入");
+    console.log("✅ Paper Generator V12.0 (多科相容版) 已就緒");
 
 })(window);
