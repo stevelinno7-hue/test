@@ -1268,27 +1268,26 @@
     ];
 
     // ==========================================
-    // 🚀 核心生成邏輯 (參照地科範例：Flat Tags & Group Registration)
-    // ==========================================
-    const Utils = { shuffle: (arr) => arr.sort(() => Math.random() - 0.5) };
+  // 🚀 核心生成邏輯 (修正版：對接 RigorousGenerator)
+  // ==========================================
+  const Utils = { shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5) };
 
   // 1. 定義統一處理函數 (Register Group)
-  // 這是讓題組能正確顯示標籤、被搜尋到的關鍵
   const registerGroup = (g) => {
       if (!g || !g.id) return;
 
-      // 💡 補上身分證欄位
       g.subject = "physics";
-      
-      // 💡 智慧標籤：抓取第一題的標籤 (如：國九、運動學) 作為題組標籤
-      // 並補上 "理化"、"閱讀題組" 以便篩選
       const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["理化"];
       g.tags = ["physics", "理化", "閱讀題組", ...baseTags];
-
-      // 標註類型
       g.type = "group";
 
-      // 掛載
+      // ✅ 關鍵修正：註冊到出題機核心，讓 paper_generator 抓得到
+      if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
+          // 題組直接以物件形式註冊，標籤需攤平
+          window.RigorousGenerator.registerTemplate(g.id, g, g.tags);
+      }
+
+      // 掛載到理化倉庫 (保留原結構)
       window.__PHYSICS_REPO__[g.id] = g;
   };
 
@@ -1297,17 +1296,15 @@
       advancedPhysicsGroups.forEach(registerGroup);
   }
 
-  // 3. 註冊一般單選題 (Fixed Questions) - 同樣套用標準格式
+  // 3. 註冊一般單選題 (Fixed Questions)
   if (typeof fixedQuestions !== 'undefined') {
       fixedQuestions.forEach((item, idx) => {
           const id = `phy_fixed_${idx}`;
-          
-          // 確保標籤包含 physics 與 理化
           const tags = ["physics", "理化", ...item.t];
           
           const func = () => {
               const opts = Utils.shuffle([item.a, ...item.o]);
-              const category = item.t[2] || item.t[0]; // 嘗試抓取 "運動學" 這一層
+              const category = item.t[2] || item.t[0]; 
 
               return {
                   id: id,
@@ -1325,9 +1322,14 @@
               };
           };
 
-          // 掛載到全域物件 (結構與地科保持一致)
+          // ✅ 關鍵修正：註冊到出題機核心
+          if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
+              window.RigorousGenerator.registerTemplate(id, func, tags);
+          }
+
+          // 掛載到理化倉庫 (結構與地科保持一致)
           window.__PHYSICS_REPO__[id] = { 
-              id: id, // 補上 ID 方便查找
+              id: id,
               func: func, 
               tags: tags, 
               subject: "physics",
@@ -1338,6 +1340,6 @@
 
   // 4. 輸出統計
   const totalCount = Object.keys(window.__PHYSICS_REPO__).length;
-  console.log(`✅ [Physics Core] 物理題庫載入完成！共 ${totalCount} 題 (含 40 組進階閱讀題)。`);
+  console.log(`✅ [Physics Core] 物理題庫載入完成！共 ${totalCount} 題 (已同步至 RigorousGenerator)。`);
 
 })(window);
