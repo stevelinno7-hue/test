@@ -24,9 +24,9 @@
     function generatePaper(config) {
         const inputSub = (config.subject || '').toLowerCase();
         const requestTags = normalizeTags(config.tags || []);
-        const totalTarget = config.total || 10; // 總題數
+        const totalTarget = config.total || 10; 
         
-        // 科目對照表
+        // 科目對照表 (確保網址參數能對應到 Repo 內的 subject 欄位)
         const subjectAlias = {
             'science': 'physics', '理化': 'physics', '物理': 'physics', '化學': 'chemistry',
             'social': 'history', '歷史': 'history', 'history': 'history',
@@ -34,9 +34,9 @@
         };
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
-        // 準備分類池
-        let groupPool = [];  // 題組池
-        let normalPool = []; // 單題池
+        // 準備分類池 (僅存放符合篩選條件的題目)
+        let groupPool = [];  
+        let normalPool = []; 
 
         const repos = [
             window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__,
@@ -44,27 +44,31 @@
             window.__ENGLISH_REPO__, window.__HISTORY_REPO__, window.__CIVICS_REPO__, window.__GEOGRAPHY_REPO__
         ].filter(Boolean);
 
+        // --- 核心篩選邏輯 ---
         repos.forEach(repo => {
             Object.keys(repo).forEach(tid => {
                 const t = repo[tid];
                 if (!t) return;
 
                 const tSub = String(t.subject || "").toLowerCase();
+                // 第一關：科目匹配
                 let isMatch = (tSub === inputSub || tSub === mappedSub || tSub.includes(inputSub));
                 if (!isMatch) return;
 
+                // 第二關：標籤匹配 (嚴格區域鎖定)
                 const itemTags = normalizeTags(t.tags || t.meta || []);
                 let score = 0;
                 if (requestTags.length === 0) {
-                    score = 1;
+                    score = 1; // 若沒選標籤，則包含該科目所有題目
                 } else {
+                    // 必須「命中」使用者要求的標籤之一
                     const hitCount = requestTags.filter(rt => itemTags.includes(rt)).length;
                     if (hitCount > 0) score = 10 + hitCount;
                 }
 
+                // 只有符合條件 (score > 0) 的題目才會進池子
                 if (score > 0) {
                     const candidate = { tid, score: score + Math.random(), rawData: t };
-                    // 💡 判斷是否為題組並分池
                     if (t.type === 'group' || (t.questions && Array.isArray(t.questions))) {
                         groupPool.push(candidate);
                     } else {
@@ -74,34 +78,31 @@
             });
         });
 
-        // 4. 計算 1:2 比例
-        // 題組數 = 總數 / 3 (無條件捨去)，剩餘為單題
+        // --- 比例與取題邏輯 ---
+        // 1:2 比例計算
         let groupTarget = Math.floor(totalTarget / 3);
         let normalTarget = totalTarget - groupTarget;
 
-        // 排序
+        // 排序候選池
         groupPool.sort((a, b) => b.score - a.score);
         normalPool.sort((a, b) => b.score - a.score);
 
-        // 取題 (如果題組不夠，會由單題補足)
+        // 💡 關鍵：嚴格取題，不足額不補位 (No Fallback)
+        // 僅從符合該標籤池中選取，若池子只有 1 題，selected 就只有 1 題
         let selectedGroups = groupPool.slice(0, groupTarget);
         let selectedNormals = normalPool.slice(0, normalTarget);
 
-        // 補全機制：如果題組不夠 1/3，多抓單題補滿總題數
-        if (selectedGroups.length < groupTarget) {
-            const diff = groupTarget - selectedGroups.length;
-            selectedNormals = normalPool.slice(0, normalTarget + diff);
-        }
-
-        // 合併並隨機打亂考卷順序
+        // 合併結果並打亂順序
         const finalSelection = [...selectedGroups, ...selectedNormals].shuffle();
 
+        console.log(`🎯 嚴格篩選: 題組 ${selectedGroups.length} 題, 單題 ${selectedNormals.length} 題 (不符區域題目已排除)`);
+
         if (finalSelection.length === 0) {
-            console.error("❌ 找不到題目！");
+            console.error("❌ 該範圍內找不到符合標籤的題目！");
             return [];
         }
 
-        // 5. 格式化輸出
+        // --- 格式化渲染輸出 ---
         return finalSelection.map(c => {
             const t = c.rawData;
             const isGroup = (t.type === 'group' || t.questions);
@@ -141,6 +142,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V13.0 (1:2 題組比例版) 已就緒");
+    console.log("✅ Paper Generator V14.0 (嚴格區域鎖定 & 1:2 題組版) 已就緒");
 
 })(window);
