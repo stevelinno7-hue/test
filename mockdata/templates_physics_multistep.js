@@ -1266,40 +1266,25 @@
             ]
         }
     ];
+(function(global){
+  'use strict';
 
-  // ==========================================
-  // 🚀 核心生成邏輯 (修正版：確保執行註冊)
-  // ==========================================
-  const Utils = { shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5) };
+  // 1. 初始化倉庫
+  window.__PHYSICS_REPO__ = window.__PHYSICS_REPO__ || {};
+  console.log("🚀 [Physics V2.0] 理化核心題庫：仿歷史科架構載入中...");
 
-  // 1. 定義註冊函數 (處理題組)
-  const registerGroup = (g) => {
-      if (!g || !g.id) return;
-      g.subject = "physics";
-      const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["理化"];
-      g.tags = ["physics", "理化", "閱讀題組", ...baseTags];
-      g.type = "group";
-
-      // ✅ 必須呼叫此處，系統才抓得到
-      if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
-          window.RigorousGenerator.registerTemplate(g.id, g, g.tags);
-      }
-      window.__PHYSICS_REPO__[g.id] = g;
+  const U = { 
+      shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5) 
   };
 
-  // 2. 執行註冊題組 (確保這段有執行)
-  if (typeof advancedPhysicsGroups !== 'undefined') {
-      advancedPhysicsGroups.forEach(registerGroup);
-  }
-
-  // 3. 執行註冊一般單選題 (Fixed Questions)
+  // 2. 註冊單選題 (從 fixedQuestions 陣列處理)
   if (typeof fixedQuestions !== 'undefined') {
       fixedQuestions.forEach((item, idx) => {
-          const id = `phy_fixed_${idx}`;
-          const tags = ["physics", "理化", ...item.t];
+          const id = `phy_f_${idx}`;
+          const finalTags = ["physics", "理化", ...(item.t || [])];
           
           const func = () => {
-              const opts = Utils.shuffle([item.a, ...item.o]);
+              const opts = U.shuffle([item.a, ...item.o]);
               const category = item.t[2] || item.t[0]; 
 
               return {
@@ -1314,21 +1299,37 @@
                       `🏷️ 範圍：${item.t.join(" / ")}`
                   ],
                   subject: "physics",
-                  tags: tags
+                  tags: finalTags
               };
           };
 
-          // ✅ 關鍵：這一步讓 RigorousGenerator 收到題目
-          if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
-              window.RigorousGenerator.registerTemplate(id, func, tags);
-          }
+          // A. 仿歷史科：掛載到自有的倉庫
+          window.__PHYSICS_REPO__[id] = { id, func, tags: finalTags, subject: "physics" };
 
-          window.__PHYSICS_REPO__[id] = { id, func, tags, subject: "physics", type: "basic" };
+          // B. 關鍵必備：註冊到出題機核心 (如果沒有這段，網站就讀不到)
+          if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
+              window.RigorousGenerator.registerTemplate(id, func, finalTags);
+          }
       });
   }
 
-  // 4. 輸出統計
-  const totalCount = Object.keys(window.__PHYSICS_REPO__).length;
-  console.log(`✅ [Physics Core] 成功載入並註冊 ${totalCount} 個物理題目/題組。`);
+  // 3. 註冊進階題組 (如果有定義 advancedPhysicsGroups)
+  if (typeof advancedPhysicsGroups !== 'undefined') {
+      advancedPhysicsGroups.forEach(g => {
+          if (!g.id) return;
+          const gTags = ["physics", "理化", "閱讀題組", ...(g.questions[0].t || [])];
+          
+          // 註冊至出題機
+          if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
+              window.RigorousGenerator.registerTemplate(g.id, g, gTags);
+          }
+          // 掛載至自有倉庫
+          window.__PHYSICS_REPO__[g.id] = { ...g, tags: gTags, type: "group" };
+      });
+  }
+
+  // 4. 輸出結果
+  const count = Object.keys(window.__PHYSICS_REPO__).length;
+  console.log(`✅ [Physics] 載入完畢，共 ${count} 題已就緒。`);
 
 })(window);
