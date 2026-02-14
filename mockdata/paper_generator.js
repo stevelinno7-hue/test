@@ -27,12 +27,19 @@
         
         // 💡 關鍵：科目對照表 (Alias)
         // 解決「理化」找不到「physics」的問題
-        const subjectAlias = {
-            '理化': 'physics', '物理': 'physics', '化學': 'chemistry',
-            '地科': 'earth_science', '地球科學': 'earth_science',
-            '生物': 'biology', '歷史': 'history', '地理': 'geography',
-            '公民': 'civics', '數學': 'math', '英文': 'english', '國文': 'chinese'
-        };
+       // 在 generatePaper 函數內部
+const subjectAlias = {
+    'science': 'physics',      // 👈 新增這一行，把網址傳來的 science 轉為 physics
+    '理化': 'physics',
+    '物理': 'physics',
+    '化學': 'chemistry',
+    '地科': 'earth_science',
+    '地球科學': 'earth_science',
+    '生物': 'biology',
+    '歷史': 'history',
+    '地理': 'geography',
+    '公民': 'civics'
+};
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
         // 收集所有 Repo
