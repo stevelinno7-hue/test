@@ -1,16 +1,12 @@
 (function(global){
     'use strict';
     
-    // 1. 確保倉庫存在
+    // 確保倉庫存在
     window.__HISTORY_REPO__ = window.__HISTORY_REPO__ || {};
 
-    console.log("📜 [History V9.5] 歷史工廠：正在生產 200+ 道試題 (旗艦擴充版)...");
-
-    // 工具函式
     const U = { 
-        shuffle: (arr) => arr.sort(() => Math.random() - 0.5)
+        shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5)
     };
-
     // 2. 資料庫 - 完整題目區 (Specific Questions)
     const fullQuestions = [
 
@@ -5321,53 +5317,57 @@ const advancedHistoryGroups = [
         ]
     }
 ];
+// --- 關鍵：執行題目註冊 (修正版：支援單題 + 題組) ---
+const registerHistoryQuestions = () => {
+    // 1. 處理單選題 (Specific Questions)
+    if (typeof fullQuestions !== 'undefined' && Array.isArray(fullQuestions)) {
+        fullQuestions.forEach((item, idx) => {
+            const id = `hist_core_${idx}`;
+            const finalTags = ["history", "歷史", "社會", ...(item.t || [])];
+            const func = () => {
+                const opts = U.shuffle([item.a, ...item.o]);
+                return {
+                    id: id, type: "basic", question: item.q,
+                    options: opts, answer: opts.indexOf(item.a),
+                    correctValue: item.a,
+                    explanation: [`✅ 正確答案：${item.a}`, `🏷️ 標籤：${(item.t || []).join(" / ")}`],
+                    subject: "history", tags: finalTags
+                };
+            };
+            window.__HISTORY_REPO__[id] = { id, func, tags: finalTags, subject: "history", type: "basic" };
+            if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
+                window.RigorousGenerator.registerTemplate(id, func, finalTags);
+            }
+        });
+    }
 
-// ===============================================================
-// 🚀 歷史題庫註冊邏輯 (標準化修正)
-// ===============================================================
+    // 2. 處理題組 (Reading Groups) 🌟 補上這段題組才會顯示
+    if (typeof advancedHistoryGroups !== 'undefined' && Array.isArray(advancedHistoryGroups)) {
+        advancedHistoryGroups.forEach((g, idx) => {
+            if (!g.id) g.id = `hist_group_${idx}`;
+            
+            // 確保題組標籤完整
+            const gTags = ["history", "歷史", "閱讀題組", ...(g.questions && g.questions[0].t ? g.questions[0].t : [])];
+            
+            // 格式化題組物件以符合出題機需求
+            const formattedGroup = {
+                ...g,
+                type: "group",
+                subject: "history",
+                tags: gTags
+            };
 
-const registerHistoryGroup = (g) => {
-    if (!g || !g.id) return;
+            // 掛載到倉庫
+            window.__HISTORY_REPO__[g.id] = formattedGroup;
 
-    // 1. 強制補上 subject (history)
-    g.subject = "history";
-
-    // 2. 自動抓取標籤 (確保包含 "history", "歷史", "閱讀題組")
-    const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["歷史"];
-    g.tags = ["history", "歷史", "閱讀題組", ...baseTags];
-
-    // 3. 標註類型
-    g.type = "group";
-
-    // 4. 存入全域 Repo
-    window.__HISTORY_REPO__[g.id] = g;
+            // 註冊到出題核心
+            if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
+                window.RigorousGenerator.registerTemplate(g.id, formattedGroup, gTags);
+            }
+        });
+    }
 };
 
-// 註冊所有高階題組
-if (typeof advancedHistoryGroups !== 'undefined') {
-    advancedHistoryGroups.forEach(registerHistoryGroup);
-}
-
-// 註冊原本的一般題 (fullQuestions)
-if (typeof fullQuestions !== 'undefined') {
-    fullQuestions.forEach((item, idx) => {
-        const id = `hist_core_${idx}`;
-        const tags = ["history", "歷史", ...item.t];
-        
-        const func = () => {
-            const opts = U.shuffle([item.a, ...item.o]);
-            return {
-                question: item.q,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                explanation: [`✅ 正確答案：${item.a}`, `🏷️ 範圍：${item.t.join(" / ")}`],
-                subject: "history",
-                tags: tags
-            };
-        };
-        window.__HISTORY_REPO__[id] = { func, tags, subject: "history" };
-    });
-}
-
-console.log(`✅ 歷史題庫(含高階活用題組)載入完成！共 ${Object.keys(window.__HISTORY_REPO__).length} 題。`);
-})(window);
+// 啟動註冊
+setTimeout(registerHistoryQuestions, 200);
+console.log("✅ [History] 歷史題庫（單題+題組）註冊邏輯已載入");
