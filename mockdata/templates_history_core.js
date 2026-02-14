@@ -5371,3 +5371,4 @@ const registerHistoryQuestions = () => {
 // 啟動註冊
 setTimeout(registerHistoryQuestions, 200);
 console.log("✅ [History] 歷史題庫（單題+題組）註冊邏輯已載入");
+})(window);
