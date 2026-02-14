@@ -1267,36 +1267,32 @@
         }
     ];
 
-    // ==========================================
-  // 🚀 核心生成邏輯 (修正版：對接 RigorousGenerator)
+  // ==========================================
+  // 🚀 核心生成邏輯 (修正版：確保執行註冊)
   // ==========================================
   const Utils = { shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5) };
 
-  // 1. 定義統一處理函數 (Register Group)
+  // 1. 定義註冊函數 (處理題組)
   const registerGroup = (g) => {
       if (!g || !g.id) return;
-
       g.subject = "physics";
       const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["理化"];
       g.tags = ["physics", "理化", "閱讀題組", ...baseTags];
       g.type = "group";
 
-      // ✅ 關鍵修正：註冊到出題機核心，讓 paper_generator 抓得到
+      // ✅ 必須呼叫此處，系統才抓得到
       if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
-          // 題組直接以物件形式註冊，標籤需攤平
           window.RigorousGenerator.registerTemplate(g.id, g, g.tags);
       }
-
-      // 掛載到理化倉庫 (保留原結構)
       window.__PHYSICS_REPO__[g.id] = g;
   };
 
-  // 2. 註冊題組 (Advanced Groups)
+  // 2. 執行註冊題組 (確保這段有執行)
   if (typeof advancedPhysicsGroups !== 'undefined') {
       advancedPhysicsGroups.forEach(registerGroup);
   }
 
-  // 3. 註冊一般單選題 (Fixed Questions)
+  // 3. 執行註冊一般單選題 (Fixed Questions)
   if (typeof fixedQuestions !== 'undefined') {
       fixedQuestions.forEach((item, idx) => {
           const id = `phy_fixed_${idx}`;
@@ -1322,24 +1318,17 @@
               };
           };
 
-          // ✅ 關鍵修正：註冊到出題機核心
+          // ✅ 關鍵：這一步讓 RigorousGenerator 收到題目
           if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
               window.RigorousGenerator.registerTemplate(id, func, tags);
           }
 
-          // 掛載到理化倉庫 (結構與地科保持一致)
-          window.__PHYSICS_REPO__[id] = { 
-              id: id,
-              func: func, 
-              tags: tags, 
-              subject: "physics",
-              type: "basic"
-          };
+          window.__PHYSICS_REPO__[id] = { id, func, tags, subject: "physics", type: "basic" };
       });
   }
 
   // 4. 輸出統計
   const totalCount = Object.keys(window.__PHYSICS_REPO__).length;
-  console.log(`✅ [Physics Core] 物理題庫載入完成！共 ${totalCount} 題 (已同步至 RigorousGenerator)。`);
+  console.log(`✅ [Physics Core] 成功載入並註冊 ${totalCount} 個物理題目/題組。`);
 
 })(window);
