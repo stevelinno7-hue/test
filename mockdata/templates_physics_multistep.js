@@ -1270,70 +1270,74 @@
     // ==========================================
     // 🚀 核心生成邏輯 (參照地科範例：Flat Tags & Group Registration)
     // ==========================================
-    
-    // 定義工具函數
     const Utils = { shuffle: (arr) => arr.sort(() => Math.random() - 0.5) };
 
-    // 1. 註冊高階題組 (Advanced Groups)
-    if (typeof advancedPhysicsGroups !== 'undefined') {
-        advancedPhysicsGroups.forEach(g => {
-            if (g && g.id) {
-                // 修正標籤：確保包含 physics 與 理化，並展開原本的 tags
-                const groupBaseTags = g.tags || ["國九", "進階活用"];
-                g.tags = ["physics", "理化", ...groupBaseTags];
-                
-                // 直接掛載題組物件到 REPO
-                window.__PHYSICS_REPO__[g.id] = g;
-            }
-        });
-    }
+  // 1. 定義統一處理函數 (Register Group)
+  // 這是讓題組能正確顯示標籤、被搜尋到的關鍵
+  const registerGroup = (g) => {
+      if (!g || !g.id) return;
 
-    // 2. 註冊一般固定題 (Fixed Questions)
-    if (typeof fixedQuestions !== 'undefined') {
-        fixedQuestions.forEach((item, idx) => {
-            const id = `phy_fixed_${idx}`;
-            
-            // ✅ 關鍵修正：使用 ...item.t 展開標籤，解決年級/單元讀取不到的問題
-            const tags = ["physics", "理化", ...item.t]; 
+      // 💡 補上身分證欄位
+      g.subject = "physics";
+      
+      // 💡 智慧標籤：抓取第一題的標籤 (如：國九、運動學) 作為題組標籤
+      // 並補上 "理化"、"閱讀題組" 以便篩選
+      const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["理化"];
+      g.tags = ["physics", "理化", "閱讀題組", ...baseTags];
 
-            // 定義題目生成器 (Generator Pattern)
-            const func = () => {
-                // 將答案與選項合併並打亂
-                const opts = Utils.shuffle([item.a, ...item.o]);
-                
-                // 抓取分類名稱 (如: 運動學) 用於顯示
-                const category = item.t[2] || item.t[0];
+      // 標註類型
+      g.type = "group";
 
-                return {
-                    id: id,
-                    type: "basic",
-                    question: `【${category}】${item.q}`, 
-                    options: opts,
-                    answer: opts.indexOf(item.a), // 取得打亂後的正確索引
-                    correctValue: item.a,
-                    explanation: [
-                        `✅ 正確答案：${item.a}`, 
-                        `🏷️ 範圍：${item.t.join(" / ")}`
-                    ],
-                    subject: "physics",
-                    tags: tags
-                };
-            };
+      // 掛載
+      window.__PHYSICS_REPO__[g.id] = g;
+  };
 
-            // 掛載到全域物件
-            window.__PHYSICS_REPO__[id] = {
-                id: id,
-                type: "basic", // 標記為基礎單選題
-                tags: tags,
-                generator: func
-            };
-        });
-    }
+  // 2. 註冊題組 (Advanced Groups)
+  if (typeof advancedPhysicsGroups !== 'undefined') {
+      advancedPhysicsGroups.forEach(registerGroup);
+  }
 
-    // 顯示載入結果
-    const groupCount = typeof advancedPhysicsGroups !== 'undefined' ? advancedPhysicsGroups.length : 0;
-    const fixedCount = typeof fixedQuestions !== 'undefined' ? fixedQuestions.length : 0;
-    
-    console.log(`✅ [Physics Core] 載入完成：${groupCount} 組進階題組，${fixedCount} 題基礎題。`);
+  // 3. 註冊一般單選題 (Fixed Questions) - 同樣套用標準格式
+  if (typeof fixedQuestions !== 'undefined') {
+      fixedQuestions.forEach((item, idx) => {
+          const id = `phy_fixed_${idx}`;
+          
+          // 確保標籤包含 physics 與 理化
+          const tags = ["physics", "理化", ...item.t];
+          
+          const func = () => {
+              const opts = Utils.shuffle([item.a, ...item.o]);
+              const category = item.t[2] || item.t[0]; // 嘗試抓取 "運動學" 這一層
+
+              return {
+                  id: id,
+                  type: "basic",
+                  question: `【${category}】${item.q}`, 
+                  options: opts,
+                  answer: opts.indexOf(item.a),
+                  correctValue: item.a,
+                  explanation: [
+                      `✅ 正確答案：${item.a}`, 
+                      `🏷️ 範圍：${item.t.join(" / ")}`
+                  ],
+                  subject: "physics",
+                  tags: tags
+              };
+          };
+
+          // 掛載到全域物件 (結構與地科保持一致)
+          window.__PHYSICS_REPO__[id] = { 
+              id: id, // 補上 ID 方便查找
+              func: func, 
+              tags: tags, 
+              subject: "physics",
+              type: "basic"
+          };
+      });
+  }
+
+  // 4. 輸出統計
+  const totalCount = Object.keys(window.__PHYSICS_REPO__).length;
+  console.log(`✅ [Physics Core] 物理題庫載入完成！共 ${totalCount} 題 (含 40 組進階閱讀題)。`);
 
 })(window);
