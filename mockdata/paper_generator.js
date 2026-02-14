@@ -24,80 +24,87 @@
     function generatePaper(config) {
         const inputSub = (config.subject || '').toLowerCase();
         const requestTags = normalizeTags(config.tags || []);
+        const totalTarget = config.total || 10; // 總題數
         
-        // 💡 關鍵：科目對照表 (Alias)
-        // 解決「理化」找不到「physics」的問題
-       // 在 generatePaper 函數內部
-const subjectAlias = {
-    'science': 'physics',      // 👈 新增這一行，把網址傳來的 science 轉為 physics
-    '理化': 'physics',
-    '物理': 'physics',
-    '化學': 'chemistry',
-    '地科': 'earth_science',
-    '地球科學': 'earth_science',
-    '生物': 'biology',
-    '歷史': 'history',
-    '地理': 'geography',
-    '公民': 'civics'
-};
+        // 科目對照表
+        const subjectAlias = {
+            'science': 'physics', '理化': 'physics', '物理': 'physics', '化學': 'chemistry',
+            'social': 'history', '歷史': 'history', 'history': 'history',
+            '地科': 'earth_science', '地球科學': 'earth_science', 'biology': 'biology'
+        };
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
-        // 收集所有 Repo
+        // 準備分類池
+        let groupPool = [];  // 題組池
+        let normalPool = []; // 單題池
+
         const repos = [
             window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__,
             window.__BIOLOGY_REPO__, window.__EARTH_SCI_REPO__, window.__CHINESE_REPO__,
             window.__ENGLISH_REPO__, window.__HISTORY_REPO__, window.__CIVICS_REPO__, window.__GEOGRAPHY_REPO__
         ].filter(Boolean);
 
-        let candidates = [];
-
         repos.forEach(repo => {
             Object.keys(repo).forEach(tid => {
                 const t = repo[tid];
                 if (!t) return;
 
-                // A. 改良後的科目過濾
                 const tSub = String(t.subject || "").toLowerCase();
-                let isMatch = (tSub === inputSub || tSub === mappedSub || 
-                               tSub.includes(inputSub) || inputSub.includes(tSub));
-                
+                let isMatch = (tSub === inputSub || tSub === mappedSub || tSub.includes(inputSub));
                 if (!isMatch) return;
 
-                // B. 標籤計分
                 const itemTags = normalizeTags(t.tags || t.meta || []);
                 let score = 0;
                 if (requestTags.length === 0) {
-                    score = 1; 
+                    score = 1;
                 } else {
                     const hitCount = requestTags.filter(rt => itemTags.includes(rt)).length;
                     if (hitCount > 0) score = 10 + hitCount;
                 }
 
                 if (score > 0) {
-                    candidates.push({
-                        tid: tid,
-                        score: score + Math.random(),
-                        rawData: t
-                    });
+                    const candidate = { tid, score: score + Math.random(), rawData: t };
+                    // 💡 判斷是否為題組並分池
+                    if (t.type === 'group' || (t.questions && Array.isArray(t.questions))) {
+                        groupPool.push(candidate);
+                    } else {
+                        normalPool.push(candidate);
+                    }
                 }
             });
         });
 
-        // 排序
-        candidates.sort((a, b) => b.score - a.score);
-        const selected = candidates.slice(0, config.total || 10);
+        // 4. 計算 1:2 比例
+        // 題組數 = 總數 / 3 (無條件捨去)，剩餘為單題
+        let groupTarget = Math.floor(totalTarget / 3);
+        let normalTarget = totalTarget - groupTarget;
 
-        if (selected.length === 0) {
-            console.error("❌ 找不到符合條件的題目！請檢查科目設定。");
+        // 排序
+        groupPool.sort((a, b) => b.score - a.score);
+        normalPool.sort((a, b) => b.score - a.score);
+
+        // 取題 (如果題組不夠，會由單題補足)
+        let selectedGroups = groupPool.slice(0, groupTarget);
+        let selectedNormals = normalPool.slice(0, normalTarget);
+
+        // 補全機制：如果題組不夠 1/3，多抓單題補滿總題數
+        if (selectedGroups.length < groupTarget) {
+            const diff = groupTarget - selectedGroups.length;
+            selectedNormals = normalPool.slice(0, normalTarget + diff);
+        }
+
+        // 合併並隨機打亂考卷順序
+        const finalSelection = [...selectedGroups, ...selectedNormals].shuffle();
+
+        if (finalSelection.length === 0) {
+            console.error("❌ 找不到題目！");
             return [];
         }
 
-        // C. 格式化輸出
-        return selected.map(c => {
+        // 5. 格式化輸出
+        return finalSelection.map(c => {
             const t = c.rawData;
-            
-            // 判斷是否為題組 (Group)
-            const isGroup = (t.type === 'group' || (t.questions && Array.isArray(t.questions)));
+            const isGroup = (t.type === 'group' || t.questions);
 
             if (isGroup) {
                 return {
@@ -115,17 +122,12 @@ const subjectAlias = {
                     })
                 };
             } else {
-                // 一般題或函數題
                 let data;
                 if (typeof t.func === 'function') {
                     data = t.func();
                 } else {
                     const opts = [t.a, ...(t.o || [])].shuffle();
-                    data = {
-                        question: t.q,
-                        options: opts,
-                        answer: opts.indexOf(t.a)
-                    };
+                    data = { question: t.q, options: opts, answer: opts.indexOf(t.a) };
                 }
                 return {
                     type: 'normal',
@@ -139,6 +141,6 @@ const subjectAlias = {
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V12.0 (多科相容版) 已就緒");
+    console.log("✅ Paper Generator V13.0 (1:2 題組比例版) 已就緒");
 
 })(window);
