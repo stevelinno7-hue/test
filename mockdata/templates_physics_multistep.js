@@ -993,7 +993,7 @@
     { q: "相對論提出者？", a: "愛因斯坦", o: ["牛頓", "法拉第", "特斯拉"], t: ["相對論", "高一"] },
     { q: "E=mc² 表示？", a: "質量可轉能量", o: ["速度可轉能量", "時間可轉能量", "體積可轉能量"], t: ["相對論", "高一"] },
     { q: "量子化代表？", a: "能量不連續", o: ["能量連續", "能量固定", "能量消失"], t: ["量子物理", "高三"] }
-  ];
+    ];
 
  // ===============================================================
 // ⚛️ 物理高階活用題組包 (Advanced Physics Groups)
@@ -1281,60 +1281,31 @@ const advancedPhysicsGroups = [
     }
 ];
 
-// ===============================================================
-// 🚀 物理題庫註冊邏輯 (統一標準化)
-// ===============================================================
 
-// 1. 定義註冊函數 (補上 subject 與 tags)
-const registerPhysicsGroup = (g) => {
-    if (!g || !g.id) return;
-
-    // 💡 關鍵：補上產生器需要的欄位
-    // 注意：根據您的系統，物理可能是 "physics" 或 "physical_science"
-    // 這裡我們設定為 "physics" 並在 tags 加入 "理化" 以確保雙向兼容
-    g.subject = "physics"; 
-
-    // 自動抓取第一題的標籤
-    const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["理化"];
+  // 3. 註冊題目
+  fixedQuestions.forEach((item, idx) => {
+    const id = `fixed_phy_${idx}`;
     
-    // 合併標籤：確保包含 "physics", "理化", "閱讀題組"
-    g.tags = ["physics", "理化", "閱讀題組", ...baseTags];
+    // 建立隨機選項 (包含正確答案)
+    const opts = [...item.o, item.a].sort(() => Math.random() - 0.5);
 
-    // 標註類型
-    g.type = "group";
+    window.__PHYSICS_REPO__[id] = {
+      func: () => ({
+        id: id,
+        question: item.q,
+        options: opts,
+        answer: opts.indexOf(item.a),
+        correctValue: item.a,
+        concept: "物理基本概念",
+        explanation: [`正確答案是：${item.a}`],
+        subject: "physics",
+        tags: item.t
+      }),
+      tags: item.t,
+      subject: "physics"
+    };
+  });
 
-    // 存入全域 Repo
-    window.__PHYSICS_REPO__[g.id] = g;
-};
-
-// 2. 註冊所有高階題組
-if (typeof advancedPhysicsGroups !== 'undefined') {
-    advancedPhysicsGroups.forEach(registerPhysicsGroup);
-}
-
-// 3. 註冊一般題 (維持原本的 fixedQuestions 邏輯)
-// 確保一般題也掛載到 window.__PHYSICS_REPO__ 並帶有正確標籤
-if (typeof fixedQuestions !== 'undefined') {
-    fixedQuestions.forEach((item, idx) => {
-        const id = `phy_core_${idx}`;
-        const tags = ["physics", "理化", ...item.t];
-        
-        // 包裝成產生器格式
-        const func = () => {
-            const opts = Utils.shuffle([item.a, ...item.o]);
-            return {
-                question: item.q,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                explanation: [`✅ 正確答案：${item.a}`, `🏷️ 範圍：${item.t.join(" / ")}`],
-                subject: "physics",
-                tags: tags
-            };
-        };
-        window.__PHYSICS_REPO__[id] = { func, tags, subject: "physics" };
-    });
-}
-
-console.log(`✅ 物理題庫(含高階活用題組)載入完成！共 ${Object.keys(window.__PHYSICS_REPO__).length} 題。`);
+  console.log(`✅ 已註冊固定物理題目：${Object.keys(window.__PHYSICS_REPO__).length} 題`);
 
 })(window);
