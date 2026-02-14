@@ -2,8 +2,12 @@
   'use strict';
 
   // 1. 初始化倉庫
-  if (!window.__PHYSICS_REPO__) window.__PHYSICS_REPO__ = {};
-  console.log("🚀 [Physics Core] 固定題庫載入中...");
+  window.__PHYSICS_REPO__ = window.__PHYSICS_REPO__ || {};
+  console.log("🚀 [Physics Core] 理化核心題庫 V2.0 啟動...");
+
+  const U = { 
+      shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5) 
+  };
  const fixedQuestions = [
 
   { q: "3. 下列有關位移與路徑長的敘述何者正確?", o: ["路徑長的大小必定≦位移的大小","路徑長的方向一定等於位移的方向","路徑長必定是有折返及彎曲的,位移一定是直線的"], a: "路徑長的大小必定≧位移的大小", t: ["理化","國九","運動學","位移與路徑長"] },
@@ -1266,70 +1270,73 @@
             ]
         }
     ];
-(function(global){
-  'use strict';
+// 註冊一般單選題的函數
+  const processFixedQuestions = () => {
+      if (typeof fixedQuestions !== 'undefined' && Array.isArray(fixedQuestions)) {
+          fixedQuestions.forEach((item, idx) => {
+              const id = `phy_f_${idx}`;
+              const finalTags = ["physics", "理化", ...(item.t || [])];
+              
+              const func = () => {
+                  const opts = U.shuffle([item.a, ...item.o]);
+                  const category = (item.t && item.t.length > 0) ? (item.t[2] || item.t[0]) : "理化"; 
 
-  // 1. 初始化倉庫
-  window.__PHYSICS_REPO__ = window.__PHYSICS_REPO__ || {};
-  console.log("🚀 [Physics V2.0] 理化核心題庫：仿歷史科架構載入中...");
+                  return {
+                      id: id,
+                      type: "basic",
+                      question: `【${category}】${item.q}`, 
+                      options: opts,
+                      answer: opts.indexOf(item.a),
+                      correctValue: item.a,
+                      explanation: [
+                          `✅ 正確答案：${item.a}`, 
+                          `🏷️ 範圍：${(item.t || []).join(" / ")}`
+                      ],
+                      subject: "physics",
+                      tags: finalTags
+                  };
+              };
 
-  const U = { 
-      shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5) 
+              // 掛載到理化專屬倉庫
+              window.__PHYSICS_REPO__[id] = { id, func, tags: finalTags, subject: "physics", type: "basic" };
+
+              // 註冊到出題核心 RigorousGenerator
+              if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
+                  window.RigorousGenerator.registerTemplate(id, func, finalTags);
+              }
+          });
+      }
   };
 
-  // 2. 註冊單選題 (從 fixedQuestions 陣列處理)
-  if (typeof fixedQuestions !== 'undefined') {
-      fixedQuestions.forEach((item, idx) => {
-          const id = `phy_f_${idx}`;
-          const finalTags = ["physics", "理化", ...(item.t || [])];
-          
-          const func = () => {
-              const opts = U.shuffle([item.a, ...item.o]);
-              const category = item.t[2] || item.t[0]; 
+  // 註冊題組的函數
+  const processGroups = () => {
+      if (typeof advancedPhysicsGroups !== 'undefined' && Array.isArray(advancedPhysicsGroups)) {
+          advancedPhysicsGroups.forEach(g => {
+              if (!g.id) return;
+              const gTags = ["physics", "理化", "閱讀題組", ...(g.questions && g.questions[0].t ? g.questions[0].t : [])];
+              
+              // 掛載到理化專屬倉庫
+              window.__PHYSICS_REPO__[g.id] = { ...g, tags: gTags, subject: "physics", type: "group" };
 
-              return {
-                  id: id,
-                  type: "basic",
-                  question: `【${category}】${item.q}`, 
-                  options: opts,
-                  answer: opts.indexOf(item.a),
-                  correctValue: item.a,
-                  explanation: [
-                      `✅ 正確答案：${item.a}`, 
-                      `🏷️ 範圍：${item.t.join(" / ")}`
-                  ],
-                  subject: "physics",
-                  tags: finalTags
-              };
-          };
+              // 註冊到出題核心
+              if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
+                  window.RigorousGenerator.registerTemplate(g.id, g, gTags);
+              }
+          });
+      }
+  };
 
-          // A. 仿歷史科：掛載到自有的倉庫
-          window.__PHYSICS_REPO__[id] = { id, func, tags: finalTags, subject: "physics" };
-
-          // B. 關鍵必備：註冊到出題機核心 (如果沒有這段，網站就讀不到)
-          if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
-              window.RigorousGenerator.registerTemplate(id, func, finalTags);
-          }
-      });
-  }
-
-  // 3. 註冊進階題組 (如果有定義 advancedPhysicsGroups)
-  if (typeof advancedPhysicsGroups !== 'undefined') {
-      advancedPhysicsGroups.forEach(g => {
-          if (!g.id) return;
-          const gTags = ["physics", "理化", "閱讀題組", ...(g.questions[0].t || [])];
-          
-          // 註冊至出題機
-          if (window.RigorousGenerator && window.RigorousGenerator.registerTemplate) {
-              window.RigorousGenerator.registerTemplate(g.id, g, gTags);
-          }
-          // 掛載至自有倉庫
-          window.__PHYSICS_REPO__[g.id] = { ...g, tags: gTags, type: "group" };
-      });
-  }
-
-  // 4. 輸出結果
-  const count = Object.keys(window.__PHYSICS_REPO__).length;
-  console.log(`✅ [Physics] 載入完畢，共 ${count} 題已就緒。`);
+  // ==========================================
+  // 執行註冊 (這段必須在資料定義之後)
+  // ==========================================
+  
+  // 這裡假設你的 fixedQuestions 和 advancedPhysicsGroups 已經定義在 global 或本檔案上方
+  // 為了保證安全，我們延遲一點點執行，確保資料已載入
+  setTimeout(() => {
+      processFixedQuestions();
+      processGroups();
+      const count = Object.keys(window.__PHYSICS_REPO__).length;
+      console.log(`✅ [Physics] 載入完畢，共 ${count} 題已成功註冊至系統。`);
+  }, 100);
 
 })(window);
