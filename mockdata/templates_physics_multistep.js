@@ -1280,32 +1280,79 @@ const advancedPhysicsGroups = [
         ]
     }
 ];
+// ... (上面是您貼上的 advancedPhysicsGroups 陣列) ...
 
+  // ==========================================
+  // 🚀 修正後的生成邏輯：同時處理「題組」與「一般題」
+  // ==========================================
 
-  // 3. 註冊題目
-  fixedQuestions.forEach((item, idx) => {
-    const id = `fixed_phy_${idx}`;
-    
-    // 建立隨機選項 (包含正確答案)
-    const opts = [...item.o, item.a].sort(() => Math.random() - 0.5);
+  // 定義工具函數 (洗牌用)
+  const Utils = { shuffle: (arr) => arr.sort(() => Math.random() - 0.5) };
 
-    window.__PHYSICS_REPO__[id] = {
-      func: () => ({
-        id: id,
-        question: item.q,
-        options: opts,
-        answer: opts.indexOf(item.a),
-        correctValue: item.a,
-        concept: "物理基本概念",
-        explanation: [`正確答案是：${item.a}`],
-        subject: "physics",
-        tags: item.t
-      }),
-      tags: item.t,
-      subject: "physics"
-    };
-  });
+  // 1. 註冊高階題組 (Advanced Groups) - 這是原本漏掉的部分！
+  if (typeof advancedPhysicsGroups !== 'undefined') {
+      advancedPhysicsGroups.forEach(g => {
+          if (g && g.id) {
+              // 修正標籤：確保包含 physics 與 理化，並展開原本的 tags
+              // 預設給予 "國九" 與 "進階活用" 標籤，除非題組本身有定義
+              const groupBaseTags = g.tags || ["國九", "進階活用"];
+              
+              // 確保標籤結構平整
+              g.tags = ["physics", "理化", ...groupBaseTags];
+              
+              // 直接掛載題組物件到 REPO
+              window.__PHYSICS_REPO__[g.id] = g;
+          }
+      });
+  }
 
-  console.log(`✅ 已註冊固定物理題目：${Object.keys(window.__PHYSICS_REPO__).length} 題`);
+  // 2. 註冊一般固定題 (Fixed Questions)
+  if (typeof fixedQuestions !== 'undefined') {
+      fixedQuestions.forEach((item, idx) => {
+          const id = `phy_fixed_${idx}`;
+          
+          // ✅ 關鍵修正：使用 ...item.t 展開標籤，解決年級/單元讀取不到的問題
+          // 修正後結構如：["physics", "理化", "國九", "運動學"]
+          const tags = ["physics", "理化", ...item.t]; 
+
+          // 定義題目生成器 (Generator Pattern)
+          const func = () => {
+              // 將答案與選項合併並打亂
+              const opts = Utils.shuffle([item.a, ...item.o]);
+              
+              // 抓取分類名稱 (如: 運動學) 用於顯示
+              const category = item.t[2] || item.t[0];
+
+              return {
+                  id: id,
+                  type: "basic",
+                  question: `【${category}】${item.q}`, 
+                  options: opts,
+                  answer: opts.indexOf(item.a), // 取得打亂後的正確索引
+                  correctValue: item.a,
+                  explanation: [
+                      `✅ 正確答案：${item.a}`, 
+                      `🏷️ 範圍：${item.t.join(" / ")}`
+                  ],
+                  subject: "physics",
+                  tags: tags
+              };
+          };
+
+          // 掛載到全域物件
+          window.__PHYSICS_REPO__[id] = {
+              id: id,
+              type: "basic", // 標記為基礎單選題
+              tags: tags,
+              generator: func
+          };
+      });
+  }
+
+  // 顯示載入結果
+  const groupCount = typeof advancedPhysicsGroups !== 'undefined' ? advancedPhysicsGroups.length : 0;
+  const fixedCount = typeof fixedQuestions !== 'undefined' ? fixedQuestions.length : 0;
+  
+  console.log(`✅ [Physics Core] 載入完成：${groupCount} 組進階題組，${fixedCount} 題基礎題。`);
 
 })(window);
