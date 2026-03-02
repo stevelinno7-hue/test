@@ -570,7 +570,7 @@
                 nextBtn.className = "bg-slate-800 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition flex items-center gap-2";
                 nextBtn.onclick = trySubmit;
             } else {
-                nextBtn.innerHTML = `下一大題 <i class="fas fa-arrow-right ml-2"></i>`;
+                nextBtn.innerHTML = `下一題 <i class="fas fa-arrow-right ml-2"></i>`;
                 nextBtn.className = "bg-white border border-slate-300 hover:border-blue-500 text-slate-700 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition";
                 nextBtn.onclick = () => { currentQIndex++; renderQuestion(); };
             }
