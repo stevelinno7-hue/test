@@ -1494,7 +1494,7 @@ history: [
 
         // --- 公民 (Civics) ---
 civics: [
- [
+ 
   {
     id: "civ_j1", name: "國七公民 (個人與社會)", stage: "junior_high", subject: "civics", book: "Book 1",
     units: [
