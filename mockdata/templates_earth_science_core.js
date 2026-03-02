@@ -1334,7 +1334,7 @@ const group_river_profile = {
         
         // 抓取子題目的標籤作為題組標籤 (如：國九、地質、天文)
         const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["地科"];
-        g.tags = ["earth_science", "地科", "閱讀題組", ...baseTags];
+        g.tags = ["earth_science", "閱讀題組", ...baseTags];
         
         // 標註類型
         g.type = "group";
