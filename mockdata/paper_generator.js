@@ -1,7 +1,6 @@
 (function(global){
     'use strict';
 
-    // 1. 陣列隨機工具
     if (!Array.prototype.shuffle) {
         Array.prototype.shuffle = function() {
             let arr = this.slice();
@@ -26,53 +25,57 @@
         
         const subjectAlias = {
             'science': 'physics', '理化': 'physics', '物理': 'physics', '化學': 'chemistry',
-            'social': 'history', '歷史': 'history', 'history': 'history',
-            '地科': 'earth_science', '地球科學': 'earth_science', 'biology': 'biology'
+            'social': 'history', '歷史': 'history', '地科': 'earth_science', 'biology': 'biology'
         };
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
-        // 所有的「合格題目」池
         let qualifiedPool = []; 
 
-        const repos = [
-            window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__,
-            window.__BIOLOGY_REPO__, window.__EARTH_SCI_REPO__, window.__CHINESE_REPO__,
-            window.__ENGLISH_REPO__, window.__HISTORY_REPO__, window.__CIVICS_REPO__, window.__GEOGRAPHY_REPO__
-        ].filter(Boolean);
+        // 根據科目動態選擇 Repo，避免跨科目亂抓
+        const repoMap = {
+            'math': window.__MATH_REPO__,
+            'physics': window.__PHYSICS_REPO__,
+            'chemistry': window.__CHEMISTRY_REPO__,
+            'biology': window.__BIOLOGY_REPO__,
+            'earth_science': window.__EARTH_SCI_REPO__,
+            'chinese': window.__CHINESE_REPO__,
+            'english': window.__ENGLISH_REPO__,
+            'history': window.__HISTORY_REPO__,
+            'civics': window.__CIVICS_REPO__,
+            'geography': window.__GEOGRAPHY_REPO__
+        };
 
-        // --- 第一步：嚴格篩選 (Filtering) ---
-        repos.forEach(repo => {
-            Object.keys(repo).forEach(tid => {
-                const t = repo[tid];
-                if (!t) return;
+        // 只檢查目標科目 Repo，徹底防止單元亂跳
+        const targetRepo = repoMap[mappedSub];
+        if (!targetRepo) {
+            console.error(`❌ 找不到科目 Repo: ${mappedSub}`);
+            return [];
+        }
 
-                const tSub = String(t.subject || "").toLowerCase();
-                if (!(tSub === inputSub || tSub === mappedSub || tSub.includes(inputSub))) return;
+        // --- 嚴格過濾邏輯 ---
+        Object.keys(targetRepo).forEach(tid => {
+            const t = targetRepo[tid];
+            if (!t) return;
 
-                const itemTags = normalizeTags(t.tags || t.meta || []);
-                
-                // 標籤檢查：如果有指定標籤，必須命中至少一個
-                if (requestTags.length > 0) {
-                    const hasTag = requestTags.some(rt => itemTags.includes(rt));
-                    if (!hasTag) return; // 不符合標籤，直接剔除，不予補位
-                }
+            const itemTags = normalizeTags(t.tags || t.meta || []);
+            
+            // 💡 關鍵：必須包含「所有」使用者要求的標籤 (AND 邏輯)
+            // 這樣就不會因為標籤重疊而抓到隔壁單元的題目
+            if (requestTags.length > 0) {
+                const isStrictMatch = requestTags.every(rt => itemTags.includes(rt));
+                if (!isStrictMatch) return; 
+            }
 
-                qualifiedPool.push(t);
-            });
+            qualifiedPool.push(t);
         });
 
-        // --- 第二步：隨機抽樣 (Sampling) ---
-        // 先將所有合格的題目打亂順序
-        const shuffledPool = qualifiedPool.shuffle();
-        
-        // 從打亂後的池子取出要求的數量 (若池子不足 10 題，slice 會自動只取現有的數量)
-        const finalSelection = shuffledPool.slice(0, totalTarget);
+        // --- 隨機抽樣 ---
+        const finalSelection = qualifiedPool.shuffle().slice(0, totalTarget);
 
-        console.log(`📊 篩選報告：符合標籤的總數為 ${qualifiedPool.length} 題，隨機抽選出 ${finalSelection.length} 題。`);
+        console.log(`🎯 精確鎖定：單元符合數 ${qualifiedPool.length} 題，隨機抽出 ${finalSelection.length} 題。`);
 
         if (finalSelection.length === 0) return [];
 
-        // --- 第三步：格式化輸出 ---
         return finalSelection.map(t => {
             const isGroup = (t.type === 'group' || t.questions);
             if (isGroup) {
@@ -110,6 +113,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V16.0 (公平隨機抽樣版) 已就緒");
+    console.log("✅ Paper Generator V17.0 (嚴格標籤交集版) 已就緒");
 
 })(window);
