@@ -24,10 +24,22 @@
         const totalTarget = config.total || 10; 
         
         const subjectAlias = {
-            'science': 'physics', '理化': 'physics', '物理': 'physics', '化學': 'chemistry',
-            'social': 'history', '歷史': 'history', '地科': 'earth_science', 'biology': 'biology',
-            '公民': 'civics', '地理': 'geography'
-        };
+    'science': 'physics',      // 保留理化
+    '理化': 'physics',
+    '物理': 'physics',
+    '化學': 'chemistry',
+
+    'earth science': 'earth_science',
+    'earth_science': 'earth_science',
+    '地科': 'earth_science',
+    '地球科學': 'earth_science',
+
+    'social': 'history',
+    '歷史': 'history',
+    'biology': 'biology',
+    '公民': 'civics',
+    '地理': 'geography'
+};
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
         // 💡 關鍵：定義「背景標籤」，這些標籤不參與精確單元過濾
