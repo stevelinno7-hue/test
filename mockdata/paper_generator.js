@@ -28,7 +28,7 @@
     '理化': 'physics',
     '物理': 'physics',
     '化學': 'chemistry',
-
+    'earth': 'earth_science',  
     'earth science': 'earth_science',
     'earth_science': 'earth_science',
     '地科': 'earth_science',
