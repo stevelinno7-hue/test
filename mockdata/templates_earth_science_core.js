@@ -1325,61 +1325,87 @@ const group_river_profile = {
     // 🚀 修正後的註冊邏輯：確保所有題組都能被搜尋到
     // ==========================================
 
-    // 統一處理函數：確保題組帶有與一般題相同的搜尋身分證
+   // ==========================================
+    // 🚀 旗艦修復版：確保地科題目「每一題」都能被掌握
+    // ==========================================
+
+    // 確保所有可能的倉庫都已初始化
+    window.__EARTH_SCI_REPO__ = window.__EARTH_SCI_REPO__ || {};
+    window.__SCIENCE_REPO__ = window.__SCIENCE_REPO__ || {};
+
+    // 統一標籤飽和函數：增加搜尋命中率
+    const getSaturatedTags = (originalTags) => {
+        const mandatory = ["地科", "自然", "理化", "science", "earth_science", "國九"];
+        return Array.from(new Set([...(originalTags || []), ...mandatory]));
+    };
+
+    // 1. 修復題組註冊邏輯
     const registerGroup = (g) => {
         if (!g || !g.id) return;
         
-        // 💡 關鍵修正：補上產生器需要的欄位
-        g.subject = "earth_science"; 
-        
-        // 抓取子題目的標籤作為題組標籤 (如：國九、地質、天文)
+        // 強制對齊科目與標籤
+        g.subject = "science"; // 統一改為大科目 science
         const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["地科"];
-        g.tags = ["earth_science", "閱讀題組", ...baseTags];
-        
-        // 標註類型
+        g.tags = getSaturatedTags(["閱讀題組", ...baseTags]);
         g.type = "group";
         
+        // 雙向掛載：讓後台不管搜哪邊都找得到
         window.__EARTH_SCI_REPO__[g.id] = g;
+        window.__SCIENCE_REPO__[g.id] = g;
     };
 
-    // 註冊至全域庫
-    conceptGroups.forEach(registerGroup);
-    visualGroups.forEach(registerGroup);
-
+    // 2. 註冊所有題組 (岩石循環、板塊、季節、潮汐)
     const allGroups = [
-        group_river_profile, 
-        group_rock_cycle, 
-        group_geo_history, 
-        group_plate_tectonics, 
-        group_seasons, 
-        group_tides
+        ...(typeof conceptGroups !== 'undefined' ? conceptGroups : []),
+        ...(typeof visualGroups !== 'undefined' ? visualGroups : []),
+        ...(typeof group_river_profile !== 'undefined' ? [group_river_profile] : []),
+        ...(typeof group_rock_cycle !== 'undefined' ? [group_rock_cycle] : []),
+        ...(typeof group_geo_history !== 'undefined' ? [group_geo_history] : []),
+        ...(typeof group_plate_tectonics !== 'undefined' ? [group_plate_tectonics] : []),
+        ...(typeof group_seasons !== 'undefined' ? [group_seasons] : []),
+        ...(typeof group_tides !== 'undefined' ? [group_tides] : [])
     ];
-
     allGroups.forEach(registerGroup);
 
-    // ==========================================
-    // 生成一般題 (維持原本邏輯)
-    // ==========================================
+    // 3. 修復一般題註冊 (對齊歷史科成功邏輯)
     earthDB.forEach((item, idx) => {
         const id = `earth_core_${idx}`;
-        const tags = ["earth_science", "地科", ...item.t]; 
+        const saturatedTags = getSaturatedTags(item.t);
         
-        const func = () => {
-            const opts = Utils.shuffle([item.a, ...item.o]);
-            return {
-                question: `【${item.t[0]}】${item.q}`, 
-                options: opts,
-                answer: opts.indexOf(item.a),
-                explanation: [
-                    `✅ 正確答案：${item.a}`, 
-                    `🏷️ 範圍：${item.t.join(" / ")}`
-                ],
-                subject: "earth_science", 
-                tags: tags
-            };
+        const entry = {
+            subject: "science",
+            tags: saturatedTags,
+            type: "single",
+            func: () => {
+                const opts = Utils.shuffle([item.a, ...item.o]);
+                return {
+                    id: id,
+                    question: `【${item.t[0]}】${item.q}`, 
+                    options: opts,
+                    answer: opts.indexOf(item.a), // 核心：數字索引
+                    correctValue: item.a,
+                    explanation: [
+                        `✅ 正確答案：${item.a}`, 
+                        `🏷️ 範圍：${item.t.join(" / ")}`
+                    ],
+                    subject: "science",
+                    tags: saturatedTags
+                };
+            }
         };
-        window.__EARTH_SCI_REPO__[id] = { func, tags, subject: "earth_science" };
+        
+        // 雙向同步
+        window.__EARTH_SCI_REPO__[id] = entry;
+        window.__SCIENCE_REPO__[id] = entry;
     });
 
-    console.log(`✅ 地科題庫載入完成！共 ${Object.keys(window.__EARTH_SCI_REPO__).length} 題 (含閱讀題組)。`);
+    // 4. 定時檢查補丁 (防止被系統其他程式碼覆蓋)
+    setInterval(() => {
+        if (Object.keys(window.__EARTH_SCI_REPO__).length === 0) {
+            console.log("⚠️ 地科倉庫異常清空，正在自動重新掛載...");
+            allGroups.forEach(registerGroup);
+        }
+    }, 5000);
+
+    console.log(`🎉 [地科強化完成] 目前倉庫總數：${Object.keys(window.__EARTH_SCI_REPO__).length} 題。`);
     })(window);
