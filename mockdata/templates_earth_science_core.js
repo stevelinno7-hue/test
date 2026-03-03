@@ -1334,7 +1334,7 @@ const group_river_profile = {
         
         // 抓取子題目的標籤作為題組標籤 (如：國九、地質、天文)
         const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["地科"];
-        g.tags = ["earth_science", "閱讀題組", ...baseTags];
+        g.tags = ["earth_science", "地科", "閱讀題組", ...baseTags];
         
         // 標註類型
         g.type = "group";
@@ -1360,38 +1360,25 @@ const group_river_profile = {
     // ==========================================
     // 生成一般題 (維持原本邏輯)
     // ==========================================
-   // ==========================================
-    // 🚀 終極修正：確保複雜 URL 也能精準出題
-    // ==========================================
     earthDB.forEach((item, idx) => {
         const id = `earth_core_${idx}`;
+        const tags = ["earth_science", "地科", ...item.t]; 
         
-        // 確保標籤乾淨，移除多餘空格
-        const cleanTags = item.t.map(tag => tag.trim());
-
-        // 💡 這裡很關鍵：我們將標籤存入庫中
-        // 這樣 generatePaper 進行匹配時，只要 URL 的 grade 裡有一個詞對上 cleanTags 就能出題
         const func = () => {
             const opts = Utils.shuffle([item.a, ...item.o]);
             return {
-                question: `【${cleanTags[0]}】${item.q}`, 
+                question: `【${item.t[0]}】${item.q}`, 
                 options: opts,
                 answer: opts.indexOf(item.a),
                 explanation: [
                     `✅ 正確答案：${item.a}`, 
-                    `🏷️ 範圍：${cleanTags.join(" / ")}`
+                    `🏷️ 範圍：${item.t.join(" / ")}`
                 ],
                 subject: "earth_science", 
-                tags: cleanTags 
+                tags: tags
             };
         };
-
-        // 統一存入全域庫
-        window.__EARTH_SCI_REPO__[id] = { 
-            func, 
-            tags: cleanTags, // 👈 確保這裡只有純粹的知識點標籤
-            subject: "earth_science" 
-        };
+        window.__EARTH_SCI_REPO__[id] = { func, tags, subject: "earth_science" };
     });
 
     console.log(`✅ 地科題庫載入完成！共 ${Object.keys(window.__EARTH_SCI_REPO__).length} 題 (含閱讀題組)。`);
