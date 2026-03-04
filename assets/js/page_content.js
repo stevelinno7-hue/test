@@ -10,26 +10,41 @@ window.PageContent = {
             <p class="mb-4">我們的核心引擎採用最新的機器學習演算法，能夠根據學生的答題歷程，動態調整題目難度。不再是死板的題庫抽題，而是為每一位學生量身打造的專屬試卷。</p>
             <h3 class="text-xl font-bold mb-4">2. 知識點雷達圖</h3>
             <p class="mb-4">透過視覺化的雷達圖，精準呈現學生在「運算」、「幾何」、「代數」、「邏輯」等各個維度的能力值，一眼看出強弱項。</p>
-            <h3 class="text-xl font-bold mb-4">3. 親師生三方連動</h3>
-            <p>打破資訊不對稱，讓家長與老師能即時掌握學生的學習狀況，並透過系統發送鼓勵或補救建議。</p>
+            <h3 class="text-xl font-bold mb-4">3. 多台裝置聯動</h3>
+            <p>數據即時同步，家長可透過手機登入孩子的帳號掌握孩子狀況，學生可在不同裝置上學習並練習。</p>
         `
     },
     "changelog": {
         title: "更新日誌",
         content: `
-            <div class="border-l-4 border-blue-500 pl-4 mb-6">
+         <div class="border-l-4 border-blue-500 pl-4 mb-6">
                 <div class="text-gray-500 text-sm">2025-12-01</div>
-                <h4 class="font-bold">v2.0 全新改版上線</h4>
-                <p>導入 Generator Engine，支援無限題庫生成。</p>
+                <h4 class="font-bold">v1.1.2 題庫重新命題</h4>
+                <p>加入更困難的考題。</p>
             </div>
             <div class="border-l-4 border-gray-300 pl-4 mb-6">
-                <div class="text-gray-500 text-sm">2025-11-15</div>
-                <h4 class="font-bold">v1.5 家長功能更新</h4>
-                <p>新增 LINE Notify 通知綁定功能。</p>
+                <div class="text-gray-500 text-sm">2025-12-01</div>
+                <h4 class="font-bold">v1.1.1 新功能</h4>
+                <p>加入重點複習、遊戲場。</p>
+            </div>
+            <div class="border-l-4 border-gray-300 pl-4 mb-6">
+                <div class="text-gray-500 text-sm">2025-12-01</div>
+                <h4 class="font-bold">v1.1.0 全新改版上線</h4>
+                <p>整理所有科目課程，排列整齊。</p>
+            </div>
+             <div class="border-l-4 border-gray-300 pl-4 mb-6">
+                <div class="text-gray-500 text-sm">2025-11</div>
+                <h4 class="font-bold">v1.0.2 擴充智慧題庫</h4>
+                <p>所有科目題目到齊。</p>
+            </div>
+            <div class="border-l-4 border-gray-300 pl-4 mb-6">
+                <div class="text-gray-500 text-sm">2025-10</div>
+                <h4 class="font-bold">v1.0.1 擴充功能</h4>
+                <p>新增錯題補救，解題論壇。</p>
             </div>
             <div class="border-l-4 border-gray-300 pl-4">
-                <div class="text-gray-500 text-sm">2025-10-01</div>
-                <h4 class="font-bold">v1.0 正式發布</h4>
+                <div class="text-gray-500 text-sm">2025-08</div>
+                <h4 class="font-bold">v1.0.0 正式發布</h4>
                 <p>雲端學院基礎版上線。</p>
             </div>
         `
@@ -100,7 +115,7 @@ window.PageContent = {
     "about": {
         title: "公司簡介",
         content: `
-            <p class="mb-6">雲端學院成立於 2025 年，致力於運用科技提升教育品質。我們的團隊由教育專家、軟體工程師與設計師組成，目標是打造一個讓每個學生都能享受個人化學習體驗的平台。</p>
+            <p class="mb-6">學雲端學院成立於 2025 年，致力於運用科技提升教育品質。</p>
             <h3 class="text-lg font-bold mb-2">我們的使命</h3>
             <p class="mb-4">讓優質教育資源不再受限於地理位置與經濟條件，透過科技實現教育公平。</p>
             <h3 class="text-lg font-bold mb-2">核心價值</h3>
@@ -156,7 +171,7 @@ window.PageContent = {
     "terms": {
         title: "服務條款",
         content: `
-            <p class="text-sm text-gray-500 mb-4">最後更新日期：2025年1月1日</p>
+            <p class="text-sm text-gray-500 mb-4">最後更新日期：2026年1月12日</p>
             <h4 class="font-bold mt-4">1. 認知與接受條款</h4>
             <p>當您使用雲端學院（以下簡稱本服務）時，即表示您已閱讀、瞭解並同意接受本服務條款之所有內容。</p>
             <h4 class="font-bold mt-4">2. 會員註冊義務</h4>
