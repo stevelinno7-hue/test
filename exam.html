@@ -160,44 +160,35 @@
 
     <div class="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
 
-        <header class="bg-white shadow-sm border-b border-gray-200 h-16 shrink-0 z-20 px-3 md:px-4 flex justify-between items-center relative">
-             <div class="flex items-center gap-3 min-w-0 flex-1">
-                <button onclick="toggleSidebar()" class="lg:hidden w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-lg shrink-0">
-                    <i class="fas fa-bars text-lg"></i>
-                </button>
+<header class="bg-white shadow-sm border-b border-gray-200 h-10 md:h-16 shrink-0 z-20 px-2 md:px-4 flex justify-between items-center relative">
+    <div class="flex items-center gap-1 md:gap-3 min-w-0 flex-1">
+        <button onclick="toggleSidebar()" class="hidden sm:flex lg:hidden w-8 h-8 items-center justify-center text-slate-500 hover:bg-slate-100 rounded-lg shrink-0">
+            <i class="fas fa-bars text-lg"></i>
+        </button>
 
-                <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg shrink-0 hidden md:flex">測</div>
-                
-                <div class="min-w-0 flex flex-col justify-center">
-                    <h1 class="text-sm font-bold text-gray-800 truncate leading-tight" id="examTitle">載入中...</h1>
-                    <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                        <span id="examSubjectTag" class="bg-gray-100 px-1.5 py-0.5 rounded font-bold shrink-0 text-[10px] md:text-xs">科目</span>
-                    </div>
-                </div>
+        <div class="min-w-0 flex flex-col justify-center">
+            <h1 class="text-[11px] md:text-sm font-bold text-gray-800 truncate leading-tight" id="examTitle">載入中...</h1>
+            <div class="flex items-center gap-1 text-[9px] text-gray-400">
+                <span id="examSubjectTag" class="font-bold shrink-0">科目</span>
             </div>
+        </div>
+    </div>
 
-            <div class="flex items-center gap-2 md:gap-4 shrink-0">
-                <div class="flex items-center bg-slate-100 text-slate-600 px-2 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl font-mono font-bold text-sm md:text-lg border border-slate-200">
-                    <i class="far fa-clock mr-1.5 text-slate-400 text-xs md:text-base"></i>
-                    <span id="timer">00:00</span>
-                </div>
-                
-                <button onclick="showSetupModal()" class="text-slate-400 hover:text-blue-600 font-bold px-2 py-2 transition text-sm hidden md:block">
-                    <i class="fas fa-cog"></i>
-                </button>
-                
-                <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3 md:px-6 py-1.5 md:py-2 rounded-lg md:rounded-xl font-bold text-xs md:text-sm shadow-lg shadow-blue-200 transition whitespace-nowrap">
-                    交卷
-                </button>
-            </div>
-        </header>
-
-        <main class="flex-grow flex flex-col bg-[#f8fafc] relative overflow-hidden">
-            <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth p-3 md:p-8" id="mainScroll">
-                <div class="w-full max-w-3xl pb-4"> <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-slate-200 min-h-[400px] flex flex-col fade-in relative overflow-hidden">
-                        <div class="w-full bg-slate-100 h-1.5 absolute top-0 left-0 z-10">
-                            <div id="progressBar" class="bg-blue-500 h-1.5 transition-all duration-500 rounded-r-full" style="width: 0%"></div>
-                        </div>
+    <div class="flex items-center gap-1 md:gap-4 shrink-0">
+        <div class="flex items-center bg-slate-100 text-slate-600 px-1.5 py-0.5 md:px-4 md:py-2 rounded-md font-mono font-bold text-[11px] md:text-lg border border-slate-200">
+            <span id="timer">00:00</span>
+        </div>
+        
+        <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-blue-600 text-white px-2 py-0.5 md:px-6 md:py-2 rounded-md font-bold text-[11px] md:text-sm shadow-sm transition whitespace-nowrap">
+            交卷
+        </button>
+    </div>
+</header>
+       <main class="flex-grow flex flex-col bg-[#f8fafc] relative overflow-hidden">
+    <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth p-1 md:p-8" id="mainScroll">
+        <div class="w-full max-w-3xl pb-2"> 
+            <div class="bg-white rounded-lg md:rounded-3xl shadow-sm border border-slate-200 min-h-[200px] flex flex-col fade-in relative overflow-hidden">
+                <div class="p-3 md:p-10 flex-grow">   </div>
                         
                         <div class="p-5 md:p-10 flex-grow">
                             <div class="flex justify-between items-start mb-4 md:mb-6">
