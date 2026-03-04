@@ -490,8 +490,7 @@ function prepareExam(count, timeMin) {
     
     // 顯示分類：優先顯示題組概念，若無則顯示一般概念
     document.getElementById('conceptBadge').textContent = item.concept || (item.type === 'group' ? "閱讀題組" : "一般題型");
-    document.getElementById('progressBar').style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
-
+  
     const container = document.getElementById('optionsContainer');
     const questionTextBox = document.getElementById('questionText');
     
