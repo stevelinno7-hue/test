@@ -588,17 +588,17 @@
 
     try {
         const payload = { 
-            action: "create_question", 
-            teacher: user.name, 
-            subject: subject, 
-            question: q, 
-            answer: a, 
-            optA: o1, 
-            optB: o2, 
-            optC: o3, 
-            optD: "", 
-            tags: tagsString // 傳送組合好的標籤
-        };
+    action: "create_question", 
+    teacher: user.name, 
+    subject: subject, 
+    question: q, 
+    answer: a, // 這個是為了方便對答案用的欄位
+    optA: a,   // 將正確答案寫入選項A
+    optB: o1,  // 錯誤選項1 寫入選項B
+    optC: o2,  // 錯誤選項2 寫入選項C
+    optD: o3,  // 錯誤選項3 寫入選項D！格子終於填滿啦！
+    tags: tagsString 
+};
         const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
         const result = await res.json();
         
