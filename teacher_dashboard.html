@@ -18,54 +18,68 @@
     </style>
 </head>
 <body class="flex min-h-screen">
+<div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity duration-300 opacity-0"></div>
 
-    <aside class="w-64 bg-slate-900 text-white flex flex-col sticky top-0 h-screen shadow-xl hidden lg:flex shrink-0">
-        <div class="p-6 flex items-center space-x-3">
+<aside id="mobileSidebar" class="w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 left-0 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0 lg:flex lg:h-screen shadow-xl shrink-0">
+    
+    <div class="p-6 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
             <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/50">
                 <i class="fas fa-chalkboard-teacher text-lg"></i>
             </div>
             <span class="text-xl font-black tracking-tight">教師控制台</span>
         </div>
-        <nav class="flex-1 px-4 space-y-2 mt-4" id="sidebarNav">
-            <button onclick="switchTab('tab-overview', this)" class="nav-item active w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-                <i class="fas fa-th-large w-5"></i><span>數據總覽</span>
-            </button>
-            <button onclick="switchTab('tab-dispatch', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-                <i class="fas fa-paper-plane w-5"></i><span>派送任務</span>
-            </button>
-            <button onclick="switchTab('tab-questions', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-                <i class="fas fa-pen-nib w-5"></i><span>雲端出題 & 模擬</span>
-            </button>
-            <button id="btn-tab-students" onclick="switchTab('tab-students', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-                <i class="fas fa-users w-5"></i><span>學生名單 & 成績</span>
-            </button>
-        </nav>
-        <div class="p-6 border-t border-slate-800">
-            <button onclick="logout()" class="flex items-center space-x-3 text-red-400 hover:text-red-300 transition w-full">
-                <i class="fas fa-sign-out-alt"></i><span>登出系統</span>
-            </button>
-        </div>
-    </aside>
+        <button onclick="toggleSidebar()" class="lg:hidden w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 
+    <nav class="flex-1 px-4 space-y-2 mt-4" id="sidebarNav">
+        <button onclick="switchTab('tab-overview', this)" class="nav-item active w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-th-large w-5"></i><span>數據總覽</span>
+        </button>
+        <button onclick="switchTab('tab-dispatch', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-paper-plane w-5"></i><span>派送任務</span>
+        </button>
+        <button onclick="switchTab('tab-questions', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-pen-nib w-5"></i><span>雲端出題 & 模擬</span>
+        </button>
+        <button id="btn-tab-students" onclick="switchTab('tab-students', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-users w-5"></i><span>學生名單 & 成績</span>
+        </button>
+    </nav>
+
+    <div class="p-6 border-t border-slate-800">
+        <button onclick="logout()" class="flex items-center space-x-3 text-red-400 hover:text-red-300 transition w-full">
+            <i class="fas fa-sign-out-alt"></i><span>登出系統</span>
+        </button>
+    </div>
+</aside>
     <main class="flex-1 overflow-y-auto bg-slate-50 flex justify-center p-6 md:p-10">
-        <div class="w-full max-w-6xl">
+    <div class="w-full max-w-6xl">
             
-            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden w-11 h-11 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition active:scale-95 flex-shrink-0">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                
                 <div>
                     <h1 class="text-3xl font-black text-slate-800" id="pageTitle">學習數據中心</h1>
                     <p class="text-slate-500 font-medium mt-1">歡迎回來，<span id="teacherName" class="text-blue-600 font-bold">老師</span></p>
                 </div>
+            </div>
                 
-                <div class="relative w-full md:w-80">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fas fa-search text-slate-400"></i>
-                    </div>
-                    <input type="text" id="quickSearchInput" onkeypress="handleQuickSearch(event)" placeholder="快速尋找同學 (輸入姓名/帳號)..." class="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition">
-                    <button onclick="executeQuickSearch()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-blue-500 hover:text-blue-700 font-bold">
-                        尋找
-                    </button>
+            <div class="relative w-full md:w-80">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-slate-400"></i>
                 </div>
-            </header>
+                <input type="text" id="quickSearchInput" onkeypress="handleQuickSearch(event)" placeholder="快速尋找同學 (輸入姓名/帳號)..." class="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition">
+                <button onclick="executeQuickSearch()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-blue-500 hover:text-blue-700 font-bold">
+                    尋找
+                </button>
+            </div>
 
             <div id="tab-overview" class="tab-content">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -707,6 +721,25 @@
 
         function closeModal() { document.getElementById('detailModal').classList.add('hidden'); }
         function logout() { localStorage.removeItem('currentUser'); window.location.href = 'index.html'; }
+        // 📱 控制手機版側邊欄開關
+function toggleSidebar() {
+    const sidebar = document.getElementById('mobileSidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    
+    // 控制側邊欄滑出/收回
+    sidebar.classList.toggle('-translate-x-full');
+    
+    // 控制黑底遮罩的淡入/淡出
+    if (backdrop.classList.contains('hidden')) {
+        backdrop.classList.remove('hidden');
+        // 給予微小延遲讓 transition 動畫生效
+        setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+    } else {
+        backdrop.classList.add('opacity-0');
+        // 等待動畫結束 (300ms) 後再隱藏元素
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+    }
+}
     </script>
 </body>
 </html>
