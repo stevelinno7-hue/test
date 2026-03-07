@@ -152,8 +152,8 @@
                 </div>
             </div>
 
-            <div id="tab-questions" class="tab-content hidden max-w-4xl mx-auto space-y-6">
-              <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+          <div id="tab-questions" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                     <h2 class="text-2xl font-black text-slate-800 mb-2 flex items-center"><i class="fas fa-cloud-upload-alt text-purple-500 mr-3"></i> 建立自訂雲端題庫</h2>
                     <p class="text-slate-400 text-sm mb-6 border-b pb-4">透過結構化的單元與章節分類，讓未來的組卷與派題更加精準。</p>
                     
@@ -161,7 +161,7 @@
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-2">1. 科目</label>
                             <select id="qSubject" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:ring-2 focus:ring-purple-400 font-bold shadow-sm">
-                                  <option value="math">數學</option>
+                                <option value="math">數學</option>
                                 <option value="english">英文</option>
                                 <option value="biology">生物</option>
                                 <option value="physics">理化(物理)</option>
@@ -181,12 +181,23 @@
                                 <option value="八下">八下</option>
                                 <option value="九上">九上</option>
                                 <option value="九下">九下</option>
+                                <option value="全冊複習">全冊複習</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-2">3. 單元 / 章節名稱</label>
-                            <input type="text" id="qChapter" placeholder="例:相似形" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-purple-400 shadow-sm">
+                            <input type="text" id="qChapter" placeholder="例: 1-1 相似形" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-purple-400 shadow-sm">
                         </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-2">4. 題目難易度</label>
+                            <select id="qLevel" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:ring-2 focus:ring-purple-400 shadow-sm">
+                                <option value="基礎">🟢 基礎題</option>
+                                <option value="進階">🟡 進階題</option>
+                                <option value="難題">🔴 挑戰難題</option>
+                                <option value="素養">📚 素養題</option>
+                            </select>
+                        </div>
+                    </div>
                     
                     <div class="mb-5">
                         <label class="block text-xs font-bold text-slate-500 mb-2">題目敘述</label>
@@ -210,19 +221,13 @@
                     </button>
                 </div>
 
-                    <button onclick="createSmartQuestion(this)" class="w-full bg-purple-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-purple-700 transition text-lg flex justify-center items-center">
-                        <i class="fas fa-save mr-2"></i> 寫入雲端題庫
-                    </button>
-                </div>
-
                 <div class="bg-indigo-50 border border-indigo-100 p-8 rounded-3xl shadow-sm">
                     <h3 class="text-xl font-bold text-indigo-900 mb-2"><i class="fas fa-play-circle text-indigo-500 mr-2"></i>模擬出題與預覽</h3>
                     <p class="text-sm text-indigo-700 mb-5">輸入範圍後立即從題庫抓題，以教師專屬的「上帝視角」（包含解答標示）預覽考卷。</p>
                     
                     <div class="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
                         <select id="mockSubject" class="bg-white border border-indigo-200 rounded-xl px-4 py-3 text-sm outline-none font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-400">
-                            <option value="chinese">國文</option>
-                                <option value="math">數學</option>
+                            <option value="math">數學</option>
                                 <option value="english">英文</option>
                                 <option value="biology">生物</option>
                                 <option value="physics">理化(物理)</option>
@@ -231,8 +236,6 @@
                                 <option value="history">歷史</option>
                                 <option value="geography">地理</option>
                                 <option value="civics">公民</option>
-
-
                         </select>
                         <input type="text" id="mockTags" placeholder="欲測試之標籤 (例: 單元測試)" class="flex-1 bg-white border border-indigo-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-400">
                         <button onclick="openMockExam()" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-md whitespace-nowrap">
