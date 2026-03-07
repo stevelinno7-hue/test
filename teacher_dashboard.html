@@ -3,183 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教師管理系統  - 雲端學院</title>
+    <title>教師管理中心 - 雲端學院</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
-        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .sidebar-item-active { background-color: #2563eb; color: white; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid #e2e8f0; }
+        canvas { max-height: 250px; }
     </style>
 </head>
-<body class="flex">
+<body class="flex min-h-screen">
 
-    <aside class="w-64 min-h-screen bg-slate-900 text-white p-6 sticky top-0">
-        <div class="flex items-center mb-10">
-            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-graduation-cap text-xl"></i>
+    <aside class="w-64 bg-slate-900 text-white flex flex-col sticky top-0 h-screen shadow-xl">
+        <div class="p-6 flex items-center space-x-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/50">
+                <i class="fas fa-chalkboard-teacher text-lg"></i>
             </div>
-            <span class="text-xl font-bold tracking-wider">教師管理中心</span>
+            <span class="text-xl font-black tracking-tight">教師後台</span>
         </div>
-        
-        <nav class="space-y-2">
-            <a href="#" class="flex items-center space-x-3 p-3 bg-blue-600 rounded-xl">
-                <i class="fas fa-users w-5"></i><span>學生名單</span>
+
+        <nav class="flex-1 px-4 space-y-2 mt-4">
+            <a href="#" class="sidebar-item-active flex items-center space-x-3 p-3 rounded-xl transition">
+                <i class="fas fa-th-large w-5"></i><span>總覽面板</span>
             </a>
-            <a href="dashboard.html" class="flex items-center space-x-3 p-3 hover:bg-slate-800 rounded-xl text-slate-400 transition">
-                <i class="fas fa-arrow-left w-5"></i><span>回學生主頁</span>
+            <a href="#assignment-section" class="flex items-center space-x-3 p-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition">
+                <i class="fas fa-paper-plane w-5"></i><span>派送任務</span>
             </a>
-            <button onclick="logout()" class="w-full flex items-center space-x-3 p-3 hover:bg-red-900/30 text-red-400 rounded-xl transition mt-10">
-                <i class="fas fa-sign-out-alt w-5"></i><span>登出系統</span>
-            </button>
+            <a href="dashboard.html" class="flex items-center space-x-3 p-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition">
+                <i class="fas fa-home w-5"></i><span>返回首頁</span>
+            </a>
         </nav>
+
+        <div class="p-6 border-t border-slate-800">
+            <button onclick="logout()" class="flex items-center space-x-3 text-red-400 hover:text-red-300 transition">
+                <i class="fas fa-sign-out-alt"></i><span>登出系統</span>
+            </button>
+        </div>
     </aside>
 
-    <main class="flex-1 p-10">
-        <header class="flex justify-between items-end mb-10">
+    <main class="flex-1 p-8 overflow-y-auto">
+        <header class="flex justify-between items-center mb-10">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">學生學習概況</h1>
-                <p class="text-slate-500 mt-2">即時追蹤學生的測驗數據與錯題分佈</p>
+                <h1 class="text-3xl font-black text-slate-800">學習數據中心</h1>
+                <p class="text-slate-500 font-medium">歡迎回來，<span id="teacherName" class="text-blue-600">老師</span></p>
             </div>
-            <div class="flex space-x-4">
-                <div class="relative">
-                    <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
-                    <input type="text" id="studentSearch" onkeyup="filterStudents()" placeholder="搜尋姓名或帳號..." 
-                           class="pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none w-64 shadow-sm">
+            <div class="flex items-center space-x-4">
+                <div class="text-right hidden md:block">
+                    <p class="text-sm font-bold text-slate-700" id="currentRole">授課教師</p>
+                    <p class="text-xs text-slate-400" id="currentDate"></p>
+                </div>
+                <div class="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                    <i class="fas fa-user-tie text-slate-500 text-xl"></i>
                 </div>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10" id="statsCards">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-1">全班總人數</p>
+                <h2 class="text-3xl font-black text-slate-800" id="count-total">--</h2>
             </div>
+            <div class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-green-500">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-1">平均正確率</p>
+                <h2 class="text-3xl font-black text-slate-800" id="count-avg">--%</h2>
+            </div>
+            <div class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-orange-500">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-1">本週活躍人數</p>
+                <h2 class="text-3xl font-black text-slate-800">12</h2>
+            </div>
+            <div class="glass-card p-6 rounded-2xl shadow-sm border-l-4 border-red-500">
+                <p class="text-slate-400 text-xs font-bold uppercase mb-1">待關注學生</p>
+                <h2 class="text-3xl font-black text-slate-800" id="count-alert">--</h2>
+            </div>
+        </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-slate-50 text-slate-600 text-sm uppercase">
-                    <tr>
-                        <th class="p-5 font-bold">學生姓名</th>
-                        <th class="p-5 font-bold">班級/年級</th>
-                        <th class="p-5 font-bold">平均分數</th>
-                        <th class="p-5 font-bold">總測驗次數</th>
-                        <th class="p-5 font-bold text-center">操作</th>
-                    </tr>
-                </thead>
-                <tbody id="studentTableBody" class="divide-y divide-slate-100">
-                    </tbody>
-            </table>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            <div class="glass-card p-6 rounded-2xl shadow-sm">
+                <h3 class="font-bold text-slate-800 mb-6 flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-blue-500"></i> 成績分佈比例
+                </h3>
+                <canvas id="scoreChart"></canvas>
+            </div>
+            <div id="assignment-section" class="glass-card p-6 rounded-2xl shadow-sm bg-gradient-to-br from-blue-600 to-indigo-700 text-white border-0">
+                <h3 class="font-bold mb-4 flex items-center">
+                    <i class="fas fa-paper-plane mr-2"></i> 教師派送任務
+                </h3>
+                <p class="text-blue-100 text-sm mb-6">設定特定科目，讓學生登入後優先完成指定的練習單元。</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-blue-200 block mb-2">任務標題</label>
+                        <input type="text" id="assignTitle" placeholder="例如：地科第三單元小測驗" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:bg-white/20 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-blue-200 block mb-2">指定科目</label>
+                        <select id="assignSubject" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none">
+                            <option value="earth_science" class="text-slate-800">地球科學</option>
+                            <option value="biology" class="text-slate-800">生物科學</option>
+                            <option value="chemistry" class="text-slate-800">理化學科</option>
+                        </select>
+                    </div>
+                    <button onclick="handleCreateAssignment()" class="w-full bg-white text-blue-700 font-black py-4 rounded-xl shadow-lg hover:bg-yellow-400 hover:text-blue-900 transition flex items-center justify-center space-x-2">
+                        <span>立即派送任務</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-2xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800">學生管理名冊</h3>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                    <input type="text" id="searchBar" onkeyup="filterRoster()" placeholder="搜尋姓名或帳號..." class="pl-10 pr-4 py-2 bg-slate-100 rounded-xl text-sm border-0 focus:ring-2 focus:ring-blue-500 w-64 outline-none">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50/50 text-slate-400 text-xs uppercase tracking-wider font-bold">
+                        <tr>
+                            <th class="px-6 py-4">姓名 / 帳號</th>
+                            <th class="px-6 py-4">年級</th>
+                            <th class="px-6 py-4">平均分數</th>
+                            <th class="px-6 py-4">測驗次數</th>
+                            <th class="px-6 py-4">最後上線</th>
+                            <th class="px-6 py-4 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody" class="divide-y divide-slate-100">
+                        </tbody>
+                </table>
+            </div>
         </div>
     </main>
 
-    <div id="detailModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden scale-in">
             <div class="p-6 border-b flex justify-between items-center bg-slate-50">
-                <h3 class="text-xl font-bold text-slate-800" id="modalTitle">學生詳細記錄</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
+                <h2 class="text-xl font-bold text-slate-800" id="modalName">學生詳情</h2>
+                <button onclick="closeModal()" class="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto" id="modalContent">
+            <div id="modalBody" class="p-6 overflow-y-auto space-y-4">
                 </div>
         </div>
     </div>
 
     <script>
-        const GAS_URL = "你的_GAS_部署網址"; // ⚠️ 請更換成你的 GAS 網址
-        let allStudents = [];
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; // ⚠️ 請更換成你的 GAS 網址
+        let studentData = [];
+        let scoreChart = null;
 
         async function init() {
+            // 驗證身份
             const user = JSON.parse(localStorage.getItem('currentUser'));
             if (!user || user.role !== 'teacher') {
-                alert('權限不足，請以教師帳號登入');
+                alert('請先以教師帳號登入');
                 window.location.href = 'index.html';
                 return;
             }
+
+            document.getElementById('teacherName').textContent = user.name;
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
+            
             fetchRoster();
         }
 
         async function fetchRoster() {
             const table = document.getElementById('studentTableBody');
-            table.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>資料同步中...</td></tr>';
-            
+            table.innerHTML = '<tr><td colspan="6" class="p-20 text-center"><i class="fas fa-spinner fa-spin text-3xl text-blue-500"></i></td></tr>';
+
             try {
                 const response = await fetch(`${GAS_URL}?action=get_roster`);
-                allStudents = await response.json();
-                renderTable(allStudents);
-                updateStats(allStudents);
+                studentData = await response.json();
+                renderUI();
             } catch (err) {
-                table.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-red-500">讀取失敗，請確認 GAS 權限已設為「所有人」。</td></tr>';
+                table.innerHTML = '<tr><td colspan="6" class="p-20 text-center text-red-500 font-bold">資料加載失敗，請檢查網路與 GAS 部署。</td></tr>';
             }
         }
 
+        function renderUI() {
+            renderTable(studentData);
+            updateStats(studentData);
+            renderCharts(studentData);
+        }
+
         function renderTable(data) {
-            const table = document.getElementById('studentTableBody');
-            table.innerHTML = data.map(s => {
-                let statusClass = s.avgScore >= 80 ? 'text-green-600 bg-green-50' : (s.avgScore < 60 ? 'text-red-600 bg-red-50' : 'text-blue-600 bg-blue-50');
+            const tbody = document.getElementById('studentTableBody');
+            tbody.innerHTML = data.map(s => {
+                const scoreColor = s.avgScore >= 80 ? 'text-green-600 bg-green-50' : (s.avgScore < 60 ? 'text-red-600 bg-red-50' : 'text-blue-600 bg-blue-50');
                 return `
-                <tr class="hover:bg-slate-50 transition group">
-                    <td class="p-5 font-bold text-slate-700">${s.name} <span class="text-xs font-normal text-slate-400">(${s.username})</span></td>
-                    <td class="p-5 text-slate-600">${s.grade}</td>
-                    <td class="p-5">
-                        <span class="px-3 py-1 rounded-full text-sm font-bold ${statusClass}">${s.avgScore} 分</span>
-                    </td>
-                    <td class="p-5 font-medium text-slate-500">${s.testCount} 次</td>
-                    <td class="p-5 text-center">
-                        <button onclick="viewStudentDetail('${s.username}', '${s.name}')" 
-                                class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-900 hover:text-white transition shadow-sm">
-                            查看分析
-                        </button>
-                    </td>
-                </tr>
+                    <tr class="hover:bg-slate-50 transition group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-500 transition">
+                                    <i class="fas fa-user-graduate"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-800">${s.name}</p>
+                                    <p class="text-xs text-slate-400">${s.username}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-500 font-medium">${s.grade}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-black ${scoreColor}">${s.avgScore} 分</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-bold text-slate-600">${s.testCount} 次</td>
+                        <td class="px-6 py-4 text-xs text-slate-400 font-medium">${s.lastActive === '尚無紀錄' ? '從未練習' : new Date(s.lastActive).toLocaleDateString()}</td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="viewStudentDetails('${s.username}', '${s.name}')" class="text-blue-600 hover:underline text-sm font-bold">數據詳情</button>
+                        </td>
+                    </tr>
                 `;
             }).join('');
         }
 
-        function filterStudents() {
-            const q = document.getElementById('studentSearch').value.toLowerCase();
-            const filtered = allStudents.filter(s => s.name.toLowerCase().includes(q) || s.username.toLowerCase().includes(q));
-            renderTable(filtered);
+        function updateStats(data) {
+            document.getElementById('count-total').textContent = data.length;
+            const avg = data.length > 0 ? Math.round(data.reduce((sum, s) => sum + s.avgScore, 0) / data.length) : 0;
+            document.getElementById('count-avg').textContent = avg + '%';
+            document.getElementById('count-alert').textContent = data.filter(s => s.avgScore < 60).length;
         }
 
-        async function viewStudentDetail(username, name) {
-            const modal = document.getElementById('detailModal');
-            const content = document.getElementById('modalContent');
-            document.getElementById('modalTitle').innerText = `${name} 的測驗紀錄與錯題`;
-            modal.classList.remove('hidden');
-            content.innerHTML = '<div class="text-center p-10"><i class="fas fa-circle-notch fa-spin text-3xl text-blue-500"></i></div>';
+        function renderCharts(data) {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            const distribution = [
+                data.filter(s => s.avgScore >= 80).length,
+                data.filter(s => s.avgScore >= 60 && s.avgScore < 80).length,
+                data.filter(s => s.avgScore < 60).length
+            ];
+
+            if(scoreChart) scoreChart.destroy();
+            scoreChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['優秀 (80-100)', '及格 (60-79)', '待加強 (<60)'],
+                    datasets: [{
+                        data: distribution,
+                        backgroundColor: ['#10b981', '#3b82f6', '#ef4444'],
+                        hoverOffset: 4,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        async function handleCreateAssignment() {
+            const title = document.getElementById('assignTitle').value;
+            const subject = document.getElementById('assignSubject').value;
+            if(!title) return alert('請輸入任務名稱');
+
+            const btn = event.currentTarget;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>傳送中...';
 
             try {
-                // 抓取該學生的詳細記錄
-                const response = await fetch(`${GAS_URL}?username=${username}`);
-                const records = await response.json();
-
-                if (records.length === 0) {
-                    content.innerHTML = '<p class="text-center text-slate-400">目前尚無詳細紀錄</p>';
-                } else {
-                    content.innerHTML = records.map(r => `
-                        <div class="mb-6 p-4 border rounded-2xl bg-slate-50">
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="font-bold text-slate-800 text-lg">${r.title}</span>
-                                <span class="text-sm font-bold px-2 py-1 bg-white border rounded-lg text-blue-600">${r.score}分</span>
-                            </div>
-                            <div class="text-xs text-slate-400 mb-3">${r.date}</div>
-                            ${r.wrongList.length > 0 ? `
-                                <div class="space-y-2">
-                                    <p class="text-sm font-bold text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i>錯題：</p>
-                                    <ul class="text-sm space-y-1">
-                                        ${r.wrongList.map(w => `<li class="p-2 bg-white rounded-lg border-l-4 border-red-300">Q: ${w.q}</li>`).join('')}
-                                    </ul>
-                                </div>
-                            ` : '<p class="text-sm text-green-600 font-bold"><i class="fas fa-check-circle mr-1"></i>全對！</p>'}
-                        </div>
-                    `).join('');
+                const res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "create_assignment", title, subject, target: "all" })
+                });
+                const result = await res.json();
+                if(result.result === "success") {
+                    alert('🎉 任務已成功派送給全體學生！');
+                    document.getElementById('assignTitle').value = '';
                 }
             } catch (err) {
-                content.innerHTML = '<p class="text-red-500 text-center">抓取詳細資料失敗。</p>';
+                alert('派送失敗，請確認網路連線');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>立即派送任務</span><i class="fas fa-arrow-right"></i>';
             }
+        }
+
+        async function viewStudentDetails(username, name) {
+            const modal = document.getElementById('detailModal');
+            const body = document.getElementById('modalBody');
+            document.getElementById('modalName').textContent = `${name} (${username}) 的學習歷程`;
+            modal.classList.remove('hidden');
+            body.innerHTML = '<div class="text-center p-10"><i class="fas fa-circle-notch fa-spin text-3xl text-blue-500"></i><p class="mt-4 text-slate-400">正在分析錯題數據...</p></div>';
+
+            try {
+                const res = await fetch(`${GAS_URL}?username=${username}`);
+                const records = await res.json();
+                
+                if(records.length === 0) {
+                    body.innerHTML = '<div class="text-center p-10 text-slate-400">尚無測驗紀錄</div>';
+                    return;
+                }
+
+                body.innerHTML = records.map(r => `
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-bold text-slate-800">${r.title}</h4>
+                                <p class="text-xs text-slate-400">${new Date(r.date).toLocaleString()}</p>
+                            </div>
+                            <span class="text-lg font-black text-blue-600">${r.score}分</span>
+                        </div>
+                        <div class="mt-3">
+                            ${r.wrongList && r.wrongList.length > 0 ? `
+                                <p class="text-xs font-bold text-red-500 mb-2 underline">錯誤題目摘要：</p>
+                                <ul class="space-y-2">
+                                    ${r.wrongList.map(w => `<li class="text-sm text-slate-600 bg-white p-2 rounded-lg border-l-4 border-red-400 shadow-sm font-medium">Q: ${w.q}</li>`).join('')}
+                                </ul>
+                            ` : '<p class="text-sm text-green-600 font-bold"><i class="fas fa-check-circle mr-1"></i>完美達成，全對！</p>'}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                body.innerHTML = '<p class="text-red-500 text-center">資料載入錯誤</p>';
+            }
+        }
+
+        function filterRoster() {
+            const q = document.getElementById('searchBar').value.toLowerCase();
+            const filtered = studentData.filter(s => s.name.toLowerCase().includes(q) || s.username.toLowerCase().includes(q));
+            renderTable(filtered);
         }
 
         function closeModal() { document.getElementById('detailModal').classList.add('hidden'); }
         function logout() { localStorage.removeItem('currentUser'); window.location.href = 'index.html'; }
-
+        
         init();
     </script>
 </body>
