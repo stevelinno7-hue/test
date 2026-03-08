@@ -116,6 +116,41 @@
     </main>
 
     <script>
+        // ==========================================
+// ✏️ 個人資料與介面功能
+// ==========================================
+
+// 手機側邊欄開關
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+}
+
+// 開啟編輯視窗
+function openProfileModal() {
+    const user = Auth.getCurrentUser();
+    if (!user) return alert("請先登入！");
+    const select = document.getElementById('editGradeSelect');
+    if (user.grade) select.value = user.grade;
+    document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+function saveProfile() {
+    const newGrade = document.getElementById('editGradeSelect').value;
+    if (Auth.updateUser) {
+        Auth.updateUser('grade', newGrade);
+        const roleEl = document.getElementById('sideUserRole');
+        if (roleEl) roleEl.innerText = newGrade;
+        alert(`修改成功！目前年級已更新為：${newGrade}`);
+        closeProfileModal();
+    }
+}
         // ⚠️ 替換為你的 GAS URL
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
         let userGrade = "高一";
