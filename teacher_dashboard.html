@@ -633,23 +633,28 @@ document.getElementById('assignUnit').addEventListener('change', function() {
             }
         }
 
-        // 1. 抓取學生名單與成績
-        async function fetchRoster() {
-            try {
-                const res = await fetch(`${GAS_URL}?action=get_roster`);
-                studentData = await res.json();
-                renderTable(studentData);
-                updateDashboardStats(studentData);
-                
-                const targetSelect = document.getElementById('dispatchTarget');
-                targetSelect.innerHTML = '<option value="all">📢 全班廣播 (所有人)</option>';
-                studentData.forEach(s => {
-                    targetSelect.innerHTML += `<option value="${s.username}">👤 ${s.name} (${s.username})</option>`;
-                });
-            } catch (err) {
-                document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="p-10 text-center text-red-500 font-bold">資料讀取失敗，請確認網路狀態。</td></tr>';
-            }
+      // 1. 抓取學生名單與成績
+    async function fetchRoster() {
+        try {
+            const res = await fetch(`${GAS_URL}?action=get_roster`);
+            const rawData = await res.json(); // 先把所有資料接起來
+            
+            // 🌟🌟🌟 加入這行過濾器：只保留身分為 'student' 的人！
+            studentData = rawData.filter(user => user.role === 'student');
+            
+            // 接下來的渲染跟廣播選單，就會只用過濾後的純學生名單了
+            renderTable(studentData);
+            updateDashboardStats(studentData);
+            
+            const targetSelect = document.getElementById('dispatchTarget');
+            targetSelect.innerHTML = '<option value="all">📢 全班廣播 (所有人)</option>';
+            studentData.forEach(s => {
+                targetSelect.innerHTML += `<option value="${s.username}">👤 ${s.name} (${s.username})</option>`;
+            });
+        } catch (err) {
+            document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="p-10 text-center text-red-500 font-bold">資料讀取失敗，請確認網路狀態。</td></tr>';
         }
+    }
 
         // 2. 渲染學生表格
         function renderTable(data) {
