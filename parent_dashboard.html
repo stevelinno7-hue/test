@@ -140,7 +140,10 @@
         { id: 'civics', name: '公民', color: 'bg-indigo-500' }
     ];
 
-    // 🌟 建立「單元名稱 -> 科目」的對照表，用來拯救沒有存科目的舊資料
+    // 💡 1. 加上無敵去空白工具
+    const normalizeText = (text) => (text || "").replace(/\s+/g, "").replace("：", ":").toLowerCase();
+
+    // 🌟 2. 建立「單元名稱 -> 科目」的絕對權威對照表
     const unitToSubjectMap = {};
     const libData = window.CurriculumLibrary || {};
     const baseData = libData.data || libData;
@@ -150,7 +153,8 @@
             baseData[subId].forEach(book => {
                 if (book.units) {
                     book.units.forEach(u => {
-                        unitToSubjectMap[u.name] = subId;
+                        // 存入對照表時，把名稱去空白
+                        unitToSubjectMap[normalizeText(u.name)] = subId;
                     });
                 }
             });
@@ -159,18 +163,25 @@
 
     const html = subjects.map(s => {
         const results = remoteData.records.filter(r => {
-            // 1. 新資料：直接比對 subject
-            if (r.subject) return r.subject.toLowerCase() === s.id.toLowerCase();
+            // 取得紀錄的單元名稱，並去空白
+            const recordTitle = normalizeText(r.activity || r.title || r.unitName);
             
-            // 2. 舊資料防呆：拿測驗名稱去對照表反查所屬科目
-            const recordTitle = r.activity || r.title || r.unitName || "";
-            return unitToSubjectMap[recordTitle] === s.id;
+            // 💡 3. 最關鍵的修改：【優先】相信名稱對照表！
+            // 只要名稱能對應到科目（例如發現它是整數的運算），就強制判定為那個科目！
+            // 這樣就算 GAS 裡存成 english，在這裡也會被強勢拉回 math。
+            if (unitToSubjectMap[recordTitle]) {
+                return unitToSubjectMap[recordTitle] === s.id;
+            }
+            
+            // 4. 退回機制：如果對照表真的找不到（例如自訂名稱的測驗），才相信資料庫存的 subject
+            return (r.subject || "").toLowerCase() === s.id.toLowerCase();
         });
 
         const avg = results.length ? Math.round(results.reduce((a, b) => a + Number(b.score), 0) / results.length) : 0;
         
         return `
-            <div class="group">
+            <div class="group cursor-pointer hover:scale-105 transition-transform duration-300" 
+                 onclick="document.getElementById('subPicker').value='${s.id}'; renderUnitDetails(); document.getElementById('unitDetailList').scrollIntoView({behavior: 'smooth'});">
                 <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
                     <span>${s.name}平均精熟度</span>
                     <span class="${avg >= 80 ? 'text-green-500' : 'text-slate-600'}">${avg}%</span>
