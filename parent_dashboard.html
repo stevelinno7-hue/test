@@ -141,10 +141,20 @@
             { id: 'civics', name: '公民', color: 'bg-indigo-500' }
         ];
 
-        const html = subjects.map(s => {
-            const results = remoteData.records.filter(r => r.subject === s.id);
-            const avg = results.length ? Math.round(results.reduce((a, b) => a + b.score, 0) / results.length) : 0;
+       const html = subjects.map(s => {
+        // 🌟 強化比對邏輯：
+        // 1. 比對 subject 欄位
+        // 2. 如果紀錄裡沒有 subject，嘗試比對 unitName 是否出現在該科目的 CurriculumLibrary 中
+        const results = remoteData.records.filter(r => {
+            if (r.subject === s.id) return true;
             
+            // 💡 額外檢查：如果紀錄是「國文」，但單元名稱其實是「生物」相關的
+            const lib = window.CurriculumLibrary[s.id] || [];
+            const isMatchUnit = lib.some(book => book.units.some(u => u.name === r.unitName));
+            return isMatchUnit;
+        });
+
+        const avg = results.length ? Math.round(results.reduce((a, b) => a + b.score, 0) / results.length) : 0;
             return `
                 <div>
                     <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
