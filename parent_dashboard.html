@@ -184,37 +184,33 @@
     
     document.getElementById('subjectGrid').innerHTML = html;
 }
-   function renderUnitDetails() {
+function renderUnitDetails() {
     const selectedSub = document.getElementById('subPicker').value;
     const listContainer = document.getElementById('unitDetailList');
     
-    // 1. 抓取該科目的課程架構
     const libData = window.CurriculumLibrary || {};
     const curriculumData = (libData.data ? libData.data[selectedSub] : libData[selectedSub]) || [];
 
-    // 防呆檢查
     if (curriculumData.length === 0) {
         listContainer.innerHTML = '<div class="p-10 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border border-slate-100 m-4">此科目暫無單元資料</div>';
         return;
     }
 
-    // 2. 🌟 依「冊別/單元大類」進行分組渲染
+    // 💡 建立一個「正規化」小工具：把所有空格去掉、全形冒號換半形
+    const normalizeText = (text) => (text || "").replace(/\s+/g, "").replace("：", ":").toLowerCase();
+
     const html = curriculumData.map(book => {
-        // 如果這個分類沒有單元，就跳過不顯示
         if (!book.units || book.units.length === 0) return '';
 
-        // 渲染該冊底下的所有單元列表
         const unitsHtml = book.units.map(unit => {
-            // 💡 關鍵修正：寬鬆比對！
-            // 檢查 unitName 或 activity 或 title，並加上 trim() 去除空白，確保舊資料也能抓到
+            // 🌟 無敵比對：完全不看 subject，只看單元名稱，且去掉所有空格比對！
             const matches = remoteData.records.filter(r => {
-                const recordName = (r.unitName || r.activity || r.title || "").trim();
-                return recordName === unit.name.trim();
+                const recordName = normalizeText(r.unitName || r.activity || r.title);
+                const targetName = normalizeText(unit.name);
+                return recordName === targetName;
             });
             
-            // 抓最高分或最新的一筆
             const bestRecord = matches.length > 0 ? matches.sort((a, b) => b.score - a.score)[0] : null;
-            
             const score = bestRecord ? bestRecord.score : null;
             const scoreColor = score === null ? 'text-slate-200' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
 
@@ -238,7 +234,6 @@
             `;
         }).join('');
 
-        // 🌟 回傳這「一冊」的專屬卡片區塊
         return `
             <div class="mb-6 bg-white border border-slate-100 rounded-[1.5rem] overflow-hidden shadow-sm">
                 <div class="bg-slate-50/80 border-b border-slate-100 px-6 py-4 flex items-center gap-3">
@@ -254,7 +249,6 @@
         `;
     }).join('');
 
-    // 將整理好的分組卡片塞入畫面，並把外層的 divide-y 樣式拿掉
     listContainer.className = "p-6 bg-slate-50/50 rounded-b-[2rem]"; 
     listContainer.innerHTML = html;
 }
