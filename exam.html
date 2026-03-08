@@ -149,37 +149,47 @@
             </div>
         </div>
 
-        <nav class="flex-grow px-3 space-y-1 mt-4 overflow-y-auto">
-            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-th-large w-5 text-center"></i> 課程總覽</a>
-            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-first-aid w-5 text-center"></i> 錯題補救</a>
-            <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-book-reader w-5 text-center"></i> 重點複習</a>
-            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-gamepad w-5 text-center"></i> 遊戲場</a>
-            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-comments w-5 text-center"></i> 解題論壇</a>
-        </nav>
+       <nav class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
+    <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 任務中心</a>
+    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
+    <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 錯題補救</a>
+    <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
+    <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 遊戲場</a>
+    <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 解題論壇</a>
+    
+    <div class="pt-2 mt-2 border-t border-slate-50">
+        <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition group">
+            <i class="fas fa-key w-5 text-center group-hover:rotate-12 transition-transform"></i> 
+            <span class="text-sm font-bold">更改密碼</span>
+        </a>
+    </div>
+</nav>
     </aside>
 
     <div class="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
 
-<header class="bg-white shadow-sm border-b border-gray-200 h-10 md:h-16 shrink-0 z-20 px-2 md:px-4 flex justify-between items-center relative">
-    <div class="flex items-center gap-1 md:gap-3 min-w-0 flex-1">
-        <button onclick="toggleSidebar()" class="hidden sm:flex lg:hidden w-8 h-8 items-center justify-center text-slate-500 hover:bg-slate-100 rounded-lg shrink-0">
-            <i class="fas fa-bars text-lg"></i>
+<header class="bg-white shadow-sm border-b border-gray-200 h-14 md:h-16 shrink-0 z-20 px-4 md:px-6 flex justify-between items-center relative">
+    <div class="flex items-center gap-3 min-w-0 flex-1">
+        <button onclick="toggleSidebar()" class="hidden sm:flex lg:hidden w-10 h-10 items-center justify-center text-slate-500 hover:bg-slate-100 rounded-lg shrink-0 transition">
+            <i class="fas fa-bars text-xl"></i>
         </button>
 
         <div class="min-w-0 flex flex-col justify-center">
-            <h1 class="text-[11px] md:text-sm font-bold text-gray-800 truncate leading-tight" id="examTitle">載入中...</h1>
-            <div class="flex items-center gap-1 text-[9px] text-gray-400">
-                <span id="examSubjectTag" class="font-bold shrink-0">科目</span>
+            <h1 class="text-base md:text-lg font-black text-gray-800 truncate leading-tight" id="examTitle">載入中...</h1>
+            <div class="flex items-center gap-1 text-xs md:text-sm text-gray-400 mt-0.5">
+                <span id="examSubjectTag" class="font-bold shrink-0 tracking-wider">科目</span>
             </div>
         </div>
     </div>
 
-    <div class="flex items-center gap-1 md:gap-4 shrink-0">
-        <div class="flex items-center bg-slate-100 text-slate-600 px-1.5 py-0.5 md:px-4 md:py-2 rounded-md font-mono font-bold text-[11px] md:text-lg border border-slate-200">
+    <div class="flex items-center gap-3 md:gap-5 shrink-0">
+        <div class="flex items-center bg-slate-50 text-slate-700 px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-mono font-black text-sm md:text-xl border border-slate-200 shadow-inner">
+            <i class="far fa-clock mr-1.5 md:mr-2 text-slate-400 hidden sm:inline-block"></i>
             <span id="timer">00:00</span>
         </div>
         
-        <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-blue-600 text-white px-2 py-0.5 md:px-6 md:py-2 rounded-md font-bold text-[11px] md:text-sm shadow-sm transition whitespace-nowrap">
+        <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 md:px-6 md:py-2 rounded-lg font-black text-sm md:text-base shadow-md transition active:scale-95 whitespace-nowrap flex items-center gap-2">
+            <i class="fas fa-paper-plane hidden sm:inline-block"></i>
             交卷
         </button>
     </div>
@@ -299,583 +309,656 @@
         <p class="text-slate-600 font-bold animate-pulse">正在上傳學習紀錄...</p>
         <p class="text-xs text-slate-400 mt-2">請勿關閉視窗</p>
     </div>
+    <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in px-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                <div class="relative">
+                    <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                         <option value="國七">國七</option>
+                    <option value="國八">國八</option>
+                    <option value="國九">國九</option>
+                    <hr>
+                    <option value="高一">高一</option>
+                    <option value="高二">高二</option>
+                    <option value="高三">高三</option>
+                </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+            </div>
 
-   <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+                <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                    確認修改
+                </button>
+            </div>
+        </div>
+    </div><script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
-        let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval, examInfo = {};
-        let timeLog = [], tabLog = [], tabLeaveStart = null, questionStartTime = 0;
-        let selectedCount = 10;
-        let isSubmitting = false; 
-       // 在 exam 頁面的 script 開頭檢查
-const urlParams = new URLSearchParams(window.location.search);
-const subjectFromUrl = urlParams.get('subject');
-console.log("當前測驗科目：", subjectFromUrl); // 如果這裡出現 null，代表網址沒傳科目進來
-// ⚡ 雲端題庫融合器
-async function injectCustomQuestionsToRepo() {
-    
-    const repoMap = {
-        'chinese': '__CHINESE_REPO__',
-        'math': '__MATH_REPO__',
-        'english': '__ENGLISH_REPO__',
-        'biology': '__BIOLOGY_REPO__',
-        'physics': '__PHYSICS_REPO__',
-        'chemistry': '__CHEMISTRY_REPO__',
-        'earth_science': '__EARTH_SCI_REPO__',
-        'history': '__HISTORY_REPO__',
-        'geography': '__GEOGRAPHY_REPO__',
-        'civics': '__CIVICS_REPO__'
-    };
+    let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval, examInfo = {};
+    let timeLog = [], tabLog = [], tabLeaveStart = null, questionStartTime = 0;
+    let selectedCount = 10;
+    let isSubmitting = false; 
 
-    try {
-        const res = await fetch(`${GAS_URL}?action=get_custom_questions`);
-        const customQs = await res.json();
+    // 在 exam 頁面的 script 開頭檢查
+    const urlParams = new URLSearchParams(window.location.search);
+    const subjectFromUrl = urlParams.get('subject');
+    console.log("當前測驗科目：", subjectFromUrl); 
 
-        if (customQs && customQs.length > 0) {
-            customQs.forEach((item, idx) => {
-                let repoName = repoMap[item.subject];
-                if (!repoName) return; 
-
-                window[repoName] = window[repoName] || {};
-                const id = `custom_${item.subject}_${idx}`;
-                
-                window[repoName][id] = {
-                    func: () => {
-                        const opts = [item.a, ...item.o].sort(() => Math.random() - 0.5);
-                        return {
-                            question: `【教師出題】${item.q}`, 
-                            options: opts,
-                            answer: opts.indexOf(item.a),
-                            explanation: [`✅ 正確答案：${item.a}`, `🏷️ 標籤：${item.t.join(" / ")}`],
-                            concept: item.t[item.t.length - 1] || "自訂題目"
-                        };
-                    },
-                    tags: item.t,
-                    type: "normal"
-                };
-            });
-            console.log(`✅ 成功載入 ${customQs.length} 題教師雲端題庫！`);
+    // ==========================================
+    // 📱 UI 互動功能 (側邊欄 & Modal)
+    // ==========================================
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebar.classList.contains('-translate-x-full')) {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
         }
-    } catch (e) {
-        console.warn("雲端題庫注入跳過或連線失敗:", e);
     }
-}
-        window.onload = function() {
-            if (window.Auth && !Auth.requireLogin()) return;
-            
-            const currentUser = window.Auth ? Auth.getCurrentUser() : { username: 'guest' };
-            const lastUser = localStorage.getItem('last_exam_user');
-            
-            if (lastUser && lastUser !== currentUser.username) {
-                console.log("偵測到使用者切換，清除舊資料...");
-                localStorage.removeItem('examResult'); 
-                localStorage.removeItem('temp_answers'); 
-            }
-            
-            localStorage.setItem('last_exam_user', currentUser.username);
 
-            initVisibilityListener();
-            setupRefreshProtection();
-            showSetupModal();
+    function openProfileModal() {
+        const user = Auth.getCurrentUser();
+        const select = document.getElementById('editGradeSelect');
+        if (user && user.grade) select.value = user.grade;
+        document.getElementById('profileModal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    async function saveProfile() {
+        const newGrade = document.getElementById('editGradeSelect').value;
+        const user = Auth.getCurrentUser();
+        if (!user) return alert("請先登入！");
+
+        const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
+        const originalBtnText = saveBtn.innerText;
+
+        // 1. 進入載入狀態
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+
+        try {
+            // 2. 發送請求給 GAS 後端
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "update_grade", // 此 action 需與 GAS 後端對應
+                    account: user.account || user.username,
+                    newGrade: newGrade
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                // 3. 伺服器成功更新後，才更新本地資料
+                if (Auth.updateUser) {
+                    Auth.updateUser('grade', newGrade);
+                }
+                
+                const roleEl = document.getElementById('sideUserRole');
+                if (roleEl) roleEl.innerText = newGrade;
+
+                alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
+                closeProfileModal();
+            } else {
+                alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
+            }
+        } catch (error) {
+            console.error("更新年級發生錯誤:", error);
+            alert("網路連線異常，請稍後再試。");
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerText = originalBtnText;
+        }
+    }
+
+    // ==========================================
+    // ⚡ 雲端題庫融合器
+    // ==========================================
+    async function injectCustomQuestionsToRepo() {
+        const repoMap = {
+            'chinese': '__CHINESE_REPO__',
+            'math': '__MATH_REPO__',
+            'english': '__ENGLISH_REPO__',
+            'biology': '__BIOLOGY_REPO__',
+            'physics': '__PHYSICS_REPO__',
+            'chemistry': '__CHEMISTRY_REPO__',
+            'earth_science': '__EARTH_SCI_REPO__',
+            'history': '__HISTORY_REPO__',
+            'geography': '__GEOGRAPHY_REPO__',
+            'civics': '__CIVICS_REPO__'
         };
 
-        // 關鍵字高亮功能
-        function highlightKeywords(text) {
-            if (!text) return "";
-            const keywords = ["！＠＃＄％＾＆＊＃＄％＾％＾"];
-            let processed = text;
-            keywords.forEach(word => {
-                const reg = new RegExp(word, 'g');
-                processed = processed.replace(reg, `<span class="text-red-600 font-bold underline">${word}</span>`);
-            });
-            return processed;
+        try {
+            const res = await fetch(`${GAS_URL}?action=get_custom_questions`);
+            const customQs = await res.json();
+
+            if (customQs && customQs.length > 0) {
+                customQs.forEach((item, idx) => {
+                    let repoName = repoMap[item.subject];
+                    if (!repoName) return; 
+
+                    window[repoName] = window[repoName] || {};
+                    const id = `custom_${item.subject}_${idx}`;
+                    
+                    window[repoName][id] = {
+                        func: () => {
+                            const opts = [item.a, ...item.o].sort(() => Math.random() - 0.5);
+                            return {
+                                question: `【教師出題】${item.q}`, 
+                                options: opts,
+                                answer: opts.indexOf(item.a),
+                                explanation: [`✅ 正確答案：${item.a}`, `🏷️ 標籤：${item.t.join(" / ")}`],
+                                concept: item.t[item.t.length - 1] || "自訂題目"
+                            };
+                        },
+                        tags: item.t,
+                        type: "normal"
+                    };
+                });
+                console.log(`✅ 成功載入 ${customQs.length} 題教師雲端題庫！`);
+            }
+        } catch (e) {
+            console.warn("雲端題庫注入跳過或連線失敗:", e);
         }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
-            overlay.classList.toggle('opacity-0');
-        }
-
-        function setupRefreshProtection() {
-            window.addEventListener('beforeunload', function (e) {
-                if (!isSubmitting) {
-                    e.preventDefault();
-                    e.returnValue = ''; 
-                }
-            });
-
-            document.addEventListener('keydown', function(e) {
-                if ((e.which || e.keyCode) === 116 || 
-                    ((e.ctrlKey || e.metaKey) && (e.which || e.keyCode) === 82)) {
-                    e.preventDefault();
-                    alert("⚠️ 測驗進行中，禁止重新整理頁面！\n這會導致您的作答進度全部遺失。");
-                }
-            });
-        }
-
-        function showSetupModal() {
-            if(timerInterval) clearInterval(timerInterval);
-            document.getElementById('setupModal').classList.remove('hidden');
-        }
-
-        let selectedTime = 20; // 全域變數
-
-function selectCount(val) {
-    selectedCount = val;
-    // 更新按鈕樣式
-    document.querySelectorAll('.count-btn').forEach(btn => {
-        if(parseInt(btn.dataset.val) === val) {
-            btn.classList.add('bg-blue-50', 'border-blue-500', 'text-blue-600');
-        } else {
-            btn.classList.remove('bg-blue-50', 'border-blue-500', 'text-blue-600');
-        }
-    });
-
-    // 動態調整時間滑桿的最大值 (題數 * 2)
-    const slider = document.getElementById('timeSlider');
-    const maxTime = val * 2;
-    slider.max = maxTime;
-    
-    // 如果目前選擇的時間超過新最大值，就降下來
-    if (parseInt(slider.value) > maxTime || selectedTime === (val/val*0)) { 
-        slider.value = maxTime;
-    }
-    document.getElementById('maxTimeLabel').textContent = maxTime + " 分";
-    updateTimeLabel(slider.value);
-}
-
-function updateTimeLabel(val) {
-    selectedTime = parseInt(val);
-    document.getElementById('timeDisplay').textContent = val + " 分鐘";
-}
-     // --- 請修正為 ---
-function confirmSetup() {
-    document.getElementById('setupModal').classList.add('hidden');
-    // ⬇️ 這裡要確保傳入 selectedTime
-    prepareExam(selectedCount, selectedTime); 
-}   // --- 修正後的 prepareExam ---
-// --- 修正後的 prepareExam (加入 async 支援雲端題庫) ---
-async function prepareExam(count, timeMin) {
-    const urlParams = new URLSearchParams(window.location.search);
-    let subject = urlParams.get('subject') || 'math';
-    const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
-    const title = rawTitle.trim();
-    const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
-// 🌟 新增：從網址獲取 examId，若無則設為 null 或預設值
-    const examId = urlParams.get('id') || 'default_exam';
-    // 地科與社會科對應邏輯
-    if (subject === 'earth_science') subject = 'earth';
-    if (subject === 'social') subject = 'history';
-
-    let targetTags = [];
-    if (urlGrade && urlGrade !== 'undefined' && urlGrade !== 'null' && urlGrade.trim() !== '') {
-        targetTags = urlGrade.split(',').filter(t => t.trim() !== '');
-    } else {
-        targetTags = [subject];
-    }
-    
-    document.getElementById('examTitle').textContent = title;
-    document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
-
-    // 🌟 【關鍵插入點】：等待雲端題目下載並註冊完畢
-    await injectCustomQuestionsToRepo();
-
-    // 1. 呼叫產生器取得題目
-    if (window.generatePaper) {
-        mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
-    } else {
-        alert("系統錯誤：題庫引擎未載入");
-        return;
     }
 
-    if (!mockQuestions || mockQuestions.length === 0) {
-        alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！`);
-        showSetupModal(); // 重新顯示設定視窗
-        return;
-    }
-
-    // 🚀 2. 關鍵修正：初始化答案結構 (解決題組或單選題沒反應的問題)
-    userAnswers = mockQuestions.map(item => {
-        // 如果是題組 (Group)，初始化一個對應長度的空數組
-        if (item.type === 'group' || item.questions) {
-            return new Array(item.questions.length).fill(null);
+    window.onload = function() {
+        if (window.Auth && !Auth.requireLogin()) return;
+        
+        const currentUser = window.Auth ? Auth.getCurrentUser() : { username: 'guest' };
+        const lastUser = localStorage.getItem('last_exam_user');
+        
+        if (lastUser && lastUser !== currentUser.username) {
+            console.log("偵測到使用者切換，清除舊資料...");
+            localStorage.removeItem('examResult'); 
+            localStorage.removeItem('temp_answers'); 
         }
-        // 如果是單選題 (Normal)，初始化為 null
-        return null;
-    });
-    
-    // 3. 設定計時器時間 (關鍵修正版本)
-    examInfo = { 
-        id: examId,
-        title: title, // 直接使用上面定義好的變數
-        subject: subject, // 直接使用上面定義好的變數
-        questions: mockQuestions, // 🌟 這裡必須改為 mockQuestions
-        timeLimit: timeMin * 60 
+        
+        localStorage.setItem('last_exam_user', currentUser.username);
+
+        initVisibilityListener();
+        setupRefreshProtection();
+        showSetupModal();
     };
 
-    timeLeft = examInfo.timeLimit;
-  
-    
-    // 4. 重置遊戲狀態
-    currentQIndex = 0;
-    timeLog = [];
-    tabLog = [];
-    
-    // 5. 初始化遊戲 UI
-    initGame(); 
-}
-        function initGame() {
-            currentQIndex = 0;
-            // 初始化答案，題組存陣列，單題存 null
-            userAnswers = mockQuestions.map(q => q.type === 'group' ? new Array(q.questions.length).fill(null) : null);
-            timeLog = new Array(mockQuestions.length).fill(0);
-            renderQuestion();
-            updatePalette();
-            startTimer();
+    // 關鍵字高亮功能
+    function highlightKeywords(text) {
+        if (!text) return "";
+        const keywords = ["！＠＃＄％＾＆＊＃＄％＾％＾"];
+        let processed = text;
+        keywords.forEach(word => {
+            const reg = new RegExp(word, 'g');
+            processed = processed.replace(reg, `<span class="text-red-600 font-bold underline">${word}</span>`);
+        });
+        return processed;
+    }
+
+    function setupRefreshProtection() {
+        window.addEventListener('beforeunload', function (e) {
+            if (!isSubmitting) {
+                e.preventDefault();
+                e.returnValue = ''; 
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.which || e.keyCode) === 116 || 
+                ((e.ctrlKey || e.metaKey) && (e.which || e.keyCode) === 82)) {
+                e.preventDefault();
+                alert("⚠️ 測驗進行中，禁止重新整理頁面！\n這會導致您的作答進度全部遺失。");
+            }
+        });
+    }
+
+    function showSetupModal() {
+        if(timerInterval) clearInterval(timerInterval);
+        document.getElementById('setupModal').classList.remove('hidden');
+    }
+
+    let selectedTime = 20; 
+
+    function selectCount(val) {
+        selectedCount = val;
+        // 更新按鈕樣式
+        document.querySelectorAll('.count-btn').forEach(btn => {
+            if(parseInt(btn.dataset.val) === val) {
+                btn.classList.add('bg-blue-50', 'border-blue-500', 'text-blue-600');
+            } else {
+                btn.classList.remove('bg-blue-50', 'border-blue-500', 'text-blue-600');
+            }
+        });
+
+        // 動態調整時間滑桿的最大值 (題數 * 2)
+        const slider = document.getElementById('timeSlider');
+        const maxTime = val * 2;
+        slider.max = maxTime;
+        
+        if (parseInt(slider.value) > maxTime || selectedTime === (val/val*0)) { 
+            slider.value = maxTime;
+        }
+        document.getElementById('maxTimeLabel').textContent = maxTime + " 分";
+        updateTimeLabel(slider.value);
+    }
+
+    function updateTimeLabel(val) {
+        selectedTime = parseInt(val);
+        document.getElementById('timeDisplay').textContent = val + " 分鐘";
+    }
+
+    function confirmSetup() {
+        document.getElementById('setupModal').classList.add('hidden');
+        prepareExam(selectedCount, selectedTime); 
+    }   
+
+    async function prepareExam(count, timeMin) {
+        const urlParams = new URLSearchParams(window.location.search);
+        let subject = urlParams.get('subject') || 'math';
+        const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
+        const title = rawTitle.trim();
+        const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
+        const examId = urlParams.get('id') || 'default_exam';
+        
+        if (subject === 'earth_science') subject = 'earth';
+        if (subject === 'social') subject = 'history';
+
+        let targetTags = [];
+        if (urlGrade && urlGrade !== 'undefined' && urlGrade !== 'null' && urlGrade.trim() !== '') {
+            targetTags = urlGrade.split(',').filter(t => t.trim() !== '');
+        } else {
+            targetTags = [subject];
+        }
+        
+        document.getElementById('examTitle').textContent = title;
+        document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
+
+        await injectCustomQuestionsToRepo();
+
+        if (window.generatePaper) {
+            mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
+        } else {
+            alert("系統錯誤：題庫引擎未載入");
+            return;
         }
 
-       function renderQuestion() {
-    recordTime(); 
-    questionStartTime = Date.now();
+        if (!mockQuestions || mockQuestions.length === 0) {
+            alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！`);
+            showSetupModal(); 
+            return;
+        }
 
-    const item = mockQuestions[currentQIndex];
-    if (!item) return;
+        userAnswers = mockQuestions.map(item => {
+            if (item.type === 'group' || item.questions) {
+                return new Array(item.questions.length).fill(null);
+            }
+            return null;
+        });
+        
+        examInfo = { 
+            id: examId,
+            title: title, 
+            subject: subject, 
+            questions: mockQuestions, 
+            timeLimit: timeMin * 60 
+        };
 
-    // --- 1. 更新頂部 UI 資訊 ---
-    document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
-    document.getElementById('currentQIdx').textContent = currentQIndex + 1;
-    document.getElementById('totalQCount').textContent = mockQuestions.length;
-    
-    // 顯示分類：優先顯示題組概念，若無則顯示一般概念
-    document.getElementById('conceptBadge').textContent = item.concept || (item.type === 'group' ? "閱讀題組" : "一般題型");
-  
-    const container = document.getElementById('optionsContainer');
-    const questionTextBox = document.getElementById('questionText');
-    
-    // 清空舊內容
-    container.innerHTML = '';
-    
-    // --- 2. 判斷模式：題組 vs 單題 ---
-    if (item.type === 'group') {
-        // 【題組模式】
-        // 渲染引文區塊 (支援 HTML 格式，如你的表格與列表)
-        questionTextBox.innerHTML = `
-            <div class="bg-blue-50 p-5 rounded-2xl border-l-8 border-blue-400 mb-6 text-slate-700 leading-relaxed shadow-sm fade-in">
-                <div class="font-bold text-blue-600 mb-2 flex items-center">
-                    <i class="fas fa-book-reader mr-2"></i> 閱讀引文
+        timeLeft = examInfo.timeLimit;
+      
+        currentQIndex = 0;
+        timeLog = [];
+        tabLog = [];
+        
+        initGame(); 
+    }
+
+    function initGame() {
+        currentQIndex = 0;
+        userAnswers = mockQuestions.map(q => q.type === 'group' ? new Array(q.questions.length).fill(null) : null);
+        timeLog = new Array(mockQuestions.length).fill(0);
+        renderQuestion();
+        updatePalette();
+        startTimer();
+    }
+
+    function renderQuestion() {
+        recordTime(); 
+        questionStartTime = Date.now();
+
+        const item = mockQuestions[currentQIndex];
+        if (!item) return;
+
+        document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
+        document.getElementById('currentQIdx').textContent = currentQIndex + 1;
+        document.getElementById('totalQCount').textContent = mockQuestions.length;
+        
+        document.getElementById('conceptBadge').textContent = item.concept || (item.type === 'group' ? "閱讀題組" : "一般題型");
+      
+        const container = document.getElementById('optionsContainer');
+        const questionTextBox = document.getElementById('questionText');
+        
+        container.innerHTML = '';
+        
+        if (item.type === 'group') {
+            questionTextBox.innerHTML = `
+                <div class="bg-blue-50 p-5 rounded-2xl border-l-8 border-blue-400 mb-6 text-slate-700 leading-relaxed shadow-sm fade-in">
+                    <div class="font-bold text-blue-600 mb-2 flex items-center">
+                        <i class="fas fa-book-reader mr-2"></i> 閱讀引文
+                    </div>
+                    <div class="group-context-content">
+                        ${item.context}
+                    </div>
                 </div>
-                <div class="group-context-content">
-                    ${item.context}
-                </div>
-            </div>
-        `;
+            `;
 
-        // 循環渲染題組內的所有子題目
-        item.questions.forEach((subQ, subIdx) => {
-            const subCard = document.createElement('div');
-            subCard.className = "mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-md fade-in";
-            
-            // 產生選項 HTML
-            let optionsHtml = subQ.options.map((opt, optIdx) => {
-                // 檢查 userAnswers[目前題號][子題號] 是否等於目前選項索引
-                const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][subIdx] === optIdx);
+            item.questions.forEach((subQ, subIdx) => {
+                const subCard = document.createElement('div');
+                subCard.className = "mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-md fade-in";
                 
-                return `
-                    <div onclick="selectAnswer(${currentQIndex}, ${optIdx}, ${subIdx})" 
-                         class="option-card w-full p-3 rounded-xl flex items-center gap-3 mt-2 cursor-pointer transition-all ${isSelected ? 'selected' : 'bg-slate-50 border border-slate-100 hover:border-blue-300'}">
-                        <div class="w-7 h-7 rounded-full border flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-400 border-slate-300'}">
-                            ${String.fromCharCode(65 + optIdx)}
+                let optionsHtml = subQ.options.map((opt, optIdx) => {
+                    const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][subIdx] === optIdx);
+                    
+                    return `
+                        <div onclick="selectAnswer(${currentQIndex}, ${optIdx}, ${subIdx})" 
+                             class="option-card w-full p-3 rounded-xl flex items-center gap-3 mt-2 cursor-pointer transition-all ${isSelected ? 'selected' : 'bg-slate-50 border border-slate-100 hover:border-blue-300'}">
+                            <div class="w-7 h-7 rounded-full border flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-400 border-slate-300'}">
+                                ${String.fromCharCode(65 + optIdx)}
+                            </div>
+                            <div class="text-slate-700 font-medium">${opt}</div>
                         </div>
-                        <div class="text-slate-700 font-medium">${opt}</div>
+                    `;
+                }).join('');
+
+                subCard.innerHTML = `
+                    <div class="font-bold text-slate-800 mb-4 text-lg">
+                        <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-lg mr-2">${subIdx + 1}</span>
+                        ${highlightKeywords(subQ.question)}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        ${optionsHtml}
                     </div>
                 `;
-            }).join('');
+                container.appendChild(subCard);
+            });
 
-            subCard.innerHTML = `
-                <div class="font-bold text-slate-800 mb-4 text-lg">
-                    <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-lg mr-2">${subIdx + 1}</span>
-                    ${highlightKeywords(subQ.question)}
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    ${optionsHtml}
-                </div>
-            `;
-            container.appendChild(subCard);
-        });
-
-    } else {
-        // 【單題模式】
-        // 顯示一般題目文字
-        questionTextBox.innerHTML = `
-            <div class="text-2xl font-bold text-slate-800 mb-4 fade-in">
-                ${highlightKeywords(item.question)}
-            </div>
-        `;
-
-        item.options.forEach((opt, idx) => {
-            const isSelected = userAnswers[currentQIndex] === idx;
-            const optDiv = document.createElement('div');
-            optDiv.className = `option-card w-full p-4 rounded-2xl flex items-center gap-4 cursor-pointer transition-all mb-4 fade-in ${isSelected ? 'selected' : 'bg-white border border-slate-100 text-slate-700 shadow-sm hover:border-blue-300'}`;
-            
-            optDiv.innerHTML = `
-                <div class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-300 text-slate-400'}">
-                    ${String.fromCharCode(65 + idx)}
-                </div>
-                <div class="flex-grow font-medium text-lg">${opt}</div>
-            `;
-            
-            optDiv.onclick = () => selectAnswer(currentQIndex, idx);
-            container.appendChild(optDiv);
-        });
-    }
-
-  // 在 renderQuestion 末端修改
-const hasMath = questionTextBox.innerText.includes('\\(') || container.innerText.includes('\\(');
-if (window.MathJax && hasMath) {
-    MathJax.typesetPromise();
-}
-    updateNavButtons();
-    updatePalette();
-}
-window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
-    // 1. 更新資料
-    if (subIdx !== null) {
-        userAnswers[mainIdx][subIdx] = optIdx;
-    } else {
-        userAnswers[mainIdx] = optIdx;
-    }
-
-    // 2. 局部更新畫面樣式，不再呼叫 renderQuestion()
-    // 找出目前容器內所有的選項卡片
-    const container = subIdx !== null 
-        ? document.querySelectorAll('.group-context-content + div, .fade-in')[subIdx + 1] // 題組定位
-        : document.getElementById('optionsContainer');
-
-    const cards = container.querySelectorAll('.option-card');
-    
-    cards.forEach((card, idx) => {
-        const circle = card.querySelector('.rounded-full');
-        if (idx === optIdx) {
-            // 選中樣式
-            card.classList.add('selected');
-            card.classList.remove('bg-white', 'bg-slate-50', 'border-slate-100');
-            if (circle) circle.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
         } else {
-            // 取消選中
-            card.classList.remove('selected');
-            card.classList.add('bg-white', 'border-slate-100');
-            if (circle) circle.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+            questionTextBox.innerHTML = `
+                <div class="text-2xl font-bold text-slate-800 mb-4 fade-in">
+                    ${highlightKeywords(item.question)}
+                </div>
+            `;
+
+            item.options.forEach((opt, idx) => {
+                const isSelected = userAnswers[currentQIndex] === idx;
+                const optDiv = document.createElement('div');
+                optDiv.className = `option-card w-full p-4 rounded-2xl flex items-center gap-4 cursor-pointer transition-all mb-4 fade-in ${isSelected ? 'selected' : 'bg-white border border-slate-100 text-slate-700 shadow-sm hover:border-blue-300'}`;
+                
+                optDiv.innerHTML = `
+                    <div class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-300 text-slate-400'}">
+                        ${String.fromCharCode(65 + idx)}
+                    </div>
+                    <div class="flex-grow font-medium text-lg">${opt}</div>
+                `;
+                
+                optDiv.onclick = () => selectAnswer(currentQIndex, idx);
+                container.appendChild(optDiv);
+            });
         }
-    });
 
-    // 3. 更新下方題號狀態點 (Palette)
-    updatePalette();
-};
+        const hasMath = questionTextBox.innerText.includes('\\(') || container.innerText.includes('\\(');
+        if (window.MathJax && hasMath) {
+            MathJax.typesetPromise();
+        }
+        updateNavButtons();
+        updatePalette();
+    }
 
-        function updateNavButtons() {
-            const nextBtn = document.getElementById('nextBtn');
-            const prevBtn = document.getElementById('prevBtn');
-            prevBtn.disabled = currentQIndex === 0;
-            prevBtn.className = currentQIndex === 0 ? "hidden" : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-3 py-2 cursor-pointer";
+    window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
+        if (subIdx !== null) {
+            userAnswers[mainIdx][subIdx] = optIdx;
+        } else {
+            userAnswers[mainIdx] = optIdx;
+        }
 
-            if (currentQIndex === mockQuestions.length - 1) {
-                nextBtn.innerHTML = `完成交卷 <i class="fas fa-check-circle ml-2"></i>`;
-                nextBtn.className = "bg-slate-800 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition flex items-center gap-2";
-                nextBtn.onclick = trySubmit;
+        const container = subIdx !== null 
+            ? document.querySelectorAll('.group-context-content + div, .fade-in')[subIdx + 1] 
+            : document.getElementById('optionsContainer');
+
+        const cards = container.querySelectorAll('.option-card');
+        
+        cards.forEach((card, idx) => {
+            const circle = card.querySelector('.rounded-full');
+            if (idx === optIdx) {
+                card.classList.add('selected');
+                card.classList.remove('bg-white', 'bg-slate-50', 'border-slate-100');
+                if (circle) circle.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
             } else {
-                nextBtn.innerHTML = `下一題 <i class="fas fa-arrow-right ml-2"></i>`;
-                nextBtn.className = "bg-white border border-slate-300 hover:border-blue-500 text-slate-700 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition";
-                nextBtn.onclick = () => { currentQIndex++; renderQuestion(); };
+                card.classList.remove('selected');
+                card.classList.add('bg-white', 'border-slate-100');
+                if (circle) circle.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
             }
+        });
+
+        updatePalette();
+    };
+
+    function updateNavButtons() {
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        prevBtn.disabled = currentQIndex === 0;
+        prevBtn.className = currentQIndex === 0 ? "hidden" : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-3 py-2 cursor-pointer";
+
+        if (currentQIndex === mockQuestions.length - 1) {
+            nextBtn.innerHTML = `完成交卷 <i class="fas fa-check-circle ml-2"></i>`;
+            nextBtn.className = "bg-slate-800 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition flex items-center gap-2";
+            nextBtn.onclick = trySubmit;
+        } else {
+            nextBtn.innerHTML = `下一題 <i class="fas fa-arrow-right ml-2"></i>`;
+            nextBtn.className = "bg-white border border-slate-300 hover:border-blue-500 text-slate-700 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition";
+            nextBtn.onclick = () => { currentQIndex++; renderQuestion(); };
         }
+    }
 
-        function updatePalette() {
-            const p = document.getElementById('questionPalette');
-            p.innerHTML = '';
-            mockQuestions.forEach((item, i) => {
-                let isAnswered = false;
-                if (item.type === 'group') {
-                    isAnswered = userAnswers[i].every(a => a !== null);
-                } else {
-                    isAnswered = userAnswers[i] !== null;
-                }
+    function updatePalette() {
+        const p = document.getElementById('questionPalette');
+        p.innerHTML = '';
+        mockQuestions.forEach((item, i) => {
+            let isAnswered = false;
+            if (item.type === 'group') {
+                isAnswered = userAnswers[i].every(a => a !== null);
+            } else {
+                isAnswered = userAnswers[i] !== null;
+            }
 
-                const cls = isAnswered ? 'q-dot answered' : (i === currentQIndex ? 'q-dot active' : 'q-dot normal');
-                const dot = document.createElement('div');
-                dot.className = cls + " flex-shrink-0 cursor-pointer";
-                dot.textContent = i + 1;
-                dot.onclick = () => { currentQIndex = i; renderQuestion(); };
-                p.appendChild(dot);
-            });
-        }
+            const cls = isAnswered ? 'q-dot answered' : (i === currentQIndex ? 'q-dot active' : 'q-dot normal');
+            const dot = document.createElement('div');
+            dot.className = cls + " flex-shrink-0 cursor-pointer";
+            dot.textContent = i + 1;
+            dot.onclick = () => { currentQIndex = i; renderQuestion(); };
+            p.appendChild(dot);
+        });
+    }
 
-        function recordTime() {
-            if (questionStartTime === 0) return;
-            const duration = (Date.now() - questionStartTime) / 1000;
-            timeLog[currentQIndex] = (timeLog[currentQIndex] || 0) + duration;
-        }
+    function recordTime() {
+        if (questionStartTime === 0) return;
+        const duration = (Date.now() - questionStartTime) / 1000;
+        timeLog[currentQIndex] = (timeLog[currentQIndex] || 0) + duration;
+    }
 
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-                const s = (timeLeft % 60).toString().padStart(2, '0');
-                document.getElementById('timer').textContent = `${m}:${s}`;
-                if (timeLeft <= 0) { clearInterval(timerInterval); finalSubmit(); }
-            }, 1000);
-        }
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${m}:${s}`;
+            if (timeLeft <= 0) { clearInterval(timerInterval); finalSubmit(); }
+        }, 1000);
+    }
 
-        function initVisibilityListener() {
-            document.addEventListener("visibilitychange", () => {
-                if (document.hidden) {
-                    tabLeaveStart = Date.now();
-                } else if (tabLeaveStart) {
-                    const duration = (Date.now() - tabLeaveStart) / 1000;
-                    tabLog.push({ time: new Date().toLocaleString(), qIndex: currentQIndex + 1, duration: duration.toFixed(1) });
-                    tabLeaveStart = null;
-                }
-            });
-        }
+    function initVisibilityListener() {
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                tabLeaveStart = Date.now();
+            } else if (tabLeaveStart) {
+                const duration = (Date.now() - tabLeaveStart) / 1000;
+                tabLog.push({ time: new Date().toLocaleString(), qIndex: currentQIndex + 1, duration: duration.toFixed(1) });
+                tabLeaveStart = null;
+            }
+        });
+    }
 
-        function trySubmit() {
-            recordTime();
-            // 計算「總小題數」與「已答小題數」
-            let totalSub = 0, answeredSub = 0;
-            mockQuestions.forEach((item, i) => {
-                if (item.type === 'group') {
-                    totalSub += item.questions.length;
-                    answeredSub += userAnswers[i].filter(a => a !== null).length;
-                } else {
-                    totalSub += 1;
-                    if (userAnswers[i] !== null) answeredSub += 1;
-                }
-            });
+    function trySubmit() {
+        recordTime();
+        let totalSub = 0, answeredSub = 0;
+        mockQuestions.forEach((item, i) => {
+            if (item.type === 'group') {
+                totalSub += item.questions.length;
+                answeredSub += userAnswers[i].filter(a => a !== null).length;
+            } else {
+                totalSub += 1;
+                if (userAnswers[i] !== null) answeredSub += 1;
+            }
+        });
 
-            document.getElementById('modalAnswered').textContent = answeredSub;
-            document.getElementById('modalUnanswered').textContent = totalSub - answeredSub;
-            document.getElementById('submitModal').classList.remove('hidden');
-        }
+        document.getElementById('modalAnswered').textContent = answeredSub;
+        document.getElementById('modalUnanswered').textContent = totalSub - answeredSub;
+        document.getElementById('submitModal').classList.remove('hidden');
+    }
 
-        function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
+    function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
-        async function finalSubmit() {
-            const submitBtn = document.getElementById('confirmSubmitBtn');
-            if (submitBtn.disabled) return; 
-            submitBtn.disabled = true;      
-            submitBtn.textContent = "評分中..."; 
-            
-            if (timerInterval) clearInterval(timerInterval);
-            isSubmitting = true; 
-            document.getElementById('submitModal').classList.add('hidden');
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+    async function finalSubmit() {
+        const submitBtn = document.getElementById('confirmSubmitBtn');
+        if (submitBtn.disabled) return; 
+        submitBtn.disabled = true;      
+        submitBtn.textContent = "評分中..."; 
+        
+        if (timerInterval) clearInterval(timerInterval);
+        isSubmitting = true; 
+        document.getElementById('submitModal').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('hidden');
 
-            let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
+        let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
 
-            mockQuestions.forEach((item, idx) => {
-                const timeSpent = timeLog[idx] || 0;
-                if (item.type === 'group') {
-                    item.questions.forEach((subQ, sIdx) => {
-                        totalCount++;
-                        const userAns = userAnswers[idx][sIdx];
-                        // 題組通常比對 answerKey (字串) 或 answer (索引)
-                        const isCorrect = (userAns === subQ.answer); 
-                        if (isCorrect) correctCount++;
-                        else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
-                    });
-                    if (timeSpent < 10) fastCount++; // 題組給 10 秒緩衝
-                } else {
+        mockQuestions.forEach((item, idx) => {
+            const timeSpent = timeLog[idx] || 0;
+            if (item.type === 'group') {
+                item.questions.forEach((subQ, sIdx) => {
                     totalCount++;
-                    if (timeSpent < 3) fastCount++;
-                    if (userAnswers[idx] === item.answer) {
-                        correctCount++;
-                    } else {
-                        wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
-                    }
+                    const userAns = userAnswers[idx][sIdx];
+                    const isCorrect = (userAns === subQ.answer); 
+                    if (isCorrect) correctCount++;
+                    else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
+                });
+                if (timeSpent < 10) fastCount++; 
+            } else {
+                totalCount++;
+                if (timeSpent < 3) fastCount++;
+                if (userAnswers[idx] === item.answer) {
+                    correctCount++;
+                } else {
+                    wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
                 }
-            });
-
-            const finalScore = Math.round((correctCount / totalCount) * 100);
-            const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
-
-            // XP 經驗值系統
-            const baseXP = 20; 
-            const bonusXP = correctCount * 10;
-            const totalXP = baseXP + bonusXP;
-            let isLevelUp = (window.Auth && user.username !== 'guest') ? Auth.addXP(totalXP) : false;
-
-          const urlParams = new URLSearchParams(window.location.search);
-
-            const resultData = {
-                owner: user.username, 
-                id: Date.now(),
-                // 🌟 修正：優先從 examInfo 抓，抓不到就從網址抓，最後預設 english
-                subject: (examInfo && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
-                title: examInfo.title || urlParams.get('title') || "綜合測驗",
-                score: finalScore, 
-                correctCount,
-                totalCount,
-                wrongList,
-                tabSwitches: tabLog.length, 
-                xpGained: totalXP,
-                isLevelUp,
-                cheat: {
-                    cheatLevel: (fastCount > 3 || tabLog.length > 5) ? 'HIGH' : 'NORMAL',
-                    fastCount
-                },
-                analysis: { timeLog, tabLogDetails: tabLog }
-            };
-
-            localStorage.setItem('examResult', JSON.stringify(resultData));
-            const historyKey = `history_${user.username}`;
-            let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-            history.push(resultData);
-            localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
-
-            if (user.username !== 'guest') {
-                try {
-                    await Promise.race([
-                        uploadToCloud(user.username, examInfo.title, finalScore, resultData),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-                    ]);
-                } catch (e) { console.error("雲端備份跳過:", e); }
             }
+        });
 
-            setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
+        const finalScore = Math.round((correctCount / totalCount) * 100);
+        const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
+
+        const baseXP = 20; 
+        const bonusXP = correctCount * 10;
+        const totalXP = baseXP + bonusXP;
+        let isLevelUp = (window.Auth && user.username !== 'guest') ? Auth.addXP(totalXP) : false;
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const resultData = {
+            owner: user.username, 
+            id: Date.now(),
+            subject: (examInfo && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
+            title: examInfo.title || urlParams.get('title') || "綜合測驗",
+            score: finalScore, 
+            correctCount,
+            totalCount,
+            wrongList,
+            tabSwitches: tabLog.length, 
+            xpGained: totalXP,
+            isLevelUp,
+            cheat: {
+                cheatLevel: (fastCount > 3 || tabLog.length > 5) ? 'HIGH' : 'NORMAL',
+                fastCount
+            },
+            analysis: { timeLog, tabLogDetails: tabLog }
+        };
+
+        localStorage.setItem('examResult', JSON.stringify(resultData));
+        const historyKey = `history_${user.username}`;
+        let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+        history.push(resultData);
+        localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
+
+        if (user.username !== 'guest') {
+            try {
+                await Promise.race([
+                    uploadToCloud(user.username, examInfo.title, finalScore, resultData),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                ]);
+            } catch (e) { console.error("雲端備份跳過:", e); }
         }
 
- async function uploadToCloud(username, activityName, score, fullData) {
-    // 🌟 修正：不要再看網址了，直接看傳進來的資料
-   const currentSubject = urlParams.get('subject') || "unknown";
-    const detailToSave = {
-        subject: currentSubject,           // 這裡就是家長看板顯示科目的關鍵！
-        unitName: activityName,            
-        grade: fullData.grade || "國九",
-        totalCount: fullData.totalCount,
-        correctCount: fullData.correctCount,
-        wrongList: fullData.wrongList,
-        cheat: fullData.cheat,
-        tabSwitches: fullData.tabSwitches
-    };
+        setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
+    }
 
-    const payload = {
-        action: "save_record",
-        username: username,
-        activity: activityName,
-        score: score,
-        detail: JSON.stringify(detailToSave) 
-    };
+    async function uploadToCloud(username, activityName, score, fullData) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSubject = urlParams.get('subject') || "unknown";
+        const detailToSave = {
+            subject: currentSubject,           
+            unitName: activityName,            
+            grade: fullData.grade || "國九",
+            totalCount: fullData.totalCount,
+            correctCount: fullData.correctCount,
+            wrongList: fullData.wrongList,
+            cheat: fullData.cheat,
+            tabSwitches: fullData.tabSwitches
+        };
 
-    // 傳送到您的 GAS
-    return fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors', // 配合您的 GAS 設定
-        body: JSON.stringify(payload)
-    });
-}
-    </script>
+        const payload = {
+            action: "save_record",
+            username: username,
+            activity: activityName,
+            score: score,
+            detail: JSON.stringify(detailToSave) 
+        };
+
+        return fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            body: JSON.stringify(payload)
+        });
+    }
+</script>
 </body>
 </html>
