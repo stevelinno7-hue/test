@@ -6,7 +6,7 @@
     <title>家長監護中心 | 學習進度即時看板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="js/curriculum_integrated.js"></script>
+    <script src="mockdata/curriculum_integrated.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen text-slate-900">
 
@@ -131,13 +131,24 @@
             document.getElementById('subjectGrid').innerHTML = html;
         }
 
-        function renderUnitDetails() {
+       function renderUnitDetails() {
             const selectedSub = document.getElementById('subPicker').value;
             const listContainer = document.getElementById('unitDetailList');
             
-            // 🌟 核心：從引用的 curriculum_integrated.js 撈取資料
+            // 🛡️ 防呆：檢查 CurriculumLibrary 是否存在
+            if (typeof window.CurriculumLibrary === "undefined") {
+                console.error("找不到單元資料！請檢查 curriculum_integrated.js 檔案是否正確載入。");
+                listContainer.innerHTML = `
+                    <div class="p-8 text-center text-red-500 font-bold bg-red-50 rounded-xl m-4 border border-red-200">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>無法載入課程單元資料</p>
+                        <p class="text-xs text-red-400 mt-1">請檢查 JS 檔案路徑與變數名稱設定</p>
+                    </div>`;
+                return; // 直接中斷執行，防止報錯
+            }
+        
+            // 🌟 核心：撈取資料
             const curriculumData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[selectedSub] : window.CurriculumLibrary[selectedSub]) || [];
-            
             // 攤平所有冊別 (Books) 的單元
             let unitsToDisplay = [];
             curriculumData.forEach(book => {
