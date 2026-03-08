@@ -841,12 +841,13 @@ window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
         }
 
    async function uploadToCloud(username, activityName, score, fullData) {
-    // 優先順序：測驗資料內的科目 > 網址參數 > 預設值
     const urlParams = new URLSearchParams(window.location.search);
-    const currentSubject = fullData.subject || urlParams.get('subject') || "未分類"; 
+    
+    // 🌟 修正點：優先從 examInfo 抓取（這是 prepareExam 時就定好的），其次才是網址或預設
+    const currentSubject = examInfo.subject ? examInfo.subject.toLowerCase() : (urlParams.get('subject') || "english");
 
     const detailToSave = {
-        subject: currentSubject, // 🌟 這樣科目就會被傳入 Google Sheets
+        subject: currentSubject,           // 確保這一行確實存在
         unitName: activityName,
         grade: fullData.grade || "國九",
         totalCount: fullData.totalCount,
@@ -861,7 +862,9 @@ window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
         username: username,
         activity: activityName,
         score: score,
-        detail: JSON.stringify(detailToSave) // 🌟 將包含 subject 的物件轉成字串
+        // 🌟 同時在最外層也傳一份 subject，讓 GAS 後端更好處理
+        subject: currentSubject, 
+        detail: JSON.stringify(detailToSave)
     };
     
     // ... 後續 fetch 程式碼 ...
