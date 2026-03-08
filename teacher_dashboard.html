@@ -276,7 +276,32 @@
                 </div>
             </div>
 <div id="tab-students" class="tab-content hidden space-y-6">
-                
+                <div class="bg-gradient-to-br from-white to-slate-50/80 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-slate-200 border-t-4 border-t-blue-500 relative overflow-hidden mt-8">
+                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-8 relative z-10">
+                        <div>
+                            <h2 class="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+                                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+                                    <i class="fas fa-chart-pie text-2xl"></i>
+                                </div>
+                                學生進度深度查詢
+                            </h2>
+                            <p class="text-sm text-slate-500 mt-3 font-bold ml-1">輸入學生帳號，即可調閱該生的各科精熟度與單元測驗明細</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
+                            <div class="relative flex-1 xl:w-80">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fas fa-user-graduate text-slate-400"></i>
+                                </div>
+                                <input type="text" id="searchStudentId" placeholder="輸入學號 (例: S12345)" class="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-slate-700 shadow-sm placeholder:text-slate-300 placeholder:font-normal">
+                            </div>
+                            <button onclick="fetchStudentProgress()" id="btnSearchStudent" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 flex items-center justify-center gap-2 whitespace-nowrap">
+                                <i class="fas fa-search"></i> 開始分析
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-3xl shadow-sm overflow-hidden border border-slate-200">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center bg-slate-50 space-y-4 md:space-y-0">
                         <h3 class="font-bold text-slate-800 text-xl"><i class="fas fa-users text-blue-500 mr-2"></i>班級學生名冊</h3>
@@ -308,32 +333,7 @@
                     </div>
                 </div>
 
-                <div class="bg-gradient-to-br from-white to-slate-50/80 rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-slate-200 border-t-4 border-t-blue-500 relative overflow-hidden mt-8">
-                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                    <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-8 relative z-10">
-                        <div>
-                            <h2 class="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-                                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
-                                    <i class="fas fa-chart-pie text-2xl"></i>
-                                </div>
-                                學生進度深度查詢
-                            </h2>
-                            <p class="text-sm text-slate-500 mt-3 font-bold ml-1">輸入學生帳號，即可調閱該生的各科精熟度與單元測驗明細</p>
-                        </div>
-                        <div class="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
-                            <div class="relative flex-1 xl:w-80">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i class="fas fa-user-graduate text-slate-400"></i>
-                                </div>
-                                <input type="text" id="searchStudentId" placeholder="輸入學號 (例: S12345)" class="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-slate-700 shadow-sm placeholder:text-slate-300 placeholder:font-normal">
-                            </div>
-                            <button onclick="fetchStudentProgress()" id="btnSearchStudent" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 flex items-center justify-center gap-2 whitespace-nowrap">
-                                <i class="fas fa-search"></i> 開始分析
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
+                
                 <div id="studentProgressResult" class="hidden transition-all duration-500 mt-4">
                     <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white flex flex-col md:flex-row justify-between items-center shadow-2xl relative overflow-hidden mb-8">
                         <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl"><i class="fas fa-user-graduate"></i></div>
