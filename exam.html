@@ -811,17 +811,20 @@ async function prepareExam(count, timeMin) {
             setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
         }
 
-        async function uploadToCloud(username, activityName, score, fullData) {
+       async function uploadToCloud(username, activityName, score, fullData) {
             const payload = {
                 action: "save_record",
                 username: username,
                 activity: activityName,
                 score: score,
+                // 🌟 將 subject 加入 detail 中，讓家長後台可以正確辨識科目！
                 detail: JSON.stringify({
+                    subject: fullData.subject || "chinese", // 新增這行：從 fullData 抓取科目
                     totalCount: fullData.totalCount,
                     correctCount: fullData.correctCount,
                     tabSwitches: fullData.tabSwitches,
-                    cheat: fullData.cheat
+                    cheat: fullData.cheat,
+                    wrongList: fullData.wrongList // 建議把錯題也傳回去，家長後台才看得到錯什麼
                 })
             };
             return fetch(GAS_URL, {
