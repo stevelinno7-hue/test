@@ -889,18 +889,18 @@ function toggleSidebar() {
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>雲端發布中...</span>`;
 
     try {
+        // 教師端建議寫法 (修正你之前的代碼)
         const response = await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "update_announcement",
-                annId: annId, // 🌟 傳送 ID 到後端存儲
                 date: finalDate,
                 title: title,
                 content: content,
-                isActive: isActive
+                isActive: isActive // 這裡傳過去後，GAS 會幫你產生 version
             })
         });
-        
+                
         const resData = await response.json();
         
         if (resData.result === "success") {
