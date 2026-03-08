@@ -323,6 +323,54 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_O
         });
     });
 }
+    // 顯示回覆輸入框的函式
+function showReplyInput(postId) {
+  // 找到該貼文下方的回覆容器
+  const replyArea = document.getElementById(`reply-area-${postId}`);
+  if (!replyArea) return;
+
+  // 切換顯示/隱藏
+  if (replyArea.style.display === 'none' || replyArea.style.display === '') {
+    replyArea.style.display = 'block';
+    replyArea.innerHTML = `
+      <div style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+        <textarea id="reply-text-${postId}" placeholder="請輸入回覆內容..." style="width:100%; height:60px;"></textarea>
+        <button onclick="submitReply('${postId}')" style="margin-top:5px; background-color:#28a745; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;">提交回覆</button>
+      </div>
+    `;
+  } else {
+    replyArea.style.display = 'none';
+  }
+}
+
+// 提交回覆到後端的函式
+function submitReply(postId) {
+  const content = document.getElementById(`reply-text-${postId}`).value;
+  if (!content) return alert("內容不能為空");
+
+  const user = JSON.parse(localStorage.getItem('user'));
+  
+  // 呼叫你的 GAS doPost
+  fetch(googleWebAppUrl, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'add_forum_post',
+      id: 'R' + Date.now(),
+      date: new Date().toLocaleString(),
+      username: user.username,
+      name: user.name,
+      content: content,
+      parentId: postId // 🌟 這裡會對應到你 GAS 裡的 param.parentId
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.result === 'success') {
+      alert("回覆成功！");
+      loadPosts(); // 重新載入列表
+    }
+  });
+}
     function renderPost(post) {
     const isAIReply = post.reply && (post.reply.author === "AI 助教" || post.reply.author === RealAITutor.name);
     
