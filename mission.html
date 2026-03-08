@@ -121,23 +121,43 @@
 // ==========================================
  const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
         let userGrade = "高一";
+// ==========================================
+// ✏️ 個人資料編輯功能
+// ==========================================
 // 手機側邊欄開關
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
+    
+    if (sidebar.classList.contains('-translate-x-full')) {
+        // 開啟
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        // 關閉
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
 }
-
-// 開啟編輯視窗
+// 1. 開啟編輯視窗
 function openProfileModal() {
     const user = Auth.getCurrentUser();
-    if (!user) return alert("請先登入！");
+    if (!user) {
+        alert("請先登入！");
+        return;
+    }
+
+    // 設定下拉選單為目前的年級
     const select = document.getElementById('editGradeSelect');
-    if (user.grade) select.value = user.grade;
+    if (user.grade) {
+        select.value = user.grade;
+    }
+    
+    // 顯示視窗
     document.getElementById('profileModal').classList.remove('hidden');
 }
 
+// 2. 關閉編輯視窗
 function closeProfileModal() {
     document.getElementById('profileModal').classList.add('hidden');
 }
