@@ -80,73 +80,87 @@
 
     
 
-    <script>
+<script>
         // ⚠️ 請確認這是你最新部署的 Google Apps Script 網址
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        // 🌟 1. 處理身份切換的 UI 變化
+        function toggleRoleUI() {
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const studentFields = document.getElementById('studentFields');
+            const parentFields = document.getElementById('parentFields');
+            const gradeInput = document.getElementById('grade');
+            const childUsernameInput = document.getElementById('childUsername');
+
+            if (role === 'parent') {
+                studentFields.classList.add('hidden');
+                studentFields.classList.remove('block');
+                parentFields.classList.add('block');
+                parentFields.classList.remove('hidden');
+                
+                // 調整必填屬性
+                gradeInput.removeAttribute('required');
+                childUsernameInput.setAttribute('required', 'true');
+            } else {
+                studentFields.classList.add('block');
+                studentFields.classList.remove('hidden');
+                parentFields.classList.add('hidden');
+                parentFields.classList.remove('block');
+                
+                // 調整必填屬性
+                gradeInput.setAttribute('required', 'true');
+                childUsernameInput.removeAttribute('required');
+            }
+        }
+
+        // 🌟 2. 處理註冊表單送出
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const submitBtn = document.getElementById('submitBtn');
             const originalBtnText = submitBtn.innerHTML;
 
-            // 1. 鎖定按鈕與防呆
+            // 鎖定按鈕避免重複點擊
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 登入驗證中...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 註冊處理中...';
             submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
 
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const name = document.getElementById('name').value.trim();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
+            
+            // 根據身份取對應的資料
+            const grade = role === 'student' ? document.getElementById('grade').value : "";
+            const childUsername = role === 'parent' ? document.getElementById('childUsername').value.trim() : "";
 
-            if (!username || !password) {
-                alert("❌ 請輸入帳號與密碼！");
-                resetButton(); return;
-            }
-
-            const loginData = {
-                action: "login",
+            // 準備傳送給 GAS 的資料格式
+            const registerData = {
+                action: "register",
+                role: role,
+                name: name,
                 username: username,
-                password: password
+                password: password,
+                grade: grade,
+                childUsername: childUsername
             };
 
             try {
-                // 2. 傳送至後端驗證 (加上解決 CORS 的設定)
+                // 傳送資料至後端
                 const response = await fetch(GAS_URL, {
                     method: "POST",
                     redirect: "follow",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(loginData)
+                    body: JSON.stringify(registerData)
                 });
 
                 const data = await response.json();
 
-                // 3. 登入成功，根據身分自動分流！
                 if (data.result === "success") {
-                    const user = data.user;
-                    
-                    // 將基本登入資訊存入瀏覽器
-                    localStorage.setItem('username', user.username);
-                    localStorage.setItem('name', user.name);
-                    localStorage.setItem('role', user.role);
-
-                    // 🌟 智慧身分判斷與跳轉
-                    if (user.role === 'parent') {
-                        // 因為我們把家長綁定的小孩帳號存在第 4 欄 (GAS 回傳為 grade 屬性)
-                        localStorage.setItem('childUsername', user.grade); 
-                        alert(`🎉 登入成功！\n歡迎 ${user.name} 家長，將為您導向學習分析儀表板。`);
-                        window.location.href = 'parent_dashboard.html'; // 跳轉到家長後台
-                    } 
-                    else if (user.role === 'teacher') {
-                        alert(`🎉 登入成功！\n歡迎 ${user.name} 老師。`);
-                        window.location.href = 'teacher_dashboard.html'; // 請改成你實際的教師頁面檔名
-                    } 
-                    else {
-                        // 預設為 student
-                        alert(`🎉 登入成功！\n歡迎 ${user.name} 同學。`);
-                        window.location.href = 'student_dashboard.html'; // 請改成你實際的學生主頁檔名
-                    }
+                    alert("🎉 註冊成功！請使用新帳號登入。");
+                    window.location.href = "index.html"; // 跳轉回登入頁
                 } else {
-                    alert("❌ 登入失敗：" + (data.message || "帳號或密碼錯誤"));
+                    alert("❌ 註冊失敗：" + (data.message || "未知錯誤"));
                     resetButton();
                 }
 
@@ -162,6 +176,9 @@
                 submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
         });
+
+        // 頁面載入時先執行一次，確保初始狀態正確
+        window.onload = toggleRoleUI;
     </script>
 </body>
 </html>
