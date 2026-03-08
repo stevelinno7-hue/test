@@ -997,6 +997,142 @@ function toggleSidebar() {
         btn.innerHTML = originalBtnHTML;
     }
 }
+         // ==========================================
+    // 🌟 老師端融合家長功能：個別學生進度查詢
+    // ==========================================
+    let currentStudentData = { records: [] };
+
+    // 1. 抓取特定學生資料
+    async function fetchStudentProgress() {
+        const studentId = document.getElementById('searchStudentId').value.trim();
+        if (!studentId) {
+            alert("請先輸入要查詢的學生帳號！");
+            return;
+        }
+
+        const btn = document.getElementById('btnSearchStudent');
+        const originalBtnHTML = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 搜尋中...`;
+        btn.disabled = true;
+
+        try {
+            // 直接呼叫原本寫給家長用的 API
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "get_parent_dashboard", studentId: studentId })
+            });
+            
+            const data = await response.json();
+            
+            // 如果成功抓到該學生
+            if (data.studentName && data.studentName !== "未知學生") {
+                currentStudentData = data;
+                
+                // 顯示結果區塊
+                document.getElementById('studentProgressResult').classList.remove('hidden');
+                
+                // 更新標頭資訊
+                document.getElementById('ts_studentName').innerText = data.studentName + " 同學";
+                document.getElementById('ts_studentId').innerText = "帳號: " + data.studentId;
+                document.getElementById('ts_statCount').innerText = data.records.length;
+
+                // 畫出圖表與清單
+                renderTeacherSubjectProgress();
+                renderTeacherUnitDetails();
+            } else {
+                alert("找不到該學生資料，請確認帳號是否輸入正確。");
+                document.getElementById('studentProgressResult').classList.add('hidden');
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+            alert("連線失敗，請檢查網路狀態或稍後再試。");
+        } finally {
+            btn.innerHTML = originalBtnHTML;
+            btn.disabled = false;
+        }
+    }
+
+    // 2. 渲染各科進度條
+    function renderTeacherSubjectProgress() {
+        const subjects = [
+            { id: 'chinese', name: '國文', color: 'bg-red-500' },
+            { id: 'math', name: '數學', color: 'bg-blue-500' },
+            { id: 'english', name: '英文', color: 'bg-orange-500' },
+            { id: 'biology', name: '生物', color: 'bg-green-500' },
+            { id: 'physics', name: '理化(物)', color: 'bg-purple-500' },
+            { id: 'chemistry', name: '理化(化)', color: 'bg-pink-500' },
+            { id: 'earth_science', name: '地科', color: 'bg-teal-500' },
+            { id: 'history', name: '歷史', color: 'bg-yellow-600' },
+            { id: 'geography', name: '地理', color: 'bg-emerald-500' },
+            { id: 'civics', name: '公民', color: 'bg-indigo-500' }
+        ];
+
+        const html = subjects.map(s => {
+            const results = currentStudentData.records.filter(r => r.subject === s.id);
+            const avg = results.length ? Math.round(results.reduce((a, b) => a + b.score, 0) / results.length) : 0;
+            
+            return `
+                <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                    <div class="flex justify-between text-[11px] font-black text-slate-500 mb-2 uppercase tracking-widest">
+                        <span>${s.name}</span>
+                        <span class="${avg >= 80 ? 'text-green-500' : (avg >= 60 ? 'text-amber-500' : 'text-slate-400')}">${avg}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                        <div class="${s.color} h-full rounded-full transition-all duration-1000" style="width: ${avg}%"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('ts_subjectGrid').innerHTML = html;
+    }
+
+    // 3. 渲染單元明細
+    function renderTeacherUnitDetails() {
+        const selectedSub = document.getElementById('ts_subPicker').value;
+        const listContainer = document.getElementById('ts_unitDetailList');
+        
+        // 防呆：確認有引入 curriculum_integrated.js
+        if (typeof window.CurriculumLibrary === "undefined") {
+            listContainer.innerHTML = `<div class="p-8 text-red-500 text-sm font-bold text-center">找不到課程單元庫，請確認 HTML <head> 是否有引入 curriculum_integrated.js</div>`;
+            return; 
+        }
+    
+        const curriculumData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[selectedSub] : window.CurriculumLibrary[selectedSub]) || [];
+        let unitsToDisplay = [];
+        
+        // 攤平資料
+        curriculumData.forEach(book => {
+            if(book.units) {
+                book.units.forEach(u => unitsToDisplay.push({ ...u, bookLabel: book.name }));
+            }
+        });
+
+        if (unitsToDisplay.length === 0) {
+            listContainer.innerHTML = `<div class="p-8 text-slate-400 text-sm font-bold text-center">此科目暫無單元資料</div>`;
+            return;
+        }
+
+        listContainer.innerHTML = unitsToDisplay.map(unit => {
+            const match = currentStudentData.records.find(r => r.unitName === unit.name);
+            const score = match ? match.score : null;
+            const scoreColor = score === null ? 'text-slate-300' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
+
+            return `
+                <div class="p-5 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                    <div>
+                        <p class="text-[10px] font-black text-blue-500 tracking-wider mb-1">${unit.bookLabel}</p>
+                        <h4 class="text-sm font-bold text-slate-800">${unit.name}</h4>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-black ${scoreColor}">
+                            ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '-'}
+                        </div>
+                        <p class="text-[10px] font-bold text-slate-400 mt-1">${match ? match.date : '尚未測驗'}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
     </script>
 </body>
 </html>
