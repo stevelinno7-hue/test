@@ -508,10 +508,13 @@ async function prepareExam(count, timeMin) {
     
     // 3. 設定計時器時間 (關鍵修正)
     examInfo = { 
-        subject: subject.toUpperCase(), 
-        title: title, 
-        timeLimit: timeMin * 60 // 使用滑桿選擇的分鐘數轉換為秒
-    };
+    id: examId,
+    title: found ? found.title : (urlParams.get('title') || "未命名測驗"),
+    // 🌟 修正：優先看題庫有沒有 subject，沒有就看網址 ?subject=xxx，再沒有就給 english
+    subject: (found && found.subject) ? found.subject : (urlParams.get('subject') || "english"),
+    questions: selectedQuestions, // 👈 這裡一定要補上這個逗號！
+    timeLimit: timeMin * 60        // 使用滑桿選擇的分鐘數轉換為秒
+};
     timeLeft = examInfo.timeLimit;
     
     // 4. 重置遊戲狀態
