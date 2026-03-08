@@ -357,7 +357,7 @@ function saveProfile() {
 
     async function fetchAnnouncement() {
         // GAS URL 檢查
-        const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "你的_GAS_網址";
+        const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
         
         try {
             const response = await fetch(url, {
