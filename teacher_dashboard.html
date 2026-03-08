@@ -1081,8 +1081,7 @@ function toggleSidebar() {
             btn.disabled = false;
         }
     }
-
-    // 2. 渲染各科進度條
+// 2. 🌟 渲染各科進度條 (老師端 - 具備自動校正與去空白功能)
     function renderTeacherSubjectProgress() {
         const subjects = [
             { id: 'chinese', name: '國文', color: 'bg-red-500' },
@@ -1091,136 +1090,244 @@ function toggleSidebar() {
             { id: 'biology', name: '生物', color: 'bg-green-500' },
             { id: 'physics', name: '理化(物)', color: 'bg-purple-500' },
             { id: 'chemistry', name: '理化(化)', color: 'bg-pink-500' },
-            { id: 'earth_science', name: '地科', color: 'bg-teal-500' },
+            { id: 'earth', name: '地球科學', color: 'bg-teal-500' }, 
             { id: 'history', name: '歷史', color: 'bg-yellow-600' },
             { id: 'geography', name: '地理', color: 'bg-emerald-500' },
             { id: 'civics', name: '公民', color: 'bg-indigo-500' }
         ];
 
+        // 正規化工具：去空白、轉半形、轉小寫
+        const normalizeText = (text) => (text || "").replace(/\s+/g, "").replace("：", ":").toLowerCase();
+
+        // 建立單元名稱對應科目的反查表
+        const unitToSubjectMap = {};
+        const libData = window.CurriculumLibrary || {};
+        const baseData = libData.data || libData;
+        
+        Object.keys(baseData).forEach(subId => {
+            if (Array.isArray(baseData[subId])) {
+                baseData[subId].forEach(book => {
+                    if (book.units) {
+                        book.units.forEach(u => {
+                            unitToSubjectMap[normalizeText(u.name)] = subId;
+                        });
+                    }
+                });
+            }
+        });
+
         const html = subjects.map(s => {
-            const results = currentStudentData.records.filter(r => r.subject === s.id);
-            const avg = results.length ? Math.round(results.reduce((a, b) => a + b.score, 0) / results.length) : 0;
+            const results = currentStudentData.records.filter(r => {
+                const recordTitle = normalizeText(r.activity || r.title || r.unitName);
+                
+                // 優先使用對照表自動校正科目
+                if (unitToSubjectMap[recordTitle]) {
+                    return unitToSubjectMap[recordTitle] === s.id;
+                }
+                
+                // 找不到才用資料庫原始紀錄
+                return (r.subject || "").toLowerCase() === s.id.toLowerCase();
+            });
+
+            const avg = results.length ? Math.round(results.reduce((a, b) => a + Number(b.score), 0) / results.length) : 0;
             
             return `
-                <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                    <div class="flex justify-between text-[11px] font-black text-slate-500 mb-2 uppercase tracking-widest">
-                        <span>${s.name}</span>
-                        <span class="${avg >= 80 ? 'text-green-500' : (avg >= 60 ? 'text-amber-500' : 'text-slate-400')}">${avg}%</span>
-                    </div>
-                    <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                        <div class="${s.color} h-full rounded-full transition-all duration-1000" style="width: ${avg}%"></div>
+                <div class="group cursor-pointer hover:scale-105 transition-transform duration-300" 
+                     onclick="document.getElementById('ts_subPicker').value='${s.id}'; renderTeacherUnitDetails(); document.getElementById('ts_unitDetailList').scrollIntoView({behavior: 'smooth'});">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-colors">
+                        <div class="flex justify-between text-[11px] font-black text-slate-500 mb-3 uppercase tracking-widest">
+                            <span class="text-slate-700">${s.name}平均</span>
+                            <span class="${avg >= 80 ? 'text-green-500' : (avg >= 60 ? 'text-amber-500' : 'text-slate-400')}">${avg}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden shadow-inner">
+                            <div class="${s.color} h-full rounded-full transition-all duration-1000" style="width: ${avg}%"></div>
+                        </div>
                     </div>
                 </div>
             `;
         }).join('');
+        
         document.getElementById('ts_subjectGrid').innerHTML = html;
     }
 
-    // 3. 渲染單元明細
+    // 3. 🌟 渲染單元明細 (加入無敵去空白與分冊卡片UI)
     function renderTeacherUnitDetails() {
         const selectedSub = document.getElementById('ts_subPicker').value;
         const listContainer = document.getElementById('ts_unitDetailList');
         
-        // 防呆：確認有引入 curriculum_integrated.js
-        if (typeof window.CurriculumLibrary === "undefined") {
-            listContainer.innerHTML = `<div class="p-8 text-red-500 text-sm font-bold text-center">找不到課程單元庫，請確認 HTML <head> 是否有引入 curriculum_integrated.js</div>`;
-            return; 
-        }
-    
-        const curriculumData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[selectedSub] : window.CurriculumLibrary[selectedSub]) || [];
-        let unitsToDisplay = [];
-        
-        // 攤平資料
-        curriculumData.forEach(book => {
-            if(book.units) {
-                book.units.forEach(u => unitsToDisplay.push({ ...u, bookLabel: book.name }));
-            }
-        });
+        const libData = window.CurriculumLibrary || {};
+        const curriculumData = (libData.data ? libData.data[selectedSub] : libData[selectedSub]) || [];
 
-        if (unitsToDisplay.length === 0) {
-            listContainer.innerHTML = `<div class="p-8 text-slate-400 text-sm font-bold text-center">此科目暫無單元資料</div>`;
+        if (curriculumData.length === 0) {
+            listContainer.innerHTML = '<div class="p-10 text-center text-slate-400 font-bold bg-white rounded-2xl border border-slate-100 shadow-sm"><i class="fas fa-folder-open mb-3 text-3xl"></i><br>此科目暫無單元資料</div>';
             return;
         }
 
-        listContainer.innerHTML = unitsToDisplay.map(unit => {
-            const match = currentStudentData.records.find(r => r.unitName === unit.name);
-            const score = match ? match.score : null;
-            const scoreColor = score === null ? 'text-slate-300' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
+        const normalizeText = (text) => (text || "").replace(/\s+/g, "").replace("：", ":").toLowerCase();
+
+        const html = curriculumData.map(book => {
+            if (!book.units || book.units.length === 0) return '';
+
+            const unitsHtml = book.units.map(unit => {
+                const matches = currentStudentData.records.filter(r => {
+                    const recordName = normalizeText(r.unitName || r.activity || r.title);
+                    const targetName = normalizeText(unit.name);
+                    return recordName === targetName;
+                });
+                
+                const bestRecord = matches.length > 0 ? matches.sort((a, b) => b.score - a.score)[0] : null;
+                const score = bestRecord ? bestRecord.score : null;
+                const scoreColor = score === null ? 'text-slate-200' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
+
+                return `
+                    <div class="p-5 flex justify-between items-center hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 group">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 tracking-wider mb-1 uppercase group-hover:text-blue-400 transition-colors">${book.name}</p>
+                            <h4 class="text-sm font-bold text-slate-800">${unit.name}</h4>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${(unit.topics || unit.tags || []).slice(0, 3).map(t => `<span class="text-[9px] bg-white border border-slate-200 text-slate-400 px-1.5 py-0.5 rounded-md">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-black ${scoreColor}">
+                                ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '<span class="text-lg">----</span>'}
+                            </div>
+                            <p class="text-[10px] font-bold text-slate-400 mt-1">
+                                ${bestRecord ? '<i class="far fa-calendar-check mr-1"></i>' + (bestRecord.date || '已測驗') : '尚未測驗'}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
 
             return `
-                <div class="p-5 flex justify-between items-center hover:bg-slate-50 transition-colors">
-                    <div>
-                        <p class="text-[10px] font-black text-blue-500 tracking-wider mb-1">${unit.bookLabel}</p>
-                        <h4 class="text-sm font-bold text-slate-800">${unit.name}</h4>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-black ${scoreColor}">
-                            ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '-'}
-                        </div>
-                        <p class="text-[10px] font-bold text-slate-400 mt-1">${match ? match.date : '尚未測驗'}</p>
-                    </div>
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
+                    ${unitsHtml}
                 </div>
             `;
         }).join('');
+
+        listContainer.innerHTML = html;
     }
-async function loadForumForAdmin() {
-    const response = await fetch(`${GAS_URL}?action=get_forum_posts`);
-    const posts = await response.json();
-    const container = document.getElementById('adminPostList');
-    container.innerHTML = '';
 
-    // 過濾出主貼文 (沒有 parentId 的)
-    const mainPosts = posts.filter(p => !p.parentId).reverse();
+    // ==========================================
+    // 🌟 討論區管理：相關功能 (包含強制刪除)
+    // ==========================================
+    async function refreshForum() {
+        const forumList = document.getElementById('forumList');
+        if (!forumList) return; // 防呆，如果畫面還沒載入
+        
+        forumList.innerHTML = '<div class="text-center p-10"><i class="fas fa-spinner fa-spin text-3xl text-blue-500"></i><p class="mt-4 text-slate-500 font-bold">正在讀取討論區資料...</p></div>';
+        
+        try {
+            const response = await fetch(GAS_URL + "?action=get_forum_posts");
+            const data = await response.json();
+            
+            if (!data || data.length === 0) {
+                forumList.innerHTML = '<div class="text-center p-10 bg-slate-50 rounded-2xl border border-slate-100"><i class="fas fa-comments text-4xl text-slate-300 mb-3"></i><p class="text-slate-500 font-bold">目前討論區尚無任何貼文</p></div>';
+                return;
+            }
+            
+            // 過濾掉可能混入的舊版資料結構
+            const validPosts = data.filter(p => !p.parentId).reverse();
 
-    mainPosts.forEach(post => {
-        container.innerHTML += `
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500">${post.author[0]}</div>
-                        <div>
-                            <p class="text-sm font-bold text-slate-800">${post.author} <span class="text-[10px] text-slate-400 font-normal">${post.date}</span></p>
-                            <h4 class="font-bold text-blue-600">${post.title}</h4>
+            let html = '';
+            validPosts.forEach(post => {
+                html += `
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 transition-all hover:shadow-md">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-lg">${post.author || '匿名學生'}</h3>
+                                <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md mt-1 inline-block"><i class="far fa-clock mr-1"></i>${post.timestamp || post.date || ''}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="text-[10px] font-black text-slate-400 border border-slate-200 px-2 py-1 rounded-md hidden md:inline-block bg-slate-50">ID: ${post.id}</span>
+                                <button onclick="deleteForumPost('${post.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-lg text-xs font-black transition-colors border border-red-100 shadow-sm flex items-center gap-1">
+                                    <i class="fas fa-trash-alt"></i> 刪除
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm text-slate-700 mb-5 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed">${post.content}</p>
+
+                        <div class="mb-5 border-l-4 ${post.reply ? 'border-green-500 bg-green-50' : 'border-slate-300 bg-slate-50'} p-4 rounded-r-xl">
+                            <p class="text-[10px] font-black ${post.reply ? 'text-green-600' : 'text-slate-500'} uppercase mb-1">
+                                ${post.reply ? '<i class="fas fa-reply mr-1"></i> 最新回覆 (' + (post.reply.author || '教師') + ')' : '尚未回覆'}
+                            </p>
+                            <p class="text-sm font-bold ${post.reply ? 'text-slate-700' : 'text-slate-400'}">${post.reply ? post.reply.content : '目前還沒有人回覆這則貼文。'}</p>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <input id="admin-input-${post.id}" type="text" placeholder="以教師身分補充回覆..." class="flex-grow bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-all font-bold text-slate-700">
+                            <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-md flex items-center gap-2 whitespace-nowrap">
+                                <i class="fas fa-paper-plane"></i> 送出
+                            </button>
                         </div>
                     </div>
-                    <span class="px-3 py-1 bg-slate-50 text-slate-500 text-[10px] rounded-full border border-slate-100">ID: ${post.id}</span>
-                </div>
-                
-                <p class="text-sm text-slate-600 mb-4 bg-slate-50 p-4 rounded-2xl">${post.content}</p>
+                `;
+            });
+            forumList.innerHTML = html;
+        } catch (error) {
+            console.error("讀取討論區錯誤:", error);
+            forumList.innerHTML = '<div class="text-center p-10 text-red-500 font-bold"><i class="fas fa-exclamation-triangle mr-2"></i>無法連線至討論區，請檢查網路狀態。</div>';
+        }
+    }
 
-                <div class="mb-4 border-l-4 border-blue-500 pl-4">
-                    <p class="text-[10px] font-black text-blue-500 uppercase">Current Reply (${post.reply ? post.reply.author : 'None'})</p>
-                    <p class="text-xs text-slate-500 italic">${post.reply ? post.reply.content.substring(0, 100) + '...' : '尚未回覆'}</p>
-                </div>
+    async function adminReply(postId) {
+        const content = document.getElementById(`admin-input-${postId}`).value.trim();
+        if (!content) return alert("⚠️ 請先輸入回覆內容！");
 
-                <div class="flex gap-2">
-                    <input id="admin-input-${post.id}" type="text" placeholder="以教師身分補充回覆..." class="flex-grow bg-slate-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    <button onclick="adminReply(${post.id})" class="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all">
-                        送出
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-}
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        const authorName = user ? user.name + " 老師" : "教師";
 
-async function adminReply(postId) {
-    const content = document.getElementById(`admin-input-${postId}`).value;
-    if(!content) return alert("請輸入內容");
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "admin_reply",
+                    id: postId,
+                    author: authorName,
+                    content: content
+                })
+            });
+            
+            const res = await response.json();
+            if (res.result === "success") {
+                alert("✅ 回覆成功！");
+                refreshForum();
+            } else {
+                alert("❌ 回覆失敗：" + res.message);
+            }
+        } catch (error) {
+            console.error("回覆錯誤:", error);
+            alert("網路連線異常，請稍後再試。");
+        }
+    }
 
-    await fetch(GAS_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: "admin_reply",
-            id: postId,
-            content: content
-        })
-    });
-    
-    alert("回覆已更新");
-    loadForumForAdmin();
-}
-         
-    </script>
+    async function deleteForumPost(postId) {
+        if (!confirm("⚠️ 警告：確定要強制刪除這筆貼文嗎？此動作將從資料庫完全抹除，無法復原！")) {
+            return;
+        }
+
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "delete_forum_post", id: postId })
+            });
+            
+            const res = await response.json();
+            if (res.result === "success") {
+                alert("🗑️ 貼文已成功刪除！");
+                refreshForum(); 
+            } else {
+                alert("❌ 刪除失敗：" + (res.message || "未知錯誤"));
+            }
+        } catch (error) {
+            console.error("刪除發生錯誤:", error);
+            alert("網路連線異常，請稍後再試。");
+        }
+    }
+
+</script>
 </body>
 </html>
