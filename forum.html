@@ -443,50 +443,38 @@ async function addPost() {
     // 假設你的 renderPost 是直接 append，這裡可能需要微調 loadPosts 邏輯
     
     try {
-        // 🚀 2. 將「問題」同步送往雲端存檔
+        // 🚀 第一步：先把學生的提問存到試算表 (action: add_forum_post)
         await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "add_forum_post",
                 id: postId,
-                username: user.username,
-                name: user.name,
-                title: t,
-                content: c,
-                date: postDate
+                // ... 其他欄位 ...
             })
         });
+        
+        await loadPosts(); // 立即顯示「分析中」
 
-        // 刷新一次列表，確保資料與雲端同步（此時 AI 還沒回，會顯示分析中）
-        await loadPosts();
-
-        // 🚀 3. 啟動 AI 分析 (背景執行，不阻塞 UI)
-        console.log("AI 開始思考...");
+        // 🚀 第二步：呼叫你的 RealAITutor 拿答案
+        // 注意：這裡拿到的會是包含 "📘 AI 助教解答" 的文字
         const aiResponse = await RealAITutor.askGemini(t, c);
 
-        // 🚀 4. AI 回完後，更新雲端試算表
+        // 🚀 第三步：把這個答案存回試算表 (action: update_forum_reply)
         await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "update_forum_reply",
                 id: postId,
                 replyAuthor: RealAITutor.name,
-                replyContent: aiResponse
+                replyContent: aiResponse // 存入帶有 Markdown 排版的內容
             })
         });
 
-        // 🚀 5. 最終刷新：讓「分析中」變身為「AI 助教回覆」
-        await loadPosts();
+        await loadPosts(); // 再次刷新，分析中變身為解答
 
-    } catch (err) {
-        console.error("發送過程出錯:", err);
-        alert("同步至雲端時發生錯誤，請檢查網路連線。");
-    }
+    } catch (err) { ... }
 }
-    // 初始加載
-    loadPosts();
-    // ... (上面原本的 Sidebar、Auth、addPost 等程式碼保持不變) ...
-
+    //
     // ==========================================
     // ✨ 新增功能：偵測是否有來自「錯題本」的提問
     // ==========================================
