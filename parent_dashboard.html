@@ -10,8 +10,7 @@
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
 </head>
 <body class="bg-gray-50 min-h-screen text-slate-900">
-
-    <nav class="bg-slate-900 text-white p-6 shadow-xl sticky top-0 z-50">
+<nav class="bg-slate-900 text-white p-6 shadow-xl sticky top-0 z-50">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
@@ -22,9 +21,16 @@
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">即時學習追蹤系統</p>
                 </div>
             </div>
-            <div class="text-right">
-                <p class="text-sm font-bold" id="studentName">讀取中...</p>
-                <p class="text-[10px] text-blue-400 font-mono" id="studentIdDisplay">學號: ----</p>
+            
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-bold" id="studentName">讀取中...</p>
+                    <p class="text-[10px] text-blue-400 font-mono" id="studentIdDisplay">學號: ----</p>
+                </div>
+                
+                <button onclick="logout()" class="w-10 h-10 bg-slate-800 hover:bg-red-500 rounded-xl flex items-center justify-center transition-colors shadow-sm border border-slate-700 hover:border-red-400 group">
+                    <i class="fas fa-sign-out-alt text-slate-400 group-hover:text-white transition-colors"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -72,123 +78,152 @@
                 </div>
         </div>
     </main>
-
-    <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; // 💡 替換成你的真實 GAS 網址
-        let remoteData = { records: [] };
-        // 🌟 從 localStorage 讀取剛剛登入時存起來的綁定小孩帳號
-        // 如果讀不到，才拿 S12345 當作備用的防呆測試帳號
-        const targetStudentId = localStorage.getItem('childUsername') || "S12345";
-        async function fetchDashboardData() {
-            try {
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "get_parent_dashboard", studentId: targetStudentId })
-                });
-                remoteData = await response.json();
-                
-                // 更新基礎資訊
-                document.getElementById('studentName').innerText = remoteData.studentName + " 同學";
-                document.getElementById('studentIdDisplay').innerText = "學號: " + remoteData.studentId;
-                document.getElementById('statCount').innerText = remoteData.records.length;
-
-                renderSubjectProgress();
-                renderUnitDetails();
-            } catch (error) {
-                console.error("Data fetch error:", error);
-                alert("無法連線至雲端資料庫，請檢查網路設定。");
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; // 💡 你的真實 GAS 網址
+    let remoteData = { records: [] };
+    
+    // 🌟 強化版：多管齊下抓取綁定的小孩帳號
+    let targetStudentId = localStorage.getItem('childUsername');
+    
+    // 如果 childUsername 抓不到，嘗試從登入時整包的 currentUser 裡面抓
+    if (!targetStudentId) {
+        try {
+            const userObj = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            // 在你的設定中，家長綁定的學生帳號是存在 grade (年級或綁定帳號) 欄位裡
+            if (userObj.role === 'parent' && userObj.grade) {
+                targetStudentId = userObj.grade;
             }
+        } catch(e) { 
+            console.warn("無法解析 currentUser"); 
         }
+    }
+    
+    // 最終防呆：如果都沒抓到，才用備用帳號
+    if (!targetStudentId) {
+        console.error("⚠️ 找不到綁定的學生帳號，使用預設測試帳號 S12345");
+        targetStudentId = "S12345";
+    } else {
+        console.log("✅ 成功抓取綁定帳號：", targetStudentId);
+    }
 
-        function renderSubjectProgress() {
-           const subjects = [
-                { id: 'chinese', name: '國文', color: 'bg-red-500' },
-                { id: 'math', name: '數學', color: 'bg-blue-500' },
-                { id: 'english', name: '英文', color: 'bg-orange-500' },
-                { id: 'biology', name: '生物', color: 'bg-green-500' },
-                { id: 'physics', name: '理化(物理)', color: 'bg-purple-500' },
-                { id: 'chemistry', name: '理化(化學)', color: 'bg-pink-500' },
-                { id: 'earth_science', name: '地球科學', color: 'bg-teal-500' },
-                { id: 'history', name: '歷史', color: 'bg-yellow-600' },
-                { id: 'geography', name: '地理', color: 'bg-emerald-500' },
-                { id: 'civics', name: '公民', color: 'bg-indigo-500' }
-            ];
-
-            const html = subjects.map(s => {
-                const results = remoteData.records.filter(r => r.subject === s.id);
-                const avg = results.length ? Math.round(results.reduce((a, b) => a + b.score, 0) / results.length) : 0;
-                
-                return `
-                    <div>
-                        <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
-                            <span>${s.name}平均精熟度</span>
-                            <span class="${avg >= 80 ? 'text-green-500' : 'text-slate-600'}">${avg}%</span>
-                        </div>
-                        <div class="w-full bg-slate-100 h-4 rounded-full p-1 border border-slate-50">
-                            <div class="${s.color} h-full rounded-full transition-all duration-1000 shadow-sm shadow-current" style="width: ${avg}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            document.getElementById('subjectGrid').innerHTML = html;
-        }
-
-       function renderUnitDetails() {
-            const selectedSub = document.getElementById('subPicker').value;
-            const listContainer = document.getElementById('unitDetailList');
-            
-            // 🛡️ 防呆：檢查 CurriculumLibrary 是否存在
-            if (typeof window.CurriculumLibrary === "undefined") {
-                console.error("找不到單元資料！請檢查 curriculum_integrated.js 檔案是否正確載入。");
-                listContainer.innerHTML = `
-                    <div class="p-8 text-center text-red-500 font-bold bg-red-50 rounded-xl m-4 border border-red-200">
-                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                        <p>無法載入課程單元資料</p>
-                        <p class="text-xs text-red-400 mt-1">請檢查 JS 檔案路徑與變數名稱設定</p>
-                    </div>`;
-                return; // 直接中斷執行，防止報錯
-            }
-        
-            // 🌟 核心：撈取資料
-            const curriculumData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[selectedSub] : window.CurriculumLibrary[selectedSub]) || [];
-            // 攤平所有冊別 (Books) 的單元
-            let unitsToDisplay = [];
-            curriculumData.forEach(book => {
-                book.units.forEach(u => {
-                    unitsToDisplay.push({ ...u, bookLabel: book.name });
-                });
+    async function fetchDashboardData() {
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "get_parent_dashboard", studentId: targetStudentId })
             });
+            remoteData = await response.json();
+            
+            // 更新基礎資訊
+            document.getElementById('studentName').innerText = remoteData.studentName + " 同學";
+            document.getElementById('studentIdDisplay').innerText = "學號: " + remoteData.studentId;
+            document.getElementById('statCount').innerText = remoteData.records.length;
 
-            listContainer.innerHTML = unitsToDisplay.map(unit => {
-                // 比對 GAS 回傳的成績
-                const match = remoteData.records.find(r => r.unitName === unit.name);
-                const score = match ? match.score : null;
-                const scoreColor = score === null ? 'text-slate-200' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
+            renderSubjectProgress();
+            renderUnitDetails();
+        } catch (error) {
+            console.error("Data fetch error:", error);
+            alert("無法連線至雲端資料庫，請檢查網路設定。");
+        }
+    }
 
-                return `
-                    <div class="p-8 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-slate-50 transition-all group">
-                        <div class="space-y-2">
-                            <p class="text-[10px] font-black text-blue-500 uppercase tracking-tighter">${unit.bookLabel}</p>
-                            <h4 class="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors">${unit.name}</h4>
-                            <div class="flex flex-wrap gap-2">
-                                ${unit.topics.map(t => `<span class="px-2 py-1 bg-slate-100 text-slate-400 text-[9px] font-bold rounded-md border border-slate-200 uppercase tracking-tighter italic">${t}</span>`).join('')}
-                            </div>
-                        </div>
-                        <div class="mt-4 md:mt-0 text-right">
-                            <div class="text-4xl font-black ${scoreColor} tracking-tighter">
-                                ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '----'}
-                            </div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase mt-1">
-                                ${match ? '完成日期：' + match.date : '尚未測驗'}
-                            </p>
+    function renderSubjectProgress() {
+        const subjects = [
+            { id: 'chinese', name: '國文', color: 'bg-red-500' },
+            { id: 'math', name: '數學', color: 'bg-blue-500' },
+            { id: 'english', name: '英文', color: 'bg-orange-500' },
+            { id: 'biology', name: '生物', color: 'bg-green-500' },
+            { id: 'physics', name: '理化(物理)', color: 'bg-purple-500' },
+            { id: 'chemistry', name: '理化(化學)', color: 'bg-pink-500' },
+            { id: 'earth_science', name: '地球科學', color: 'bg-teal-500' },
+            { id: 'history', name: '歷史', color: 'bg-yellow-600' },
+            { id: 'geography', name: '地理', color: 'bg-emerald-500' },
+            { id: 'civics', name: '公民', color: 'bg-indigo-500' }
+        ];
+
+        const html = subjects.map(s => {
+            const results = remoteData.records.filter(r => r.subject === s.id);
+            const avg = results.length ? Math.round(results.reduce((a, b) => a + b.score, 0) / results.length) : 0;
+            
+            return `
+                <div>
+                    <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
+                        <span>${s.name}平均精熟度</span>
+                        <span class="${avg >= 80 ? 'text-green-500' : 'text-slate-600'}">${avg}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-4 rounded-full p-1 border border-slate-50">
+                        <div class="${s.color} h-full rounded-full transition-all duration-1000 shadow-sm shadow-current" style="width: ${avg}%"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('subjectGrid').innerHTML = html;
+    }
+
+    function renderUnitDetails() {
+        const selectedSub = document.getElementById('subPicker').value;
+        const listContainer = document.getElementById('unitDetailList');
+        
+        // 🛡️ 防呆：檢查 CurriculumLibrary 是否存在
+        if (typeof window.CurriculumLibrary === "undefined") {
+            console.error("找不到單元資料！請檢查 curriculum_integrated.js 檔案是否正確載入。");
+            listContainer.innerHTML = `
+                <div class="p-8 text-center text-red-500 font-bold bg-red-50 rounded-xl m-4 border border-red-200">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p>無法載入課程單元資料</p>
+                    <p class="text-xs text-red-400 mt-1">請檢查 JS 檔案路徑與變數名稱設定</p>
+                </div>`;
+            return; 
+        }
+    
+        // 🌟 核心：撈取資料
+        const curriculumData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[selectedSub] : window.CurriculumLibrary[selectedSub]) || [];
+        // 攤平所有冊別 (Books) 的單元
+        let unitsToDisplay = [];
+        curriculumData.forEach(book => {
+            book.units.forEach(u => {
+                unitsToDisplay.push({ ...u, bookLabel: book.name });
+            });
+        });
+
+        listContainer.innerHTML = unitsToDisplay.map(unit => {
+            // 比對 GAS 回傳的成績
+            const match = remoteData.records.find(r => r.unitName === unit.name);
+            const score = match ? match.score : null;
+            const scoreColor = score === null ? 'text-slate-200' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
+
+            return `
+                <div class="p-8 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-slate-50 transition-all group">
+                    <div class="space-y-2">
+                        <p class="text-[10px] font-black text-blue-500 uppercase tracking-tighter">${unit.bookLabel}</p>
+                        <h4 class="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors">${unit.name}</h4>
+                        <div class="flex flex-wrap gap-2">
+                            ${unit.topics.map(t => `<span class="px-2 py-1 bg-slate-100 text-slate-400 text-[9px] font-bold rounded-md border border-slate-200 uppercase tracking-tighter italic">${t}</span>`).join('')}
                         </div>
                     </div>
-                `;
-            }).join('');
-        }
+                    <div class="mt-4 md:mt-0 text-right">
+                        <div class="text-4xl font-black ${scoreColor} tracking-tighter">
+                            ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '----'}
+                        </div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mt-1">
+                            ${match ? '完成日期：' + match.date : '尚未測驗'}
+                        </p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 
-        // 啟動頁面
-        window.onload = fetchDashboardData;
-    </script>
+    // 🌟 登出功能
+    function logout() {
+        if(confirm("確定要登出家長監護中心嗎？")) {
+            localStorage.clear(); // 清除本地紀錄的帳號資訊
+            window.location.href = "index.html"; // 跳轉回登入頁面
+        }
+    }
+
+    // 啟動頁面
+    window.onload = fetchDashboardData;
+</script>
 </body>
 </html>
