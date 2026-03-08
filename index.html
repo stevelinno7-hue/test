@@ -554,69 +554,85 @@
         </div>
     </div>
 
-    <script>
-        // 🌟 動態抓取公告邏輯
-        let currentAnnVersion = null; // 記錄當前從雲端抓下來的版本號
+   <script>
+    // 🌟 全站公告邏輯：確保每個帳號在每則新公告發布時都只顯示一次
+    let currentAnnVersion = null; 
 
-        async function fetchAnnouncement() {
-            // 注意：請確保這裡的網址是你最新部署的 GAS 網址！
-            const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+    async function fetchAnnouncement() {
+        // GAS URL 檢查
+        const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "你的_GAS_網址";
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({ action: "get_announcement" })
+            });
+            const resData = await response.json();
             
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "get_announcement" })
-                });
-                const resData = await response.json();
+            // 判斷公告是否處於「啟用」狀態
+            if (resData.result === "success" && resData.data && resData.data.isActive) {
+                const ann = resData.data;
+                currentAnnVersion = ann.version; 
+
+                // 🌟 關鍵邏輯：取得當前登入者 ID（確保不同帳號登入有獨立的已讀紀錄）
+                // 請確認你的 HTML 導覽列中有 id="teacherName" 的元素，或改用你的用戶變數
+                const currentUser = document.getElementById('teacherName')?.innerText.trim() || "guest";
+                const storageKey = `read_ann_${currentUser}`;
                 
-                // 如果後端有資料，且老師設定為 isActive: true
-                if (resData.result === "success" && resData.data && resData.data.isActive) {
-                    const ann = resData.data;
-                    currentAnnVersion = ann.version; // 將雲端的版本號存起來
+                // 從瀏覽器取出該使用者最後讀過的版本號
+                const lastReadVersion = localStorage.getItem(storageKey);
 
-                    // 檢查瀏覽器是不是已經看過這個版本了
-                    const readVersion = localStorage.getItem("read_announcement");
-                    if (readVersion !== currentAnnVersion) {
-                        // 沒看過！把內容塞進 HTML 裡
-                        document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
-                        document.getElementById('annTitleDisplay').innerText = ann.title;
-                        // 把換行符號 \n 轉成 <br> 以支援多行顯示
-                        document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
-                        
-                        // 延遲 0.5 秒彈出，視覺效果更順暢
-                        setTimeout(showAnnouncement, 500);
-                    }
+                // 如果 版本號不一致（代表有新公告）或 從未讀過
+                if (lastReadVersion !== currentAnnVersion) {
+                    renderAnnouncement(ann);
                 }
-            } catch (error) {
-                console.error("無法抓取公告:", error);
             }
+        } catch (error) {
+            console.error("無法抓取公告:", error);
         }
+    }
 
-        function showAnnouncement() {
-            const modal = document.getElementById('announcementModal');
-            const content = document.getElementById('announcementContent');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-            }, 10);
+    // 將資料塞入 HTML 並顯示
+    function renderAnnouncement(ann) {
+        document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
+        document.getElementById('annTitleDisplay').innerText = ann.title;
+        // 支援換行符號
+        document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
+        
+        // 延遲顯示，增加視覺緩衝感
+        setTimeout(showAnnouncement, 500);
+    }
+
+    function showAnnouncement() {
+        const modal = document.getElementById('announcementModal');
+        const content = document.getElementById('announcementContent');
+        modal.classList.remove('hidden');
+        // Tailwind 動畫觸發
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeAnnouncement() {
+        const modal = document.getElementById('announcementModal');
+        const content = document.getElementById('announcementContent');
+        
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        
+        setTimeout(() => { 
+            modal.classList.add('hidden'); 
+        }, 300);
+        
+        // 🌟 使用者點擊「我知道了」後，立即標記該帳號已讀取此版本
+        if (currentAnnVersion) {
+            const currentUser = document.getElementById('teacherName')?.innerText.trim() || "guest";
+            localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
         }
+    }
 
-        function closeAnnouncement() {
-            const modal = document.getElementById('announcementModal');
-            const content = document.getElementById('announcementContent');
-            modal.classList.add('opacity-0');
-            content.classList.add('scale-95');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-            
-            // 使用者按關閉了！把這個版本號記錄到瀏覽器，下次就不會再跳出來
-            if (currentAnnVersion) {
-                localStorage.setItem("read_announcement", currentAnnVersion);
-            }
-        }
-
-        // 網頁載入完成後，偷偷去後端問有沒有新公告
-        window.addEventListener('DOMContentLoaded', fetchAnnouncement);
-    </script>
+    window.addEventListener('DOMContentLoaded', fetchAnnouncement);
+</script>
 </body>
 </html>
