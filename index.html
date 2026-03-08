@@ -553,71 +553,82 @@
             </div>
         </div>
     </div>
-
-   <script>
+<script>
     // 🌟 全站公告邏輯：確保每個帳號在每則新公告發布時都只顯示一次
     let currentAnnVersion = null; 
 
+    // 1. 學生端/用戶端檢查邏輯
     async function fetchAnnouncement() {
-        // GAS URL 檢查
+        // 注意：請確保 GAS_URL 已經在外部定義，或直接寫入網址
         const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "你的_GAS_網址";
-        
+
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ action: "get_announcement" })
             });
             const resData = await response.json();
-            
-            // 判斷公告是否處於「啟用」狀態
+
+            // 如果後端回傳成功，且公告是啟用狀態 (isActive)
             if (resData.result === "success" && resData.data && resData.data.isActive) {
                 const ann = resData.data;
-                currentAnnVersion = ann.version; 
-
-                // 🌟 關鍵邏輯：取得當前登入者 ID（確保不同帳號登入有獨立的已讀紀錄）
-                // 請確認你的 HTML 導覽列中有 id="teacherName" 的元素，或改用你的用戶變數
-                const currentUser = document.getElementById('teacherName')?.innerText.trim() || "guest";
-                const storageKey = `read_ann_${currentUser}`;
+                currentAnnVersion = ann.version; // 取得 GAS 產生的 v_xxxx 版本號
                 
-                // 從瀏覽器取出該使用者最後讀過的版本號
-                const lastReadVersion = localStorage.getItem(storageKey);
+                // 🌟 關鍵：取得當前帳號名稱 (請確認 HTML 中有這個 ID，或改用你的變數)
+                // 這裡嘗試抓 userName 或 teacherName，如果都沒有就用 guest
+                const currentUser = (document.getElementById('userName') || document.getElementById('teacherName'))?.innerText.trim() || "guest";
+                
+                // 檢查本地瀏覽器紀錄
+                const readVersion = localStorage.getItem(`read_ann_${currentUser}`);
 
-                // 如果 版本號不一致（代表有新公告）或 從未讀過
-                if (lastReadVersion !== currentAnnVersion) {
+                // 如果本地紀錄的版本號與雲端不同，就顯示公告
+                if (readVersion !== currentAnnVersion) {
                     renderAnnouncement(ann);
                 }
             }
         } catch (error) {
-            console.error("無法抓取公告:", error);
+            console.error("抓取公告時發生錯誤:", error);
         }
     }
 
-    // 將資料塞入 HTML 並顯示
+    // 2. 將資料塞入 HTML 並準備顯示
     function renderAnnouncement(ann) {
-        document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
-        document.getElementById('annTitleDisplay').innerText = ann.title;
-        // 支援換行符號
-        document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
+        const dateEl = document.getElementById('annDateDisplay');
+        const titleEl = document.getElementById('annTitleDisplay');
+        const contentEl = document.getElementById('annContentDisplay');
+
+        if (dateEl) dateEl.innerText = ann.date || "最新消息";
+        if (titleEl) titleEl.innerText = ann.title;
+        if (contentEl) {
+            // 將換行符 \n 轉為 <br> 標籤
+            contentEl.innerHTML = ann.content.replace(/\n/g, '<br>');
+        }
         
-        // 延遲顯示，增加視覺緩衝感
+        // 延遲 0.5 秒彈出，視覺效果更平滑
         setTimeout(showAnnouncement, 500);
     }
 
+    // 3. 執行彈窗顯示動畫
     function showAnnouncement() {
         const modal = document.getElementById('announcementModal');
         const content = document.getElementById('announcementContent');
+        if (!modal || !content) return;
+
         modal.classList.remove('hidden');
-        // Tailwind 動畫觸發
+        // 透過觸發重繪來啟動 Tailwind 動畫
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             content.classList.remove('scale-95');
         }, 10);
     }
 
+    // 4. 關閉公告並標記為「已讀」
     function closeAnnouncement() {
         const modal = document.getElementById('announcementModal');
         const content = document.getElementById('announcementContent');
-        
+        if (!modal || !content) return;
+
+        // 縮小與淡出動畫
         modal.classList.add('opacity-0');
         content.classList.add('scale-95');
         
@@ -625,13 +636,14 @@
             modal.classList.add('hidden'); 
         }, 300);
         
-        // 🌟 使用者點擊「我知道了」後，立即標記該帳號已讀取此版本
+        // 🌟 核心：紀錄此帳號已看過這個版本
         if (currentAnnVersion) {
-            const currentUser = document.getElementById('teacherName')?.innerText.trim() || "guest";
+            const currentUser = (document.getElementById('userName') || document.getElementById('teacherName'))?.innerText.trim() || "guest";
             localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
         }
     }
 
+    // 初始化：網頁載入完成後執行
     window.addEventListener('DOMContentLoaded', fetchAnnouncement);
 </script>
 </body>
