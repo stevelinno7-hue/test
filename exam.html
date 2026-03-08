@@ -840,15 +840,14 @@ window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
             setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
         }
 
-    async function uploadToCloud(username, activityName, score, fullData) {
-    // 1. 取得當前網址參數中的科目 (例如 ?subject=english)
+   async function uploadToCloud(username, activityName, score, fullData) {
+    // 優先順序：測驗資料內的科目 > 網址參數 > 預設值
     const urlParams = new URLSearchParams(window.location.search);
-    const currentSubject = urlParams.get('subject') || "english"; // 💡 建議預設改為常見科目或從 fullData 抓
+    const currentSubject = fullData.subject || urlParams.get('subject') || "未分類"; 
 
-    // 2. 重新建構要存入 detail 的物件
     const detailToSave = {
-        subject: currentSubject,           // 🌟 確保這行有加進去！
-        unitName: activityName,            // 儲存單元名稱
+        subject: currentSubject, // 🌟 這樣科目就會被傳入 Google Sheets
+        unitName: activityName,
         grade: fullData.grade || "國九",
         totalCount: fullData.totalCount,
         correctCount: fullData.correctCount,
