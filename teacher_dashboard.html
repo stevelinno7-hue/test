@@ -1376,89 +1376,71 @@ function toggleSidebar() {
             let html = '';
             // 翻轉陣列，讓最新的貼文顯示在最上面
             const posts = Array.isArray(data) ? data.reverse() : [];
-posts.forEach(post => {
-                // 💡 1. 抓取所有可能的文字內容與標題
-                const postTitle = post.title || post.subject || '無標題'; 
-                const questionText = post.content || post.question || post.text || '無提問內容';
-                const aiText = post.aiReply || post.ai_reply || post.reply_content || post.reply?.content || '';
-                const teacherText = post.adminReply || post.admin_reply || post.teacher_reply || post.teacherReply || '';
-                
-                // 產生回覆區塊的 HTML
-                let replyBlocksHtml = '';
+            posts.forEach(post => {
+                const postTitle = post.title || '無標題'; 
+                const questionText = post.content || '無提問內容';
+                const aiText = post.aiReply || '';
 
-                // 如果有 AI 回覆，畫出綠色區塊
+                // AI 區塊
+                let aiHtml = '';
                 if (aiText) {
-                    replyBlocksHtml += `
-                        <div class="mb-3 border-l-4 border-green-500 bg-green-50 p-4 rounded-r-xl">
-                            <p class="text-[10px] font-black text-green-600 uppercase mb-2 tracking-widest">
-                                <i class="fas fa-robot mr-1"></i> 系統 / AI 解析
-                            </p>
-                            <p class="text-sm font-bold text-slate-700 whitespace-pre-wrap">${aiText}</p>
-                        </div>
-                    `;
+                    aiHtml = `
+                    <div class="mb-3 border-l-4 border-emerald-500 bg-emerald-50 p-4 rounded-r-xl">
+                        <p class="text-[10px] font-black text-emerald-600 uppercase mb-2"><i class="fas fa-robot mr-1"></i> 系統 / AI 解析</p>
+                        <p class="text-sm font-bold text-slate-700 whitespace-pre-wrap">${aiText}</p>
+                    </div>`;
                 }
 
-                // 如果有 教師回覆，畫出藍色區塊 (接在 AI 回覆下方)
-                if (teacherText) {
-                    replyBlocksHtml += `
-                        <div class="mb-5 border-l-4 border-blue-500 bg-blue-50 p-4 rounded-r-xl shadow-sm">
-                            <p class="text-[10px] font-black text-blue-600 uppercase mb-2 tracking-widest">
-                                <i class="fas fa-chalkboard-teacher mr-1"></i> 老師親自回覆
-                            </p>
-                            <p class="text-sm font-bold text-slate-800 whitespace-pre-wrap">${teacherText}</p>
-                        </div>
-                    `;
-                }
-
-                // 如果都沒有回覆
-                if (!aiText && !teacherText) {
-                    replyBlocksHtml += `
-                        <div class="mb-5 border-l-4 border-slate-300 bg-slate-50 p-4 rounded-r-xl">
-                            <p class="text-sm font-bold text-slate-400"><i class="fas fa-hourglass-half mr-2"></i>目前尚未有任何解析或回覆。</p>
-                        </div>
-                    `;
+                // ✨ 所有留言區塊 (老師 + 學生)
+                let repliesHtml = '';
+                if (post.replies && post.replies.length > 0) {
+                    repliesHtml = post.replies.map(r => {
+                        if (r.isTeacher) {
+                            return `
+                            <div class="mb-2 p-3 rounded-xl border-l-4 border-indigo-500 bg-indigo-50 shadow-sm ml-6">
+                                <span class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">老師親自回覆</span>
+                                <p class="text-sm font-bold text-slate-800 mt-1 whitespace-pre-wrap">${r.content}</p>
+                            </div>`;
+                        } else {
+                            return `
+                            <div class="mb-2 p-3 bg-slate-50 rounded-xl border border-slate-100 ml-6 flex gap-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0">${r.author[0]}</div>
+                                <div>
+                                    <span class="text-xs font-bold text-slate-700">${r.author}</span>
+                                    <p class="text-xs text-slate-600 mt-1 whitespace-pre-wrap">${r.content}</p>
+                                </div>
+                            </div>`;
+                        }
+                    }).join('');
                 }
 
                 html += `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 transition-all hover:shadow-md">
-                        
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black shadow-inner">
-                                    ${(post.author || '生')[0]}
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-slate-800 text-base">${post.author || '匿名學生'}</h3>
-                                    <span class="text-[10px] font-bold text-slate-400"><i class="far fa-clock mr-1"></i>${post.timestamp || post.date || '未知時間'}</span>
-                                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 transition-all hover:shadow-md">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black">${(post.author || '生')[0]}</div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">${post.author || '匿名學生'}</h3>
+                                <span class="text-[10px] font-bold text-slate-400">${post.timestamp || post.date || '未知時間'}</span>
                             </div>
-                            <span class="text-[10px] font-black text-slate-400 border border-slate-200 px-2 py-1 rounded-md bg-slate-50 hidden md:inline-block">ID: ${post.id || 'N/A'}</span>
                         </div>
-                        
-                        <div class="mb-5">
-                            <span class="text-[10px] font-black text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded uppercase tracking-widest"><i class="fas fa-question-circle mr-1"></i>學生提問</span>
-                            
-                            <h4 class="text-lg font-black text-slate-800 mt-3 mb-2">${postTitle}</h4>
-                            
-                            <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-wrap">${questionText}</p>
-                        </div>
-
-                        ${replyBlocksHtml}
-
-                        <div class="flex gap-2 pt-2 border-t border-slate-100 mt-2">
-                            <input id="admin-input-${post.id}" type="text" placeholder="以教師身分補充回覆或訂正..." class="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none shadow-sm transition-all font-bold text-slate-700">
-                            
-                            <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-700 active:scale-95 transition-all shadow-md flex items-center gap-2 whitespace-nowrap">
-                                <i class="fas fa-paper-plane"></i> 送出
-                            </button>
-                            
-                            <button onclick="deleteForumPost('${post.id}')" class="bg-red-50 text-red-600 px-4 py-2.5 rounded-xl text-sm font-black hover:bg-red-100 hover:text-red-700 border border-red-200 active:scale-95 transition-all shadow-sm flex items-center justify-center whitespace-nowrap" title="強制刪除貼文">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-
                     </div>
-                `;
+                    
+                    <div class="mb-4">
+                        <span class="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded uppercase tracking-widest"><i class="fas fa-question-circle mr-1"></i>學生提問</span>
+                        <h4 class="text-lg font-black text-slate-800 mt-3 mb-2">${postTitle}</h4>
+                        <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 whitespace-pre-wrap">${questionText}</p>
+                    </div>
+
+                    ${aiHtml}
+                    ${repliesHtml}
+
+                    <div class="flex gap-2 pt-4 border-t border-slate-100 mt-4">
+                        <input id="admin-input-${post.id}" type="text" placeholder="補充回覆或訂正..." class="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold">
+                        <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-black hover:bg-blue-700 shadow-md">送出</button>
+                        <button onclick="deleteForumPost('${post.id}')" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-black hover:bg-red-100">刪除</button>
+                    </div>
+                </div>`;
             });
             forumList.innerHTML = html;
         } catch (error) {
