@@ -125,7 +125,8 @@
             console.error("Data fetch error:", error);
             alert("無法連線至雲端資料庫，請檢查網路設定。");
         }
-    }function renderSubjectProgress() {
+    }
+  function renderSubjectProgress() {
     const subjects = [
         { id: 'chinese', name: '國文', color: 'bg-red-500' },
         { id: 'math', name: '數學', color: 'bg-blue-500' },
@@ -139,24 +140,37 @@
         { id: 'civics', name: '公民', color: 'bg-indigo-500' }
     ];
 
+    // 🌟 建立「單元名稱 -> 科目」的對照表，用來拯救沒有存科目的舊資料
+    const unitToSubjectMap = {};
+    const libData = window.CurriculumLibrary || {};
+    const baseData = libData.data || libData;
+    
+    Object.keys(baseData).forEach(subId => {
+        if (Array.isArray(baseData[subId])) {
+            baseData[subId].forEach(book => {
+                if (book.units) {
+                    book.units.forEach(u => {
+                        unitToSubjectMap[u.name] = subId;
+                    });
+                }
+            });
+        }
+    });
+
     const html = subjects.map(s => {
-        // 🌟 修正後的篩選邏輯：確保括號完全對應
         const results = remoteData.records.filter(r => {
-            const recordSubject = (r.subject || "").toLowerCase();
-            const targetSubject = s.id.toLowerCase();
+            // 1. 新資料：直接比對 subject
+            if (r.subject) return r.subject.toLowerCase() === s.id.toLowerCase();
             
-            // 1. 基本比對
-            if (recordSubject === targetSubject) return true;
-            
-            // 2. 備用比對：如果科目名稱在單元清單內 (CurriculumLibrary)
-            const lib = window.CurriculumLibrary[s.id] || [];
-            return lib.some(book => book.units.some(u => u.name === r.unitName));
+            // 2. 舊資料防呆：拿測驗名稱去對照表反查所屬科目
+            const recordTitle = r.activity || r.title || r.unitName || "";
+            return unitToSubjectMap[recordTitle] === s.id;
         });
 
-        const avg = results.length ? Math.round(results.reduce((a, b) => a + b.score, 0) / results.length) : 0;
+        const avg = results.length ? Math.round(results.reduce((a, b) => a + Number(b.score), 0) / results.length) : 0;
         
         return `
-            <div>
+            <div class="group">
                 <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
                     <span>${s.name}平均精熟度</span>
                     <span class="${avg >= 80 ? 'text-green-500' : 'text-slate-600'}">${avg}%</span>
@@ -166,11 +180,11 @@
                 </div>
             </div>
         `;
-    }).join(''); // 這裡的 join 也檢查一下
+    }).join('');
     
     document.getElementById('subjectGrid').innerHTML = html;
 }
-    function renderUnitDetails() {
+   function renderUnitDetails() {
     const selectedSub = document.getElementById('subPicker').value;
     const listContainer = document.getElementById('unitDetailList');
     
@@ -191,8 +205,14 @@
 
         // 渲染該冊底下的所有單元列表
         const unitsHtml = book.units.map(unit => {
-            // 找出該單元的測驗紀錄 (抓最高分或最新的一筆)
-            const matches = remoteData.records.filter(r => r.unitName === unit.name);
+            // 💡 關鍵修正：寬鬆比對！
+            // 檢查 unitName 或 activity 或 title，並加上 trim() 去除空白，確保舊資料也能抓到
+            const matches = remoteData.records.filter(r => {
+                const recordName = (r.unitName || r.activity || r.title || "").trim();
+                return recordName === unit.name.trim();
+            });
+            
+            // 抓最高分或最新的一筆
             const bestRecord = matches.length > 0 ? matches.sort((a, b) => b.score - a.score)[0] : null;
             
             const score = bestRecord ? bestRecord.score : null;
@@ -211,7 +231,7 @@
                             ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '<span class="text-lg">----</span>'}
                         </div>
                         <p class="text-[10px] font-bold text-slate-400 mt-1">
-                            ${bestRecord ? '<i class="far fa-calendar-check mr-1"></i>' + bestRecord.date : '尚未測驗'}
+                            ${bestRecord ? '<i class="far fa-calendar-check mr-1"></i>' + (bestRecord.date || '已測驗') : '尚未測驗'}
                         </p>
                     </div>
                 </div>
@@ -234,11 +254,10 @@
         `;
     }).join('');
 
-    // 將整理好的分組卡片塞入畫面，並把外層的 divide-y 樣式拿掉（因為我們改用卡片了）
+    // 將整理好的分組卡片塞入畫面，並把外層的 divide-y 樣式拿掉
     listContainer.className = "p-6 bg-slate-50/50 rounded-b-[2rem]"; 
     listContainer.innerHTML = html;
 }
-
     // 🌟 登出功能
     function logout() {
         if(confirm("確定要登出家長監護中心嗎？")) {
