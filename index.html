@@ -124,11 +124,10 @@
         <span>立即登入</span> <i class="fas fa-arrow-right"></i>
     </button>
 </form>
-                <div class="mt-6 pt-6 border-t border-gray-100 text-center">
-                    <a href="register.html" class="inline-block text-blue-600 font-bold hover:underline">
-                        還沒有帳號？立即註冊
-                    </a>
-                </div>
+               <div class="mt-6 pt-6 border-t border-gray-100 text-center text-sm flex justify-center items-center gap-4 divide-x divide-gray-300">
+    <a href="register.html" class="text-blue-600 font-bold hover:underline pr-4">立即註冊</a>
+    <button type="button" onclick="openForgotModal()" class="text-gray-500 hover:text-red-500 font-bold pl-4 transition">忘記密碼？</button>
+</div>
             </div>
         </div>
     </main>
@@ -457,7 +456,34 @@
         </div>
     </div>
 </footer>
+<div id="forgotModal" class="hidden fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 transform scale-95 transition-transform duration-300" id="forgotModalContent">
+            <div class="p-6 md:p-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-black text-slate-800"><i class="fas fa-key text-red-500 mr-2"></i>重設密碼</h3>
+                    <button onclick="closeForgotModal()" class="text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                <p class="text-xs text-slate-500 font-bold mb-6 leading-relaxed">請輸入您的「登入帳號」與「真實姓名」進行身分驗證，驗證成功即可設定新密碼。</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="fp-username" placeholder="請輸入登入帳號" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 focus:bg-white font-bold text-sm transition">
+                    </div>
+                    <div>
+                        <input type="text" id="fp-name" placeholder="請輸入真實姓名" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 focus:bg-white font-bold text-sm transition">
+                    </div>
+                    <div class="pt-3 border-t border-slate-100 mt-2">
+                        <input type="password" id="fp-newpassword" placeholder="請輸入新的密碼" class="w-full p-3.5 bg-red-50 border border-red-200 rounded-xl focus:outline-none focus:border-red-500 focus:bg-white font-bold text-sm transition">
+                    </div>
+                </div>
 
+                <div class="flex gap-3 mt-8">
+                    <button onclick="closeForgotModal()" class="flex-1 bg-slate-100 text-slate-600 py-3.5 rounded-xl font-bold hover:bg-slate-200 transition">取消</button>
+                    <button onclick="submitForgotPassword()" id="fp-btn" class="flex-1 bg-red-500 text-white py-3.5 rounded-xl font-bold hover:bg-red-600 shadow-lg shadow-red-200 transition active:scale-95">確認重設</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
    <script>
     // ⚠️ 請確認這裡是你最新的 GAS 部署網址
@@ -543,6 +569,80 @@
         else if (role === 'teacher') window.location.href = 'teacher_dashboard.html';
         else if (role === 'parent') window.location.href = 'parent_dashboard.html';
         else window.location.href = 'dashboard.html';
+    }
+       // =========================================
+    // 🌟 忘記密碼邏輯
+    // =========================================
+    function openForgotModal() {
+        const modal = document.getElementById('forgotModal');
+        const content = document.getElementById('forgotModalContent');
+        modal.classList.remove('hidden');
+        // 小小延遲讓動畫生效
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeForgotModal() {
+        const modal = document.getElementById('forgotModal');
+        const content = document.getElementById('forgotModalContent');
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            // 關閉時清空輸入框
+            document.getElementById('fp-username').value = '';
+            document.getElementById('fp-name').value = '';
+            document.getElementById('fp-newpassword').value = '';
+        }, 300);
+    }
+
+    async function submitForgotPassword() {
+        const username = document.getElementById('fp-username').value.trim();
+        const name = document.getElementById('fp-name').value.trim();
+        const newPassword = document.getElementById('fp-newpassword').value.trim();
+        const btn = document.getElementById('fp-btn');
+
+        if (!username || !name || !newPassword) {
+            return alert("請完整填寫帳號、姓名與新密碼！");
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
+
+        const payload = {
+            action: "reset_password", // 對接你 GAS 寫好的 API
+            username: username,
+            name: name,
+            newPassword: newPassword
+        };
+
+        try {
+            const response = await fetch(GAS_URL, {
+                method: "POST",
+                redirect: "follow",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === "success") {
+                alert("✅ 密碼已成功重設！請使用新密碼登入。");
+                closeForgotModal();
+                // 自動幫他填入剛重設好的帳號和密碼到登入框，體驗更好！
+                document.getElementById('username').value = username;
+                document.getElementById('password').value = newPassword;
+            } else {
+                alert("❌ 驗證失敗：" + data.message);
+            }
+        } catch (err) {
+            alert("網路異常，請稍後再試。");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '確認重設';
+        }
     }
     </script>
     <div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
