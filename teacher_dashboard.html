@@ -188,49 +188,74 @@
                     </button>
                 </div>
             </div>
-<div id="tab-help-center" class="tab-content hidden space-y-6">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4 border-l-4 border-l-orange-500">
-            <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-envelope-open-text"></i></div>
+<div id="tab-help-center" class="tab-content hidden space-y-4 md:space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div class="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4 border-l-4 border-l-orange-500">
+            <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex shrink-0 items-center justify-center text-xl"><i class="fas fa-envelope-open-text"></i></div>
             <div><p class="text-slate-400 text-xs font-bold uppercase">待處理問題</p><h2 class="text-2xl font-black text-slate-800" id="stat-help-pending">--</h2></div>
         </div>
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
-            <div class="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-check-double"></i></div>
+        
+        <div class="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
+            <div class="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex shrink-0 items-center justify-center text-xl"><i class="fas fa-check-double"></i></div>
             <div><p class="text-slate-400 text-xs font-bold uppercase">今日已解決</p><h2 class="text-2xl font-black text-slate-800" id="stat-help-solved">--</h2></div>
         </div>
-        <button onclick="fetchHelpRequests()" class="bg-slate-800 text-white rounded-3xl font-bold hover:bg-slate-900 transition flex items-center justify-center gap-2 shadow-lg">
+        
+        <button onclick="fetchHelpRequests()" class="bg-slate-800 text-white rounded-3xl font-bold hover:bg-slate-900 transition flex items-center justify-center gap-2 shadow-lg py-4 md:py-0 h-full min-h-[3.5rem] active:scale-95">
             <i class="fas fa-sync-alt"></i> 重新整理
         </button>
     </div>
 
-    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h3 class="font-bold text-slate-800 text-lg"><i class="fas fa-list text-orange-500 mr-2"></i> 學生提報清單</h3>
-            <select id="helpFilter" class="text-xs font-bold border rounded-xl px-4 py-2 bg-white outline-none focus:ring-2 focus:ring-orange-200">
+    <div class="bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-0 bg-slate-50">
+            <h3 class="font-bold text-slate-800 text-base md:text-lg flex items-center"><i class="fas fa-list text-orange-500 mr-2"></i> 學生提報清單</h3>
+            <select id="helpFilter" class="w-full sm:w-auto text-xs font-bold border rounded-xl px-4 py-2.5 bg-white outline-none focus:ring-2 focus:ring-orange-200 shadow-sm">
                 <option value="all">顯示全部類型</option>
                 <option value="題目內容錯誤">題目內容錯誤</option>
                 <option value="系統功能異常">系統功能異常</option>
                 <option value="其他建議">其他建議</option>
             </select>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-               <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-100">
-    <tr>
-        <th class="px-8 py-4 text-center">狀態</th>
-        <th class="px-8 py-4">學生 / 時間</th>
-        <th class="px-8 py-4">提報類型</th>
-        <th class="px-8 py-4 w-1/4">問題內容</th>
-        <th class="px-8 py-4">老師回覆</th> <th class="px-8 py-4 text-right">操作</th>
-    </tr>
-</thead>
-<tbody id="helpTableBody" class="divide-y divide-slate-50 text-sm">
-    </tbody>
+        
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left border-collapse min-w-[800px]"> <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-100">
+                    <tr>
+                        <th class="px-4 md:px-8 py-3 md:py-4 text-center">狀態</th>
+                        <th class="px-4 md:px-8 py-3 md:py-4">學生 / 時間</th>
+                        <th class="px-4 md:px-8 py-3 md:py-4">提報類型</th>
+                        <th class="px-4 md:px-8 py-3 md:py-4 w-1/4">問題內容</th>
+                        <th class="px-4 md:px-8 py-3 md:py-4">老師回覆</th> 
+                        <th class="px-4 md:px-8 py-3 md:py-4 text-right">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="helpTableBody" class="divide-y divide-slate-50 text-sm">
+                    </tbody>
             </table>
         </div>
-        <div id="helpLoading" class="p-20 text-center text-slate-300 hidden">
+        
+        <div id="helpLoading" class="p-12 md:p-20 text-center text-slate-300 hidden">
             <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
             <p class="text-sm font-bold">正在同步雲端資料...</p>
+        </div>
+    </div>
+</div>
+         <div id="replyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+        <div class="p-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">回覆學生訊息</h3>
+                    <p id="replyToName" class="text-sm text-slate-400 font-bold mt-1">對象：張小明</p>
+                </div>
+                <button onclick="closeReplyModal()" class="text-slate-300 hover:text-slate-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <input type="hidden" id="currentReplyId">
+            <textarea id="replyTextarea" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-3xl p-5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold" placeholder="輸入您的回覆或指導建議..."></textarea>
+            
+            <div class="grid grid-cols-2 gap-4 mt-8">
+                <button onclick="closeReplyModal()" class="py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 transition">取消</button>
+                <button onclick="submitReply()" class="py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 shadow-lg shadow-blue-200 transition active:scale-95">確認送出</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1553,117 +1578,163 @@ async function fetchHelpRequests() {
     } finally {
         loading.classList.add('hidden');
     }
+}// ==========================================// ==========================================
+// 💡 幫助中心：讀取資料與渲染表格
+// ==========================================
+async function fetchHelpRequests() {
+    const tbody = document.getElementById('helpTableBody');
+    const loading = document.getElementById('helpLoading');
+    const filter = document.getElementById('helpFilter') ? document.getElementById('helpFilter').value : 'all';
+    
+    tbody.innerHTML = '';
+    loading.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`${GAS_URL}?action=get_help_requests`);
+        let data = await response.json();
+        
+        // 更新頂部統計數字
+        document.getElementById('stat-help-pending').innerText = data.filter(d => d.status === '待處理').length;
+        document.getElementById('stat-help-solved').innerText = data.filter(d => d.status === '已解決').length;
+
+        // 如果有選擇過濾器，就過濾資料
+        if (filter !== 'all') {
+            data = data.filter(d => d.type === filter);
+        }
+
+        // 動態產生表格內容
+        data.forEach(item => {
+            const statusColor = item.status === '待處理' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600';
+            const replyText = item.reply ? item.reply : "尚未回覆";
+            
+            // 💡 這裡的 class 已經配合我們剛剛的手機版 RWD 做過縮放 (px-4 md:px-8)
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-50 group">
+                    <td class="px-4 md:px-8 py-3 md:py-4 text-center">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black ${statusColor}">${item.status}</span>
+                    </td>
+                    <td class="px-4 md:px-8 py-3 md:py-4">
+                        <p class="font-black text-slate-700">${item.name}</p>
+                        <p class="text-[10px] text-slate-400 font-medium">${item.timestamp}</p>
+                    </td>
+                    <td class="px-4 md:px-8 py-3 md:py-4">
+                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">${item.type}</span>
+                    </td>
+                    <td class="px-4 md:px-8 py-3 md:py-4">
+                        <p class="text-slate-600 leading-relaxed font-medium truncate max-w-[150px] md:max-w-xs" title="${item.content}">${item.content}</p>
+                    </td>
+                    <td class="px-4 md:px-8 py-3 md:py-4">
+                        <div class="text-xs text-blue-600 font-bold italic truncate max-w-[100px] md:max-w-[150px]" title="${replyText}">${replyText}</div>
+                    </td>
+                    <td class="px-4 md:px-8 py-3 md:py-4 text-right">
+                        <div class="flex flex-col gap-2 items-end">
+                            <button onclick="openReplyModal('${item.id}', '${item.name}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-black hover:bg-blue-700 transition shadow-sm w-full sm:w-auto text-center active:scale-95">
+                                <i class="fas fa-reply mr-1"></i>回覆
+                            </button>
+                            ${item.status === '待處理' ? 
+                                `<button onclick="updateHelpStatus('${item.id}', '已解決')" class="text-slate-400 hover:text-green-600 font-bold text-[10px] w-full sm:w-auto text-center">直接結案</button>` : ''
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-400 font-bold">目前沒有相關的學生提報。</td></tr>';
+        }
+        
+    } catch (e) {
+        console.error("載入失敗", e);
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-red-400 font-bold">無法載入資料，請檢查網路或 API 設定。</td></tr>';
+    } finally {
+        loading.classList.add('hidden');
+    }
 }
-         function openReplyModal(id, name) {
+
+// ==========================================
+// 💡 幫助中心：老師回覆與彈窗操作
+// ==========================================
+
+// 1. 打開回覆彈窗
+function openReplyModal(id, name) {
     document.getElementById('currentReplyId').value = id;
     document.getElementById('replyToName').innerText = `對象：${name}`;
     document.getElementById('replyModal').classList.remove('hidden');
     document.getElementById('replyTextarea').value = '';
 }
 
+// 2. 關閉回覆彈窗
 function closeReplyModal() {
     document.getElementById('replyModal').classList.add('hidden');
 }
 
+// 3. 送出老師打字回覆
 async function submitReply() {
     const id = document.getElementById('currentReplyId').value;
     const content = document.getElementById('replyTextarea').value;
     
-    if (!content.trim()) return alert("請輸入回覆內容");
+    if (!content.trim()) return alert("請輸入回覆內容！");
 
-    // UI 狀態
     const btn = event.target;
+    const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 傳送中...';
 
     try {
-        const response = await fetch(GAS_URL, {
+        await fetch(GAS_URL, {
             method: "POST",
             mode: "no-cors",
             body: JSON.stringify({
                 action: "reply_help_request",
                 id: id,
-                reply: content,
-                status: "已解決"
+                reply: content,     // 傳送老師輸入的文字
+                status: "已解決"    // 將狀態更新為已解決
             })
         });
 
-        alert("已成功回覆並將該問題標記為已解決！");
+        alert("✅ 已成功回覆並將該問題標記為已解決！");
         closeReplyModal();
-        fetchHelpRequests(); // 重新整理列表
+        fetchHelpRequests(); // 自動重新整理表格
     } catch (e) {
-        alert("傳送失敗，請確認網路連線");
+        console.error("回覆失敗:", e);
+        alert("傳送失敗，請確認網路連線。");
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '確認送出';
+        btn.innerHTML = originalText;
     }
 }
-         function openReplyModal(id, name) {
-    document.getElementById('currentReplyId').value = id;
-    document.getElementById('replyToName').innerText = `對象：${name}`;
-    document.getElementById('replyModal').classList.remove('hidden');
-    document.getElementById('replyTextarea').value = '';
-}
 
-function closeReplyModal() {
-    document.getElementById('replyModal').classList.add('hidden');
-}
-
-async function submitReply() {
-    const id = document.getElementById('currentReplyId').value;
-    const content = document.getElementById('replyTextarea').value;
-    
-    if (!content.trim()) return alert("請輸入回覆內容");
-
-    // UI 狀態
-    const btn = event.target;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 傳送中...';
+// 4. 直接手動結案 (不打字)
+async function updateHelpStatus(id, newStatus) {
+    if (!confirm(`確定要將此問題標記為「${newStatus}」嗎？`)) return;
 
     try {
-        const response = await fetch(GAS_URL, {
+        await fetch(GAS_URL, {
             method: "POST",
             mode: "no-cors",
             body: JSON.stringify({
                 action: "reply_help_request",
                 id: id,
-                reply: content,
-                status: "已解決"
+                status: newStatus,
+                reply: "（教師已手動結案）" 
             })
         });
 
-        alert("已成功回覆並將該問題標記為已解決！");
-        closeReplyModal();
-        fetchHelpRequests(); // 重新整理列表
+        alert(`✅ 已成功標記為${newStatus}！`);
+        fetchHelpRequests(); // 自動重新整理表格
+        
     } catch (e) {
-        alert("傳送失敗，請確認網路連線");
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '確認送出';
+        console.error("狀態更新失敗:", e);
+        alert("更新失敗，請檢查網路連線。");
     }
 }
-         
+
+// 💡 綁定下拉選單的過濾功能
+if(document.getElementById('helpFilter')) {
+    document.getElementById('helpFilter').addEventListener('change', fetchHelpRequests);
+}
 </script>
-    <div id="replyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
-        <div class="p-8">
-            <div class="flex justify-between items-start mb-6">
-                <div>
-                    <h3 class="text-xl font-black text-slate-800">回覆學生訊息</h3>
-                    <p id="replyToName" class="text-sm text-slate-400 font-bold mt-1">對象：張小明</p>
-                </div>
-                <button onclick="closeReplyModal()" class="text-slate-300 hover:text-slate-500"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            
-            <input type="hidden" id="currentReplyId">
-            <textarea id="replyTextarea" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-3xl p-5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold" placeholder="輸入您的回覆或指導建議..."></textarea>
-            
-            <div class="grid grid-cols-2 gap-4 mt-8">
-                <button onclick="closeReplyModal()" class="py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 transition">取消</button>
-                <button onclick="submitReply()" class="py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 shadow-lg shadow-blue-200 transition active:scale-95">確認送出</button>
-            </div>
-        </div>
-    </div>
-</div>
+   
 </body>
 </html>
