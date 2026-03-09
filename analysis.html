@@ -417,14 +417,19 @@ function changeFilter(type, btn) {
     renderQuestionList(filteredData);
 }
 // ==========================================
-// 3. 雲端同步邏輯 (針對 no-cors 優化)
+// 3. 雲端同步邏輯 (防重複存檔優化)
 // ==========================================
+let isSyncing = false;
+let hasSaved = false; // ✨ 新增：標記是否已經成功存檔過，防止重複點擊
+
 function saveToCloud() {
     const btn = document.getElementById('btnSave');
-    if (isSyncing) return;
+    
+    // ✨ 阻擋條件：如果「正在同步中」或「已經存檔過了」，就直接中斷執行
+    if (isSyncing || hasSaved) return;
 
     const user = Auth.getCurrentUser();
-    // Guest 不同步，或者是複習模式下按鈕已被移除 onclick
+    // Guest 不同步，或者是複習模式下按鈕已被移除
     if (!user || user.username === 'guest') return;
 
     const resultStr = localStorage.getItem('examResult');
@@ -435,7 +440,7 @@ function saveToCloud() {
     
     // UI Loading 狀態
     if (btn) {
-        btn.disabled = true;
+        btn.disabled = true; // 鎖定按鈕
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 同步中...';
         btn.classList.add('opacity-75', 'cursor-not-allowed');
     }
@@ -445,9 +450,8 @@ function saveToCloud() {
         username: user.username,
         activity: examResult.title || "單元測驗",
         score: examResult.score,
-        // 將複雜物件轉為 JSON 字串存入 Google Sheet 的一個儲存格，避免欄位過多
         detail: JSON.stringify({
-            grade: user.grade, // 加入年級資訊
+            grade: user.grade, 
             totalCount: examResult.totalCount,
             correctCount: examResult.correctCount,
             wrongList: examResult.wrongList || [],
@@ -460,33 +464,37 @@ function saveToCloud() {
     // 使用 fetch 發送
     fetch(GAS_URL, {
         method: "POST",
-        mode: 'no-cors', // 重要：解決跨域問題，但無法讀取回傳值
+        mode: 'no-cors',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(recordData)
     })
     .then(() => {
-        // 因 no-cors，這裡只代表「請求已發出」，不保證 Server 端成功
-        // 但對使用者體驗來說，視為成功
-        if (btn) {
-            btn.className = "flex items-center gap-2 text-white bg-green-600 font-bold px-3 py-2 rounded-lg cursor-default shadow-none text-sm";
-            btn.innerHTML = '<i class="fas fa-check-circle"></i> 紀錄已送出';
-        }
+        // ✨ 存檔成功後的處理
+        hasSaved = true; // 標記為已存檔，徹底阻斷後續的執行
         isSyncing = false; 
+        
+        if (btn) {
+            btn.className = "flex items-center gap-2 text-white bg-green-600 font-bold px-3 py-2 rounded-lg cursor-default shadow-none text-sm opacity-100";
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> 紀錄已送出';
+            btn.onclick = null; // ✨ 移除點擊事件，徹底防止再按
+            btn.disabled = true; // ✨ 保持禁用狀態
+        }
     })
     .catch(err => {
         console.error("同步失敗:", err);
         isSyncing = false; 
+        hasSaved = false; // 失敗了允許使用者重試
+        
         if (btn) {
-            btn.disabled = false;
+            btn.disabled = false; // 解除鎖定讓使用者可以重試
             btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 重試';
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
             btn.classList.replace('bg-blue-600', 'bg-red-500');
         }
     });
 }
-
 // ==========================================
 // 4. 圖表渲染 (Radar Chart)
 // ==========================================
