@@ -1211,14 +1211,19 @@
     function closeMockModal() {
         document.getElementById('mockExamModal').classList.add('hidden');
     }
-
+// ==========================================
+    // 幫助中心 - 獲取清單與狀態判斷修復
+    // ==========================================
     async function fetchHelpRequests() {
         document.getElementById('helpLoading').classList.remove('hidden');
         try {
             const res = await fetch(`${GAS_URL}?action=get_help_requests`);
             const data = await res.json();
-            const pending = data.filter(d => d.status === 'pending');
-            const solved = data.filter(d => d.status === 'solved');
+            
+            // 🌟 修正點 1：同時相容中文的「待處理」與英文的「pending」
+            const pending = data.filter(d => d.status === '待處理' || d.status === 'pending');
+            const solved = data.filter(d => d.status === '已解決' || d.status === 'solved');
+            
             document.getElementById('stat-help-pending').textContent = pending.length;
             document.getElementById('stat-help-solved').textContent = solved.length;
             
@@ -1231,17 +1236,21 @@
             }
             
             data.reverse().forEach(req => {
-                const isPending = req.status === 'pending';
+                // 🌟 修正點 2：正確判斷待處理狀態
+                const isPending = req.status === '待處理' || req.status === 'pending';
                 const statusBadge = isPending 
                     ? '<span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-md text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 w-20"><i class="fas fa-clock"></i> 待處理</span>'
-                    : '<span class="bg-green-100 text-green-600 px-3 py-1 rounded-md text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 w-20"><i class="fas fa-check"></i> 已解決</span>';
+                    : '<span class="bg-green-100 text-green-600 px-3 py-1 rounded-md text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-1 w-20"><i class="fas fa-check"></i> 已結案</span>';
                 
+                // 🌟 修正點 3：修復原本抓不到學生名字的問題 (原本寫錯成 studentId)
+                const displayName = req.name || req.username || '未知學生';
+
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50/50 transition-colors group";
                 tr.innerHTML = `
                     <td class="px-8 py-4 align-middle">${statusBadge}</td>
                     <td class="px-8 py-4 align-middle">
-                        <div class="font-bold text-slate-800">${req.studentId}</div>
+                        <div class="font-bold text-slate-800">${displayName}</div>
                         <div class="text-[10px] text-slate-400 mt-0.5">${req.timestamp}</div>
                     </td>
                     <td class="px-8 py-4 align-middle">
@@ -1254,7 +1263,7 @@
                         ${isPending ? '<span class="text-slate-300 italic text-xs font-bold">尚未回覆...</span>' : createExpandableText(req.reply, 40)}
                     </td>
                     <td class="px-8 py-4 text-right align-middle">
-                        ${isPending ? `<button onclick="openReplyModal('${req.id}', '${req.studentId}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black transition-all shadow-sm active:scale-95 whitespace-nowrap">回覆並結案</button>` 
+                        ${isPending ? `<button onclick="openReplyModal('${req.id}', '${displayName}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black transition-all shadow-sm active:scale-95 whitespace-nowrap">回覆並結案</button>` 
                                    : `<button class="bg-slate-100 text-slate-400 px-4 py-2 rounded-xl text-xs font-black cursor-not-allowed whitespace-nowrap" disabled>已結案</button>`}
                     </td>
                 `;
@@ -1267,17 +1276,9 @@
         }
     }
 
-    function openReplyModal(id, name) {
-        document.getElementById('currentReplyId').value = id;
-        document.getElementById('replyToName').innerText = `對象：${name}`;
-        document.getElementById('replyModal').classList.remove('hidden');
-        document.getElementById('replyTextarea').value = '';
-    }
-
-    function closeReplyModal() {
-        document.getElementById('replyModal').classList.add('hidden');
-    }
-
+    // ==========================================
+    // 幫助中心 - 老師送出回覆修復
+    // ==========================================
     async function submitHelpReply(btn) {
         const id = document.getElementById('currentReplyId').value;
         const reply = document.getElementById('replyTextarea').value.trim();
@@ -1292,12 +1293,13 @@
                 body: JSON.stringify({
                     action: "reply_help_request",
                     id: id,
-                    reply: reply
+                    reply: reply,
+                    status: "已解決"  // 🌟 修正點 4：明確告知 GAS 將狀態改為「已解決」
                 })
             });
-            alert("已成功回覆並將該問題標記為已解決！");
+            alert("已成功回覆並將該問題標記為已結案！");
             closeReplyModal();
-            fetchHelpRequests();
+            fetchHelpRequests(); // 重新整理列表，讓該題變成已結案
         } catch (e) {
             alert("傳送失敗，請確認網路連線");
         } finally {
@@ -1305,6 +1307,19 @@
             btn.innerHTML = '確認送出';
         }
     }
+
+    function openReplyModal(id, name) {
+        document.getElementById('currentReplyId').value = id;
+        document.getElementById('replyToName').innerText = `對象：${name}`;
+        document.getElementById('replyModal').classList.remove('hidden');
+        document.getElementById('replyTextarea').value = '';
+    }
+
+    function closeReplyModal() {
+        document.getElementById('replyModal').classList.add('hidden');
+    }
+
+   
 
     function handleQuickSearch(event) {
         if (event.key === 'Enter') {
