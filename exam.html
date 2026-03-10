@@ -943,7 +943,7 @@
 
         const urlParams = new URLSearchParams(window.location.search);
 
-        const resultData = {
+const resultData = {
             owner: user.username, 
             id: Date.now(),
             subject: (examInfo && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
@@ -951,8 +951,9 @@
             score: finalScore, 
             correctCount,
             totalCount,
-                    // ✨ 重點：存入所有題目，並且要包含使用者選了什麼 (yourAns)
-            questions: questions.map((q, index) => ({
+            // ✨ 重點：存入所有題目，並且要包含使用者選了什麼 (yourAns)
+            // 👇 將 questions.map 改成 mockQuestions.map 👇
+            questions: mockQuestions.map((q, index) => ({
                 ...q,
                 yourAns: userAnswers[index] // 確保 userAnswers 有紀錄該題選了什麼
             })),
@@ -966,6 +967,7 @@
             },
             analysis: { timeLog, tabLogDetails: tabLog }
         };
+            
 
         localStorage.setItem('examResult', JSON.stringify(resultData));
         const historyKey = `history_${user.username}`;
