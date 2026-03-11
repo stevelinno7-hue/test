@@ -426,8 +426,7 @@ function saveToCloud() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 同步中...';
         btn.classList.add('opacity-75', 'cursor-not-allowed');
     }
-
-    const recordData = {
+const recordData = {
         action: "save_record",
         username: user.username,
         activity: examResult.title || "單元測驗",
@@ -437,12 +436,13 @@ function saveToCloud() {
             totalCount: examResult.totalCount,
             correctCount: examResult.correctCount,
             wrongList: examResult.wrongList || [],
+            // 🌟 新增下面這行：把包含正確題目的「完整試卷」也存上雲端！
+            questions: examResult.questions || [], 
             cheat: examResult.cheat,
             tabSwitches: examResult.tabSwitches,
             syncTime: new Date().toISOString()
         })
     };
-
     fetch(GAS_URL, {
         method: "POST",
         mode: 'no-cors',
