@@ -942,32 +942,25 @@
         let isLevelUp = (window.Auth && user.username !== 'guest') ? Auth.addXP(totalXP) : false;
 
         const urlParams = new URLSearchParams(window.location.search);
-
-const resultData = {
-            owner: user.username, 
-            id: Date.now(),
-            subject: (examInfo && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
-            title: examInfo.title || urlParams.get('title') || "綜合測驗",
-            score: finalScore, 
-            correctCount,
-            totalCount,
-            // ✨ 重點：存入所有題目，並且要包含使用者選了什麼 (yourAns)
-            // 👇 將 questions.map 改成 mockQuestions.map 👇
-            questions: mockQuestions.map((q, index) => ({
-                ...q,
-                yourAns: userAnswers[index] // 確保 userAnswers 有紀錄該題選了什麼
-            })),
-            wrongList,
-            tabSwitches: tabLog.length, 
-            xpGained: totalXP,
-            isLevelUp,
-            cheat: {
-                cheatLevel: (fastCount > 3 || tabLog.length > 5) ? 'HIGH' : 'NORMAL',
-                fastCount
-            },
-            analysis: { timeLog, tabLogDetails: tabLog }
-        };
+const recordData = {
+        action: "save_record",
+        username: user.username,
+        activity: examResult.title || "單元測驗",
+        score: examResult.score,
+        detail: JSON.stringify({
+            grade: user.grade, 
+            totalCount: examResult.totalCount,
+            correctCount: examResult.correctCount,
+            wrongList: examResult.wrongList || [],
             
+            // 🌟 關鍵修復：就是補上這一行！讓完整題目跟著一起飛上雲端
+            questions: examResult.questions || [], 
+            
+            cheat: examResult.cheat,
+            tabSwitches: examResult.tabSwitches,
+            syncTime: new Date().toISOString()
+        })
+    };
 
         localStorage.setItem('examResult', JSON.stringify(resultData));
         const historyKey = `history_${user.username}`;
