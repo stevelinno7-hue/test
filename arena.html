@@ -267,12 +267,13 @@ function toggleSidebar() {
         // 🔗 填入你的 Google Apps Script 網址
          const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 
-
 async function initProfile() {
     // 1. 從 Auth 獲取資料
     const user = (window.Auth && Auth.getCurrentUser()) || null;
     
-    // 獲取 UI 元素
+    // 偵錯用：在瀏覽器 F12 檢查你的 user 物件到底長怎樣
+    console.log("目前登入的使用者物件:", user);
+
     const sideName = document.getElementById('sideUserName');
     const sideRole = document.getElementById('sideUserRole');
     const playerName = document.getElementById('playerName');
@@ -282,30 +283,39 @@ async function initProfile() {
     if (!user || user.username === 'guest') {
         const guestName = "訪客";
         const guestRole = "尚未登入";
-        
-        // 更新側邊欄與主面板
         sideName.textContent = guestName;
         sideRole.textContent = guestRole;
         playerName.textContent = guestName;
         playerRole.textContent = guestRole;
-        
-        // 訪客隱藏 XP 進度（可選）
         document.getElementById('xpText').textContent = "0 / 0";
         return; 
     }
 
+    // --- 重點修正區 ---
+    // 嘗試抓取各種可能的姓名屬性，如果 user.name 是 undefined，就改用 username
+    const finalName = user.name || user.username || user.displayName || "學生";
+    const finalGrade = user.grade || "未設定年級";
+
+    // 先顯示本地現有的名字，避免畫面空白
+    sideName.textContent = finalName;
+    sideRole.textContent = finalGrade;
+    playerName.textContent = finalName;
+    playerRole.textContent = finalGrade;
+    // ----------------
+
     // 3. 若為正式用戶，開始請求雲端資料
     try {
-        // 先顯示本地現有的名字，避免畫面空白
-        sideName.textContent = user.name;
-        sideRole.textContent = user.grade || '學生';
-        playerName.textContent = user.name;
-
         const response = await fetch(`${GAS_URL}?action=get_profile&username=${user.username}`);
         const cloudUser = await response.json();
+        console.log("雲端回傳資料:", cloudUser);
 
         if(!cloudUser.error) {
-            // 更新雲端同步後的等級與 XP
+            // 如果雲端有回傳 name，可以再次覆蓋本地的名字
+            if(cloudUser.name) {
+                sideName.textContent = cloudUser.name;
+                playerName.textContent = cloudUser.name;
+            }
+
             document.getElementById('playerLevel').textContent = `Lv. ${cloudUser.level}`;
             const currentXP = cloudUser.xp;
             const nextLevelXP = cloudUser.level * 100; 
