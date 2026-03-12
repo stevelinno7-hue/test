@@ -911,128 +911,110 @@
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
 async function finalSubmit() {
-        const submitBtn = document.getElementById('confirmSubmitBtn');
-        if (submitBtn.disabled) return; 
-        submitBtn.disabled = true;      
-        submitBtn.textContent = "評分與上傳中..."; 
+    const submitBtn = document.getElementById('confirmSubmitBtn');
+    if (submitBtn.disabled) return; 
+    submitBtn.disabled = true;      
+    submitBtn.textContent = "資料上傳中..."; 
 
-        if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
-        
-        const submitModal = document.getElementById('submitModal');
-        if(submitModal) submitModal.classList.add('hidden');
-        
-        // 顯示一個讀取遮罩（如果有這個 ID 的話）
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        if(loadingOverlay) loadingOverlay.classList.remove('hidden');
+    if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+    const submitModal = document.getElementById('submitModal');
+    if(submitModal) submitModal.classList.add('hidden');
 
-        let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
+    let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
 
-        // 1. 計算分數邏輯
-        mockQuestions.forEach((item, idx) => {
-            const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
-            if (item.type === 'group') {
-                item.questions.forEach((subQ, sIdx) => {
-                    totalCount++;
-                    const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
-                    if (userAns === subQ.answer) correctCount++;
-                    else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
-                });
-                if (timeSpent < 10) fastCount++; 
-            } else {
+    // 1. 重新計算得分與 XP
+    mockQuestions.forEach((item, idx) => {
+        const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
+        if (item.type === 'group') {
+            item.questions.forEach((subQ, sIdx) => {
                 totalCount++;
-                if (timeSpent < 3) fastCount++;
-                if (userAnswers[idx] === item.answer) correctCount++;
-                else wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
-            }
-        });
-
-        const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
-        const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
-        const totalXP = 20 + (correctCount * 10);
-        let isLevelUp = (window.Auth && user.username !== 'guest') ? Auth.addXP(totalXP) : false;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // 2. 打包資料 (重要：名稱必須是 examResult)
-        const resultData = {
-            owner: user.username,
-            id: Date.now(),
-            subject: urlParams.get('subject') || "english",
-            title: urlParams.get('title') || "綜合測驗",
-            score: finalScore,
-            correctCount: correctCount,
-            totalCount: totalCount,
-            questions: mockQuestions.map((q, index) => ({
-                ...q,
-                yourAns: userAnswers[index]
-            })),
-            wrongList: wrongList,
-            tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
-            xpGained: totalXP,
-            isLevelUp: isLevelUp,
-            cheat: {
-                cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
-                fastCount: fastCount
-            },
-            analysis: { 
-                timeLog: (typeof timeLog !== 'undefined') ? timeLog : [], 
-                tabLogDetails: (typeof tabLog !== 'undefined') ? tabLog : [] 
-            }
-        };
-
-        // 3. 存入本地 (這是 analysis.html 的生命線)
-        localStorage.setItem('examResult', JSON.stringify(resultData));
-        
-        // 存入歷史紀錄
-        const historyKey = `history_${user.username}`;
-        let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-        history.push(resultData);
-        localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
-
-        // 4. 同步雲端
-        if (user.username !== 'guest' && typeof GAS_URL !== 'undefined') {
-            try {
-                // 不使用 no-cors，讓它正常跑完
-                await uploadToCloud(user.username, resultData.title, finalScore, resultData);
-            } catch (e) { 
-                console.error("雲端同步失敗，但本地已儲存:", e); 
-            }
+                const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
+                if (userAns === subQ.answer) correctCount++;
+                else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
+            });
+        } else {
+            totalCount++;
+            if (userAnswers[idx] === item.answer) correctCount++;
+            else wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
         }
+    });
 
-        // 5. 解除警告並跳轉
-        window.onbeforeunload = null; 
-        setTimeout(() => { 
-            window.location.href = "analysis.html?mode=new"; 
-        }, 800);
+    const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+    
+    // 🌟 關鍵：確保 XP 這裡有算出來
+    const baseXP = 20;
+    const bonusXP = correctCount * 10;
+    const totalXP = baseXP + bonusXP;
+
+    const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const resultData = {
+        owner: user.username,
+        title: urlParams.get('title') || "綜合測驗",
+        score: finalScore,
+        totalCount: totalCount,
+        correctCount: correctCount,
+        xpGained: totalXP, // 這裡要存進去供分析頁使用
+        wrongList: wrongList,
+        cheat: { cheatLevel: 'NORMAL', fastCount: fastCount },
+        tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
+        syncTime: new Date().toISOString()
+    };
+
+    // 2. 存入本地
+    localStorage.setItem('examResult', JSON.stringify(resultData));
+
+    // 3. 上傳雲端 (傳入 totalXP)
+    if (user.username !== 'guest' && typeof GAS_URL !== 'undefined') {
+        try {
+            // 🌟 傳送時確保把全量資料傳給 uploadToCloud
+            await uploadToCloud(user.username, resultData.title, finalScore, resultData);
+            if (window.Auth) Auth.addXP(totalXP); 
+        } catch (e) { 
+            console.error("雲端同步失敗:", e); 
+        }
     }
 
+    // 4. 解除警報並跳轉
+    window.onbeforeunload = null; 
+    setTimeout(() => { 
+        window.location.href = "analysis.html?mode=new"; 
+    }, 800);
+}
     // 修正後的上傳函式
-    async function uploadToCloud(username, activityName, score, fullData) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const detailToSave = {
-            subject: urlParams.get('subject') || "unknown",           
-            unitName: activityName,            
-            grade: fullData.grade || "國九",
-            totalCount: fullData.totalCount,
-            correctCount: fullData.correctCount,
-            wrongList: fullData.wrongList,
-            cheat: fullData.cheat,
-            tabSwitches: fullData.tabSwitches
-        };
+  async function uploadToCloud(username, activityName, score, fullData) {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // 🌟 這裡的 Key 要跟你的 GAS 腳本對應
+    const detailToSave = {
+        subject: urlParams.get('subject') || "unknown",           
+        unitName: activityName,            
+        grade: fullData.grade || "國九",
+        totalCount: fullData.totalCount,
+        correctCount: fullData.correctCount,
+        xpGained: fullData.xpGained, // ✨ 補上這行，GAS 才能存入試算表
+        wrongList: fullData.wrongList,
+        cheat: fullData.cheat,
+        tabSwitches: fullData.tabSwitches
+    };
 
-        const payload = {
-            action: "save_record",
-            username: username,
-            activity: activityName,
-            score: score,
-            detail: JSON.stringify(detailToSave) 
-        };
+    const payload = {
+        action: "save_record",
+        username: username,
+        activity: activityName,
+        score: score,
+        detail: JSON.stringify(detailToSave) 
+    };
 
-        return fetch(GAS_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        }).catch(err => console.log("Fetch Error:", err));
-    }
+    // 移除會中斷執行的 alert，改用 console.log 觀察
+    console.log("🚀 Syncing to Cloud...", payload);
+
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }).catch(err => console.error("GAS Fetch Error:", err));
+}
 </script>
 </body>
 </html>
