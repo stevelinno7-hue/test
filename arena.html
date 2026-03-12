@@ -4,230 +4,327 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>榮譽榜 - 雲端學院</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .header-title {
-            text-align: center;
-            color: #2c3e50;
-            font-size: 2.5em;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        /* 個人狀態卡片 UI */
-        .profile-card {
-            background: linear-gradient(135deg, #6e8efb, #a777e3);
-            border-radius: 15px;
-            padding: 25px;
-            color: white;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .avatar {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2.5em;
-            color: #a777e3;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .user-info { flex-grow: 1; }
-        .user-info h2 { margin: 0 0 10px 0; font-size: 1.8em; }
-        .level-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: bold;
-        }
-        /* 經驗值進度條 */
-        .xp-bar-bg {
-            background: rgba(255,255,255,0.3);
-            height: 12px;
-            border-radius: 6px;
-            margin-top: 15px;
-            overflow: hidden;
-            position: relative;
-        }
-        .xp-bar-fill {
-            background: #ffeb3b;
-            height: 100%;
-            width: 0%; /* 會由 JS 動態調整 */
-            border-radius: 6px;
-            transition: width 1s ease-in-out;
-        }
-        .xp-text {
-            font-size: 0.85em;
-            margin-top: 5px;
-            text-align: right;
-        }
-
-        /* 排行榜 UI */
-        .leaderboard-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        .leaderboard-card h3 {
-            margin-top: 0;
-            color: #2c3e50;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .rank-list { list-style: none; padding: 0; margin: 0; }
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 10px;
-            border-bottom: 1px solid #f5f5f5;
-            transition: background 0.3s;
-        }
-        .rank-item:hover { background: #fafafa; }
-        .rank-left { display: flex; align-items: center; gap: 15px; }
-        .rank-num {
-            font-size: 1.5em;
-            font-weight: bold;
-            width: 40px;
-            text-align: center;
-        }
-        .rank-num.gold { color: #FFD700; font-size: 2em; }
-        .rank-num.silver { color: #C0C0C0; font-size: 1.8em; }
-        .rank-num.bronze { color: #CD7F32; font-size: 1.6em; }
-        .rank-name { font-size: 1.1em; font-weight: 500; }
-        .rank-level { font-size: 0.8em; color: #888; background: #eee; padding: 2px 8px; border-radius: 10px; }
-        .rank-xp { font-weight: bold; color: #FF9800; font-size: 1.1em; }
-        
-        #loadingMsg { text-align: center; color: #888; padding: 20px; }
+        @media (max-width: 300px) { .watch-hidden { display: none !important; } }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-</head>
-<body>
 
-<div class="container">
-    <h1 class="header-title"><i class="fas fa-gamepad"></i> 學習競技場</h1>
+    </head>
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
 
-    <div class="profile-card">
-        <div class="avatar"><i class="fas fa-user-ninja"></i></div>
-        <div class="user-info">
-            <h2><span id="playerName">載入中...</span> <span class="level-badge" id="playerLevel">Lv.1</span></h2>
-            <div class="xp-bar-bg">
-                <div class="xp-bar-fill" id="xpFill"></div>
-            </div>
-            <div class="xp-text"><span id="playerXP">0</span> / <span id="nextLevelXP">100</span> XP (距離升級還差 <span id="xpNeeded">100</span>)</div>
+   
+    <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
-    </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
 
-    <div class="leaderboard-card">
-        <h3><i class="fas fa-trophy" style="color:#FFD700;"></i> 英雄排行榜 (Top 20)</h3>
-        <div id="loadingMsg"><i class="fas fa-spinner fa-spin"></i> 正在從雲端召喚神人名單...</div>
-        <ul class="rank-list" id="leaderboardList">
-            </ul>
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+
+       <div class="p-6 lg:block watch-hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+        <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+        <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+            <i class="fas fa-pen mr-1"></i> 編輯年級
+        </button>
     </div>
 </div>
 
-<script>
-    // 🔗 這裡請填入你的 Google Apps Script 網址
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+      <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
+    <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
 
-    // 1. 初始化個人狀態
-    function initProfile() {
-        // 嘗試從你的 Auth 系統抓取登入的使用者
-        const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客', xp: 0, level: 1 };
+    <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-rocket text-sm"></i>
+        </div>
+        <span class="font-bold">任務中心</span>
+        <span class="ml-auto bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full font-black">NEW</span>
+    </a>
+
+    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-book-open text-sm"></i>
+        </div>
+        <span class="font-bold">課程總覽</span>
+    </a>
+
+    <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-fire text-sm"></i>
+        </div>
+        <span class="font-bold">錯題補救</span>
+    </a>
+
+    <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-star text-sm"></i>
+        </div>
+        <span class="font-bold">重點複習</span>
+    </a>
+
+    <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
+            <i class="fas fa-gamepad text-sm"></i>
+        </div>
+        <span class="font-bold">遊戲場</span>
+    </a>
+
+    <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-comments text-sm"></i>
+        </div>
+        <span class="font-bold">解題論壇</span>
+    </a>
+    
+    <div class="pt-4 mt-4 border-t border-slate-100">
+        <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">系統支援</p>
         
-        document.getElementById('playerName').textContent = user.name;
-        document.getElementById('playerLevel').textContent = `Lv.${user.level || 1}`;
+        <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+            <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                <i class="fas fa-headset text-sm"></i>
+            </div>
+            <span class="font-bold">幫助中心 & 聯絡老師</span>
+        </a>
+
+        <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all group">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:text-slate-600">
+                <i class="fas fa-key text-xs"></i>
+            </div>
+            <span class="text-sm font-medium">更改密碼</span>
+        </a>
+    </div>
+</nav>
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-slate-50/50">
+        <div class="p-6 md:p-8 overflow-y-auto h-full scroll-smooth">
+            
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
+                        <i class="fas fa-medal text-amber-500"></i> 雲端榮譽榜
+                    </h1>
+                    <p class="text-slate-500 mt-1">累積經驗值，挑戰全服神人榜！</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 lg:col-span-1 flex flex-col items-center relative overflow-hidden h-fit">
+                    <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-600 to-indigo-500"></div>
+                    
+                    <div class="relative w-24 h-24 bg-white rounded-full border-4 border-white shadow-md flex items-center justify-center text-4xl text-indigo-500 mt-8 mb-4 z-10">
+                        <i class="fas fa-user-astronaut"></i>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-slate-800" id="playerName">載入中...</h2>
+                    <div class="text-sm text-slate-500 mb-4" id="playerRole">--</div>
+                    
+                    <div class="px-4 py-1.5 bg-indigo-100 text-indigo-700 font-black rounded-full text-sm mb-6 shadow-sm border border-indigo-200" id="playerLevel">
+                        Lv. 1
+                    </div>
+                    
+                    <div class="w-full text-left px-2">
+                        <div class="flex justify-between text-sm font-bold text-slate-600 mb-2">
+                            <span>經驗值進度</span>
+                            <span id="xpText">0 / 100</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-2 shadow-inner">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-1000 w-0" id="xpFill"></div>
+                        </div>
+                        <div class="text-right text-xs font-medium text-slate-400">
+                            距離升級還差 <span id="xpNeeded" class="text-indigo-500 font-bold">100</span> XP
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 lg:col-span-2">
+                    <h3 class="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                        <i class="fas fa-crown text-yellow-500 text-2xl"></i> 全服英雄排行榜 (Top 20)
+                    </h3>
+                    
+                    <div id="loadingMsg" class="text-center py-10 text-slate-400 font-medium">
+                        <i class="fas fa-circle-notch fa-spin text-3xl mb-3 text-indigo-300"></i><br>正在從雲端召喚神人名單...
+                    </div>
+                    
+                    <ul id="leaderboardList" class="space-y-3">
+                        </ul>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 手機側邊欄開關
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar.classList.contains('-translate-x-full')) {
+        // 開啟
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        // 關閉
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+    // 1. 開啟編輯視窗
+    function openProfileModal() {
+        const user = Auth.getCurrentUser();
+        if (!user) {
+            alert("請先登入！");
+            return;
+        }
+
+        // 設定下拉選單為目前的年級
+        const select = document.getElementById('editGradeSelect');
+        if (user.grade) {
+            select.value = user.grade;
+        }
         
-        // 簡單的升級邏輯展示 (假設每 100 XP 升一級)
-        const currentXP = user.xp || 0;
-        const currentLevel = user.level || 1;
-        const nextLevelXP = currentLevel * 100; // 下一級需要的總 XP
-        const xpNeeded = nextLevelXP - currentXP;
-        
-        document.getElementById('playerXP').textContent = currentXP;
-        document.getElementById('nextLevelXP').textContent = nextLevelXP;
-        document.getElementById('xpNeeded').textContent = xpNeeded > 0 ? xpNeeded : 0;
-        
-        // 計算進度條 %
-        const percent = Math.min((currentXP / nextLevelXP) * 100, 100);
-        document.getElementById('xpFill').style.width = `${percent}%`;
+        // 顯示視窗
+        document.getElementById('profileModal').classList.remove('hidden');
     }
 
-    // 2. 抓取並顯示排行榜
-    async function loadLeaderboard() {
-        const listContainer = document.getElementById('leaderboardList');
-        const loadingMsg = document.getElementById('loadingMsg');
+    // 2. 關閉編輯視窗
+    function closeProfileModal() {
+        document.getElementById('profileModal').classList.add('hidden');
+    }
+        // ==========================================
+        // 🚀 遊戲化與排行榜邏輯區
+        // ==========================================
+        
+        // 🔗 填入你的 Google Apps Script 網址
+        const GAS_URL = "你的_GOOGLE_APPS_SCRIPT_網址_填在這裡";
 
-        try {
-            // 向 GAS 請求排行榜資料 (需要你在 GAS 裡加上我上一則回覆的程式碼)
-            const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
-            const topPlayers = await response.json();
+        // 1. 初始化個人狀態
+        async function initProfile() {
+            // 從你原本的 Auth 系統取得登入資料 (防呆機制)
+            const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客', grade: '未登入' };
             
-            loadingMsg.style.display = 'none'; // 隱藏載入中
-            
-            if (!topPlayers || topPlayers.length === 0) {
-                listContainer.innerHTML = "<li style='text-align:center; padding:20px; color:#888;'>目前還沒有英雄上榜，快去考試搶頭香！</li>";
+            // 更新側邊欄
+            document.getElementById('sideUserName').textContent = user.name;
+            document.getElementById('sideUserRole').textContent = user.grade || '一般會員';
+
+            if (user.username === 'guest') {
+                document.getElementById('playerName').textContent = "訪客 (請先登入)";
                 return;
             }
 
-            topPlayers.forEach((player, index) => {
-                const li = document.createElement('li');
-                li.className = 'rank-item';
+            try {
+                // 向 Google 試算表請求最新 XP
+                const response = await fetch(`${GAS_URL}?action=get_profile&username=${user.username}`);
+                const cloudUser = await response.json();
+
+                if(cloudUser.error) {
+                    document.getElementById('playerName').textContent = user.name;
+                    return;
+                }
+
+                // 寫入畫面
+                document.getElementById('playerName').textContent = cloudUser.name;
+                document.getElementById('playerLevel').textContent = `Lv. ${cloudUser.level}`;
+                document.getElementById('playerRole').textContent = user.grade || '認真的學生';
                 
-                // 處理前三名圖示
-                let rankDisplay = `${index + 1}`;
-                let rankClass = "rank-num";
-                if (index === 0) { rankDisplay = '<i class="fas fa-crown"></i>'; rankClass += " gold"; }
-                if (index === 1) { rankDisplay = '<i class="fas fa-medal"></i>'; rankClass += " silver"; }
-                if (index === 2) { rankDisplay = '<i class="fas fa-award"></i>'; rankClass += " bronze"; }
+                const currentXP = cloudUser.xp;
+                const nextLevelXP = cloudUser.level * 100; 
+                const xpNeeded = nextLevelXP - currentXP;
+                
+                document.getElementById('xpText').textContent = `${currentXP} / ${nextLevelXP}`;
+                document.getElementById('xpNeeded').textContent = xpNeeded > 0 ? xpNeeded : 0;
+                
+                // 動態拉長進度條
+                const percent = Math.min((currentXP / nextLevelXP) * 100, 100);
+                setTimeout(() => { document.getElementById('xpFill').style.width = `${percent}%`; }, 300);
 
-                li.innerHTML = `
-                    <div class="rank-left">
-                        <div class="${rankClass}">${rankDisplay}</div>
-                        <div>
-                            <span class="rank-name">${player.name || player.username}</span>
-                            <span class="rank-level">Lv.${player.level || 1}</span>
-                        </div>
-                    </div>
-                    <div class="rank-xp">${player.xp} XP</div>
-                `;
-                listContainer.appendChild(li);
-            });
-
-        } catch (error) {
-            // ✅ 請換成這行（將 class 的引號改成單引號）
-loadingMsg.innerHTML = "<span style='color:red;'><i class='fas fa-exclamation-triangle'></i> 無法連接到排行榜中心，請稍後再試。</span>";
-            console.error(error);
+            } catch (error) {
+                console.error("讀取個人資料失敗:", error);
+                document.getElementById('playerName').textContent = user.name;
+            }
         }
-    }
 
-    // 當網頁載入完成後執行
-    window.addEventListener('DOMContentLoaded', () => {
-        initProfile();
-        loadLeaderboard();
-    });
-</script>
+        // 2. 載入雲端排行榜
+        async function loadLeaderboard() {
+            const listContainer = document.getElementById('leaderboardList');
+            const loadingMsg = document.getElementById('loadingMsg');
 
+            try {
+                const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
+                const topPlayers = await response.json();
+                
+                loadingMsg.style.display = 'none'; 
+                
+                if (!topPlayers || topPlayers.length === 0) {
+                    listContainer.innerHTML = "<li class='text-center py-10 text-slate-400 font-medium bg-slate-50 rounded-2xl'>目前尚無排名紀錄，快去搶頭香！</li>";
+                    return;
+                }
+
+                topPlayers.forEach((player, index) => {
+                    const li = document.createElement('li');
+                    // 使用 Tailwind 的樣式來美化清單項目
+                    li.className = 'flex items-center justify-between p-4 bg-slate-50 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-200 rounded-2xl transition-all duration-300';
+                    
+                    // 處理前三名的專屬圖示與顏色
+                    let rankDisplay = `<span class="text-slate-400 font-bold">${index + 1}</span>`;
+                    if (index === 0) rankDisplay = '<i class="fas fa-crown text-2xl text-yellow-400 drop-shadow-md"></i>';
+                    else if (index === 1) rankDisplay = '<i class="fas fa-medal text-2xl text-slate-300 drop-shadow-md"></i>';
+                    else if (index === 2) rankDisplay = '<i class="fas fa-award text-2xl text-amber-600 drop-shadow-md"></i>';
+
+                    li.innerHTML = `
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 text-center">${rankDisplay}</div>
+                            <div>
+                                <div class="font-extrabold text-slate-800 text-lg">${player.name || player.username}</div>
+                                <div class="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mt-1">Lv. ${player.level || 1}</div>
+                            </div>
+                        </div>
+                        <div class="font-black text-xl text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
+                            ${player.xp} XP
+                        </div>
+                    `;
+                    listContainer.appendChild(li);
+                });
+
+            } catch (error) {
+                loadingMsg.innerHTML = "<span class='text-red-500 font-bold'><i class='fas fa-exclamation-triangle'></i> 無法連接到伺服器</span>";
+                console.error(error);
+            }
+        }
+
+        // 網頁載入後啟動
+        document.addEventListener('DOMContentLoaded', () => {
+            initProfile();
+            loadLeaderboard();
+        });
+    </script>
 </body>
 </html>
