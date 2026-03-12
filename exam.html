@@ -909,11 +909,9 @@
 
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 async function finalSubmit() {
-    // 1. 優先變色 (確保點擊有感)
     const btn = document.getElementById('confirmSubmitBtn');
     if (btn) {
         btn.disabled = true;
-        btn.style.backgroundColor = "#94a3b8";
         btn.textContent = "上傳中...";
     }
 
@@ -922,83 +920,72 @@ async function finalSubmit() {
         const modal = document.getElementById('submitModal');
         if (modal) modal.classList.add('hidden');
 
-        // 2. 獲取參數
         const urlParams = new URLSearchParams(window.location.search);
         const subject = urlParams.get('subject') || "綜合";
         const title = urlParams.get('title') || "單元測驗";
 
         let correctCount = 0;
         let totalCount = 0;
-        let wrongList = [];
+        let allQuestions = []; // 🌟 新增：用來存「所有」題目紀錄
 
-        // 3. 核心：計算對錯並抓取錯題 (解決 questions 報錯)
-        // 確保使用你的題目變數名稱，假設是 mockQuestions
         const currentQuestions = (typeof mockQuestions !== 'undefined') ? mockQuestions : [];
         
         currentQuestions.forEach((item, idx) => {
-            if (item.type === 'group') {
-                item.questions.forEach((subQ, sIdx) => {
-                    totalCount++;
-                    const userAns = (userAnswers[idx] && userAnswers[idx][sIdx] !== undefined) ? userAnswers[idx][sIdx] : null;
-                    if (userAns === subQ.answer) {
-                        correctCount++;
-                    } else {
-                        wrongList.push({
-                            question: subQ.question,
-                            options: subQ.options,
-                            answer: subQ.answer,
-                            yourAns: userAns,
-                            concept: item.concept || "基礎概念"
-                        });
-                    }
-                });
-            } else {
+            // 處理題組或單題
+            const subQs = item.type === 'group' ? item.questions : [item];
+            const userAnsArr = item.type === 'group' ? (userAnswers[idx] || []) : [userAnswers[idx]];
+
+            subQs.forEach((q, sIdx) => {
                 totalCount++;
-                const userAns = (userAnswers[idx] !== undefined) ? userAnswers[idx] : null;
-                if (userAns === item.answer) {
-                    correctCount++;
-                } else {
-                    wrongList.push({
-                        question: item.question,
-                        options: item.options,
-                        answer: item.answer,
-                        yourAns: userAns,
-                        concept: item.concept || "基礎概念"
-                    });
-                }
-            }
+                const uAns = userAnsArr[sIdx] !== undefined ? userAnsArr[sIdx] : null;
+                const isCorrect = (uAns === q.answer);
+                
+                if (isCorrect) correctCount++;
+
+                // 🌟 把「每一題」都存進陣列，不論對錯
+                allQuestions.push({
+                    question: q.question,
+                    options: q.options,
+                    answer: q.answer,
+                    yourAns: uAns,
+                    isCorrect: isCorrect,
+                    concept: item.concept || "基礎概念"
+                });
+            });
         });
 
         const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+        
+        // 🌟 計算 XP (基礎 20 + 每題 10)
         const xp = 20 + (correctCount * 10);
 
-        // 4. 取得使用者
         let username = "guest";
         if (window.Auth && Auth.getCurrentUser()) {
             username = Auth.getCurrentUser().username || "guest";
         }
 
-        // 5. 打包完整資料 (這會傳給分析頁)
+        // 🌟 整理要傳送的詳細物件
         const resultData = {
-            owner: username,
             subject: subject,
-            title: title,
+            unitName: title,
             score: score,
-            xpGained: xp,
+            xpGained: xp,            // 🔥 確保欄位名稱叫 xpGained
             totalCount: totalCount,
             correctCount: correctCount,
-            wrongList: wrongList, // 🌟 現在這裡有資料了
+            questions: allQuestions, // 🌟 包含完整對錯清單
+            wrongList: allQuestions.filter(q => !q.isCorrect), // 依然保留錯題清單供快速過濾
             syncTime: new Date().toISOString()
         };
 
+        // 存入本地 (分析頁面使用)
         localStorage.setItem('examResult', JSON.stringify(resultData));
 
-        // 6. 呼叫上傳 (傳送完整 resultData)
+        // 6. 呼叫上傳
         if (username !== "guest" && typeof uploadToCloud === 'function') {
+            // 💡 這裡將 resultData 直接傳入
             await uploadToCloud(username, title, score, resultData);
         }
 
-        // 7. 最後跳轉
         window.onbeforeunload = null;
         window.location.href = "analysis.html?mode=new";
 
@@ -1008,39 +995,32 @@ async function finalSubmit() {
         if (btn) {
             btn.disabled = false;
             btn.textContent = "重新提交";
-            btn.style.backgroundColor = "";
         }
     }
 }
-async function uploadToCloud(username, activityName, score, fullData) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentSubject = urlParams.get('subject') || "未知科目";
-    
-    // 參考 exam (22).html 的結構，並加入 xpGained
-    const detailToSave = {
-        subject: currentSubject,           
-        unitName: activityName,            
-        grade: fullData.grade || "國九",
-        totalCount: fullData.totalCount,
-        correctCount: fullData.correctCount,
-        xpGained: fullData.xpGained || (20 + (fullData.correctCount * 10)), // 這裡確保有 XP
-        wrongList: fullData.wrongList,
-        syncTime: new Date().toISOString()
-    };
 
+async function uploadToCloud(username, activityName, score, fullData) {
+    // 💡 再次檢查封裝，確保 GAS 能讀到最外層的 xpGained
     const payload = {
         action: "save_record",
         username: username,
         activity: activityName,
         score: score,
-        detail: JSON.stringify(detailToSave) // 這裡必須轉成字串，GAS 才能用 JSON.parse 解析
+        // 🌟 這裡把整個 fullData 轉字串存入 detail
+        detail: JSON.stringify(fullData) 
     };
+
+    console.log("🚀 準備上傳雲端，XP值:", fullData.xpGained);
 
     return fetch(GAS_URL, {
         method: 'POST',
-        mode: 'no-cors', // 這是 exam (22).html 成功的關鍵之一，避免跨域報錯
+        // 💡 雖然 no-cors 無法看回傳，但這能確保請求送達 GAS
+        mode: 'no-cors', 
+        headers: {
+            'Content-Type': 'text/plain' // 避免觸發 CORS 預檢請求
+        },
         body: JSON.stringify(payload)
-    });
+    }).catch(err => console.error("雲端同步失敗:", err));
 }
 </script>
 </body>
