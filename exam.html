@@ -1002,19 +1002,17 @@
 
         setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
     }
-
 async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
     const currentSubject = urlParams.get('subject') || "unknown";
     
-    // 確保 detailToSave 裡面確實包含了 xpGained
     const detailToSave = {
         subject: currentSubject,           
         unitName: activityName,            
         grade: fullData.grade || "國九",
         totalCount: fullData.totalCount,
         correctCount: fullData.correctCount,
-        xpGained: fullData.xpGained, // 🌟 這裡必須有值
+        xpGained: fullData.xpGained, 
         wrongList: fullData.wrongList,
         cheat: fullData.cheat,
         tabSwitches: fullData.tabSwitches
@@ -1028,15 +1026,22 @@ async function uploadToCloud(username, activityName, score, fullData) {
         detail: JSON.stringify(detailToSave) 
     };
 
-    // 🌟 移除 no-cors，改用標準方式
     try {
+        // 發送資料給 GAS
         const response = await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify(payload)
         });
-        console.log("雲端同步發送成功");
+        
+        // 🌟 強制讀取 GAS 回傳的任何文字！
+        const resultText = await response.text(); 
+        
+        // 🌟 直接跳出視窗，讓你親眼看到 GAS 說了什麼！
+        alert("【後台回傳訊息】\\n" + resultText);
+
     } catch (err) {
-        console.error("雲端同步失敗:", err);
+        // 如果連線直接失敗，跳出這個警告
+        alert("【連線嚴重失敗】\\n請檢查 GAS 網址是否正確，以及權限是否設為「所有人」。\\n錯誤內容：" + err.message);
     }
 }
 </script>
