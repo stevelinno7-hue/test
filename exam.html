@@ -961,7 +961,7 @@
             correctCount: correctCount,
             totalCount: totalCount,
             // ✨ 成功把所有題目都帶上！
-            questions: questions.map((q, index) => ({
+            questions: mockQuestions.map((q, index) => ({
                 ...q,
                 yourAns: userAnswers[index]
             })),
