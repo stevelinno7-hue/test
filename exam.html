@@ -909,106 +909,89 @@
 
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 async function finalSubmit() {
-    // 1. 優先變色 (確保點擊有感)
+    console.log("開始執行結算...");
+
+    // 1. 立即變色 (只要點了就先變色，避免使用者覺得沒反應)
     const btn = document.getElementById('confirmSubmitBtn');
     if (btn) {
         btn.disabled = true;
-        btn.style.backgroundColor = "#94a3b8";
-        btn.textContent = "上傳中...";
+        btn.style.backgroundColor = "#94a3b8"; // 轉灰色
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上傳中...';
     }
 
     try {
+        // 2. 停止計時
         if (typeof timerInterval !== 'undefined') clearInterval(timerInterval);
-        const modal = document.getElementById('submitModal');
-        if (modal) modal.classList.add('hidden');
-
-        // 2. 獲取參數
-        const urlParams = new URLSearchParams(window.location.search);
-        const subject = urlParams.get('subject') || "綜合";
-        const title = urlParams.get('title') || "單元測驗";
+        
+        // 3. 確保題目資料存在 (自動偵測變數名稱)
+        const qList = (typeof mockQuestions !== 'undefined') ? mockQuestions : 
+                      (typeof questions !== 'undefined' ? questions : []);
+        
+        if (qList.length === 0) throw new Error("找不到題目資料 (questions is empty)");
 
         let correctCount = 0;
         let totalCount = 0;
         let wrongList = [];
 
-        // 3. 核心：計算對錯並抓取錯題 (解決 questions 報錯)
-        // 確保使用你的題目變數名稱，假設是 mockQuestions
-        const currentQuestions = (typeof mockQuestions !== 'undefined') ? mockQuestions : [];
-        
-        currentQuestions.forEach((item, idx) => {
+        // 4. 安全計算分數
+        qList.forEach((item, idx) => {
             if (item.type === 'group') {
                 item.questions.forEach((subQ, sIdx) => {
                     totalCount++;
                     const userAns = (userAnswers[idx] && userAnswers[idx][sIdx] !== undefined) ? userAnswers[idx][sIdx] : null;
-                    if (userAns === subQ.answer) {
-                        correctCount++;
-                    } else {
-                        wrongList.push({
-                            question: subQ.question,
-                            options: subQ.options,
-                            answer: subQ.answer,
-                            yourAns: userAns,
-                            concept: item.concept || "基礎概念"
-                        });
-                    }
+                    if (userAns === subQ.answer) correctCount++;
+                    else wrongList.push({ question: subQ.question, answer: subQ.answer, yourAns: userAns });
                 });
             } else {
                 totalCount++;
                 const userAns = (userAnswers[idx] !== undefined) ? userAnswers[idx] : null;
-                if (userAns === item.answer) {
-                    correctCount++;
-                } else {
-                    wrongList.push({
-                        question: item.question,
-                        options: item.options,
-                        answer: item.answer,
-                        yourAns: userAns,
-                        concept: item.concept || "基礎概念"
-                    });
-                }
+                if (userAns === item.answer) correctCount++;
+                else wrongList.push({ question: item.question || "未命名題目", answer: item.answer, yourAns: userAns });
             }
         });
 
         const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
         const xp = 20 + (correctCount * 10);
 
-        // 4. 取得使用者
+        // 5. 取得使用者資訊 (增加 Auth 防錯)
         let username = "guest";
-        if (window.Auth && Auth.getCurrentUser()) {
-            username = Auth.getCurrentUser().username || "guest";
-        }
+        try {
+            if (window.Auth && typeof Auth.getCurrentUser === 'function') {
+                const u = Auth.getCurrentUser();
+                if (u) username = u.username || "guest";
+            }
+        } catch(e) { console.log("Auth 抓取失敗，使用 Guest"); }
 
-        // 5. 打包完整資料 (這會傳給分析頁)
         const resultData = {
-            owner: username,
-            subject: subject,
-            title: title,
+            username: username,
             score: score,
             xpGained: xp,
             totalCount: totalCount,
             correctCount: correctCount,
-            wrongList: wrongList, // 🌟 現在這裡有資料了
+            wrongList: wrongList,
             syncTime: new Date().toISOString()
         };
 
+        // 6. 存入本地 (供分析頁使用)
         localStorage.setItem('examResult', JSON.stringify(resultData));
 
-        // 6. 呼叫上傳 (傳送完整 resultData)
-        if (username !== "guest" && typeof uploadToCloud === 'function') {
-            await uploadToCloud(username, title, score, resultData);
+        // 7. 呼叫上傳 (加上 alert 確保你知道資料送出了)
+        if (username !== "guest") {
+            // alert("🎉 資料準備好上傳了！\n帳號：" + username + "\n獲得 XP：" + xp);
+            await uploadToCloud(username, "單元測驗", score, resultData);
         }
 
-        // 7. 最後跳轉
+        // 8. 成功後跳轉
         window.onbeforeunload = null;
         window.location.href = "analysis.html?mode=new";
 
-    } catch (err) {
-        console.error("計算失敗:", err);
-        alert("❌ 結算發生錯誤：" + err.message);
+    } catch (error) {
+        // 🌟 如果還是「沒變色」或中斷，這裡會彈窗告訴你哪一行壞了！
+        alert("❌ 交卷過程發生錯誤：\n" + error.message);
         if (btn) {
             btn.disabled = false;
-            btn.textContent = "重新提交";
             btn.style.backgroundColor = "";
+            btn.textContent = "確認交卷";
         }
     }
 }
