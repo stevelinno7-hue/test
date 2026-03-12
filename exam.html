@@ -954,31 +954,32 @@ async function finalSubmit() {
             });
         });
 
-        const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
-        
-        // 🌟 計算 XP (基礎 20 + 每題 10)
-        const xp = 20 + (correctCount * 10);
+const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+    const xp = 20 + (correctCount * 10); // 計算 XP
 
-        let username = "guest";
-        if (window.Auth && Auth.getCurrentUser()) {
-            username = Auth.getCurrentUser().username || "guest";
-        }
+    // 🌟 重新整理 resultData，確保欄位名稱正確
+    const resultData = {
+        subject: subject,           // 科目 (例如：理化)
+        unitName: title,            // 單元名稱 (例如：單元測驗)
+        score: score,
+        xpGained: xp,               // 🔥 必須叫 xpGained，GAS 才認得
+        totalCount: totalCount,
+        correctCount: correctCount,
+        wrongList: wrongList,       // 錯題清單
+        questions: allQuestions,    // 🌟 這裡要放入完整題目紀錄
+        syncTime: new Date().toISOString()
+    };
 
-        // 🌟 整理要傳送的詳細物件
-        const resultData = {
-            subject: subject,
-            unitName: title,
-            score: score,
-            xpGained: xp,            // 🔥 確保欄位名稱叫 xpGained
-            totalCount: totalCount,
-            correctCount: correctCount,
-            questions: allQuestions, // 🌟 包含完整對錯清單
-            wrongList: allQuestions.filter(q => !q.isCorrect), // 依然保留錯題清單供快速過濾
-            syncTime: new Date().toISOString()
-        };
+    // 儲存到本地供分析頁使用
+    localStorage.setItem('examResult', JSON.stringify(resultData));
 
-        // 存入本地 (分析頁面使用)
-        localStorage.setItem('examResult', JSON.stringify(resultData));
+    // 呼叫上傳
+    if (username !== "guest" && typeof uploadToCloud === 'function') {
+        // 直接把整包 resultData 傳過去
+        await uploadToCloud(username, title, score, resultData);
+    }
+
+    window.location.href = "analysis.html?mode=new";
 
         // 6. 呼叫上傳
         if (username !== "guest" && typeof uploadToCloud === 'function') {
@@ -1000,27 +1001,25 @@ async function finalSubmit() {
 }
 
 async function uploadToCloud(username, activityName, score, fullData) {
-    // 💡 再次檢查封裝，確保 GAS 能讀到最外層的 xpGained
+    // 這裡我們直接把傳進來的 fullData 轉成 JSON 字串
+    // 這樣裡面就會包含 unitName, subject, xpGained, 和完整的 questions
     const payload = {
         action: "save_record",
         username: username,
-        activity: activityName,
+        activity: activityName, // 這是寫入試算表第三欄的「測驗名稱」
         score: score,
-        // 🌟 這裡把整個 fullData 轉字串存入 detail
         detail: JSON.stringify(fullData) 
     };
 
-    console.log("🚀 準備上傳雲端，XP值:", fullData.xpGained);
+    console.log("🚀 準備同步雲端:", payload);
 
     return fetch(GAS_URL, {
         method: 'POST',
-        // 💡 雖然 no-cors 無法看回傳，但這能確保請求送達 GAS
-        mode: 'no-cors', 
-        headers: {
-            'Content-Type': 'text/plain' // 避免觸發 CORS 預檢請求
-        },
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
-    }).catch(err => console.error("雲端同步失敗:", err));
+    });
+}
 }
 </script>
 </body>
