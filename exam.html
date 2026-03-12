@@ -999,7 +999,27 @@
                 }
             } catch (e) { console.error("雲端備份跳過:", e); }
         }
+// 🌟 抓鬼測試開始 🌟
+    alert("準備交卷！現在的登入身分是：" + (user ? user.username : "未知"));
 
+    if (window.Auth && user && user.username !== 'guest') {
+        try {
+            if (GAS_URL && GAS_URL !== "" && !GAS_URL.includes("你的網址")) {
+                alert("檢查通過！準備連線到 GAS 上傳資料...");
+                await Promise.race([
+                    uploadToCloud(user.username, resultData.title, finalScore, resultData),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                ]);
+            } else {
+                alert("❌ 被跳過：因為 GAS_URL 網址沒填寫！");
+            }
+        } catch (e) { 
+            console.error("雲端備份跳過:", e); 
+            alert("❌ 上傳過程發生錯誤或超時！");
+        }
+    } else {
+        alert("❌ 被跳過：因為你是訪客(guest)或沒登入，系統不會給訪客加 SP！");
+    }
         setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
     }
 async function uploadToCloud(username, activityName, score, fullData) {
