@@ -910,75 +910,85 @@
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
 async function finalSubmit() {
-    // 1. 優先：按鈕立刻變色（放在最前面，確保點擊有感）
     const btn = document.getElementById('confirmSubmitBtn');
-    if (btn) {
-        btn.disabled = true;
-        btn.style.backgroundColor = "#94a3b8"; // 強制變灰
-        btn.textContent = "傳送中...";
-    }
-
-    console.log("開始執行交卷程序...");
+    if (btn) { btn.disabled = true; btn.textContent = "傳送中..."; }
 
     try {
-        // 2. 安全關閉計時與模態框
-        if (typeof timerInterval !== 'undefined') clearInterval(timerInterval);
-        const modal = document.getElementById('submitModal');
-        if (modal) modal.classList.add('hidden');
-
-        // 3. 安全計算分數 (避免 undefined 崩潰)
+        const urlParams = new URLSearchParams(window.location.search);
+        // 🌟 修正：如果網址沒科目，給一個預設值或從標題判斷
+        const subject = urlParams.get('subject') || "綜合"; 
+        
         let correctCount = 0;
         let totalCount = 0;
-        const qData = (typeof mockQuestions !== 'undefined') ? mockQuestions : [];
-        
-        qData.forEach((item, idx) => {
+        let wrongList = [];
+
+        // 🌟 核心：完整記錄錯題
+        mockQuestions.forEach((item, idx) => {
             if (item.type === 'group') {
                 item.questions.forEach((subQ, sIdx) => {
                     totalCount++;
                     const userAns = (userAnswers[idx] && userAnswers[idx][sIdx] !== undefined) ? userAnswers[idx][sIdx] : null;
-                    if (userAns === subQ.answer) correctCount++;
+                    if (userAns === subQ.answer) {
+                        correctCount++;
+                    } else {
+                        // 紀錄題組中的錯題
+                        wrongList.push({
+                            question: subQ.question,
+                            options: subQ.options,
+                            answer: subQ.answer,
+                            yourAns: userAns,
+                            concept: item.concept || "未分類"
+                        });
+                    }
                 });
             } else {
                 totalCount++;
-                const userAns = (userAnswers[idx] !== undefined) ? userAnswers[idx] : null;
-                if (userAns === item.answer) correctCount++;
+                const userAns = userAnswers[idx];
+                if (userAns === item.answer) {
+                    correctCount++;
+                } else {
+                    // 紀錄一般題目的錯題
+                    wrongList.push({
+                        question: item.question,
+                        options: item.options,
+                        answer: item.answer,
+                        yourAns: userAns,
+                        concept: item.concept || "未分類"
+                    });
+                }
             }
         });
 
-        const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+        const score = Math.round((correctCount / totalCount) * 100);
         const xp = 20 + (correctCount * 10);
 
-        // 4. 安全取得帳號
-        let username = "guest";
-        try {
-            if (window.Auth && Auth.getCurrentUser()) {
-                username = Auth.getCurrentUser().username || "guest";
-            }
-        } catch(e) { console.log("Auth 抓取失敗"); }
+        // 打包資料
+        const resultData = {
+            subject: subject,
+            title: urlParams.get('title') || "單元測驗",
+            score: score,
+            xpGained: xp,
+            totalCount: totalCount,
+            correctCount: correctCount,
+            wrongList: wrongList, // 🌟 確保這是有資料的
+            syncTime: new Date().toISOString()
+        };
 
-        // 5. 存入本地
-        const result = { score: score, xpGained: xp, username: username, totalCount: totalCount, correctCount: correctCount };
-        localStorage.setItem('examResult', JSON.stringify(result));
+        // 存入本地 (供 analysis.html 使用)
+        localStorage.setItem('examResult', JSON.stringify(resultData));
 
-        // 🌟 絕對會彈窗（如果這行沒跑，代表上面分數計算有 Bug）
-        alert("🎉 準備傳送資料！\n帳號：" + username + "\n獲得 XP：" + xp);
-
-        // 6. 呼叫上傳
-        if (username !== "guest" && typeof uploadToCloud === 'function') {
-            await uploadToCloud(username, "綜合測驗", score, result);
+        // 上傳雲端
+        let username = (window.Auth && Auth.getCurrentUser()) ? Auth.getCurrentUser().username : 'guest';
+        if (username !== 'guest') {
+            await uploadToCloud(username, resultData.title, score, resultData);
         }
 
-        // 7. 跳轉
         window.onbeforeunload = null;
         window.location.href = "analysis.html?mode=new";
 
     } catch (err) {
-        alert("❌ 程式發生錯誤：\n" + err.message);
-        if (btn) {
-            btn.disabled = false;
-            btn.style.backgroundColor = "";
-            btn.textContent = "重新提交";
-        }
+        console.error(err);
+        alert("計算發生錯誤: " + err.message);
     }
 }
     // 修正後的上傳函式
