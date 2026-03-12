@@ -431,7 +431,15 @@
     const urlParams = new URLSearchParams(window.location.search);
     const subjectFromUrl = urlParams.get('subject');
     console.log("當前測驗科目：", subjectFromUrl); 
-
+function recordTime() {
+    try {
+        if (typeof questionStartTime !== 'undefined' && typeof timeLog !== 'undefined') {
+            const duration = (Date.now() - questionStartTime) / 1000;
+            timeLog[currentQIndex] = (timeLog[currentQIndex] || 0) + duration;
+            questionStartTime = Date.now();
+        }
+    } catch(e) { console.error("計時錯誤:", e); }
+}
     // ==========================================
     // 📱 UI 互動功能 (側邊欄 & Modal)
     // ==========================================
@@ -911,76 +919,90 @@
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
 async function finalSubmit() {
+    console.log("進入 finalSubmit");
+    
+    // 1. 強力檢查按鈕物件
     const submitBtn = document.getElementById('confirmSubmitBtn');
+    if (!submitBtn) {
+        alert("找不到 ID 為 confirmSubmitBtn 的按鈕，請檢查 HTML！");
+        return;
+    }
+    
     if (submitBtn.disabled) return; 
+    
+    // 2. 開始變色 (如果這行沒跑，代表上面出錯)
     submitBtn.disabled = true;      
     submitBtn.textContent = "資料上傳中..."; 
 
-    if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
-    const submitModal = document.getElementById('submitModal');
-    if(submitModal) submitModal.classList.add('hidden');
+    try {
+        if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+        const submitModal = document.getElementById('submitModal');
+        if(submitModal) submitModal.classList.add('hidden');
 
-    let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
+        let correctCount = 0, totalCount = 0, wrongList = [];
 
-    // 1. 重新計算得分與 XP
-    mockQuestions.forEach((item, idx) => {
-        const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
-        if (item.type === 'group') {
-            item.questions.forEach((subQ, sIdx) => {
+        // 確保變數存在
+        if (typeof mockQuestions === 'undefined') throw new Error("找不到題目資料 mockQuestions");
+
+        mockQuestions.forEach((item, idx) => {
+            if (item.type === 'group') {
+                item.questions.forEach((subQ, sIdx) => {
+                    totalCount++;
+                    const userAns = (userAnswers[idx] && userAnswers[idx][sIdx] !== undefined) ? userAnswers[idx][sIdx] : null;
+                    if (userAns === subQ.answer) correctCount++;
+                    else wrongList.push({ question: subQ.question, answer: subQ.answer, yourAns: userAns });
+                });
+            } else {
                 totalCount++;
-                const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
-                if (userAns === subQ.answer) correctCount++;
-                else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
-            });
-        } else {
-            totalCount++;
-            if (userAnswers[idx] === item.answer) correctCount++;
-            else wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
+                const userAns = (userAnswers[idx] !== undefined) ? userAnswers[idx] : null;
+                if (userAnswers[idx] === item.answer) correctCount++;
+                else wrongList.push({ question: item.question, answer: item.answer, yourAns: userAns });
+            }
+        });
+
+        const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+        const totalXP = 20 + (correctCount * 10);
+
+        // 取得使用者資訊 (增加極限防錯)
+        let username = 'guest';
+        if (window.Auth && typeof Auth.getCurrentUser === 'function') {
+            const u = Auth.getCurrentUser();
+            if (u) username = u.username;
         }
-    });
 
-    const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
-    
-    // 🌟 關鍵：確保 XP 這裡有算出來
-    const baseXP = 20;
-    const bonusXP = correctCount * 10;
-    const totalXP = baseXP + bonusXP;
+        const resultData = {
+            owner: username,
+            score: finalScore,
+            totalCount: totalCount,
+            correctCount: correctCount,
+            xpGained: totalXP,
+            wrongList: wrongList,
+            syncTime: new Date().toISOString()
+        };
 
-    const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
-    const urlParams = new URLSearchParams(window.location.search);
+        // 儲存本地
+        localStorage.setItem('examResult', JSON.stringify(resultData));
 
-    const resultData = {
-        owner: user.username,
-        title: urlParams.get('title') || "綜合測驗",
-        score: finalScore,
-        totalCount: totalCount,
-        correctCount: correctCount,
-        xpGained: totalXP, // 這裡要存進去供分析頁使用
-        wrongList: wrongList,
-        cheat: { cheatLevel: 'NORMAL', fastCount: fastCount },
-        tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
-        syncTime: new Date().toISOString()
-    };
-
-    // 2. 存入本地
-    localStorage.setItem('examResult', JSON.stringify(resultData));
-
-    // 3. 上傳雲端 (傳入 totalXP)
-    if (user.username !== 'guest' && typeof GAS_URL !== 'undefined') {
-        try {
-            // 🌟 傳送時確保把全量資料傳給 uploadToCloud
-            await uploadToCloud(user.username, resultData.title, finalScore, resultData);
-            if (window.Auth) Auth.addXP(totalXP); 
-        } catch (e) { 
-            console.error("雲端同步失敗:", e); 
+        // 3. 上傳雲端
+        if (username !== 'guest' && typeof GAS_URL !== 'undefined') {
+            // 這裡一定會彈窗
+            alert("✅ 準備上傳！\n帳號：" + username + "\n獲得 XP：" + totalXP);
+            await uploadToCloud(username, "綜合測驗", finalScore, resultData);
+            
+            if (window.Auth && typeof Auth.addXP === 'function') {
+                Auth.addXP(totalXP);
+            }
         }
+
+        window.onbeforeunload = null; 
+        setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 800);
+
+    } catch (err) {
+        // 如果中間任何地方崩潰，這裡會彈窗救你
+        alert("❌ 程式發生錯誤：\n" + err.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "重新提交";
     }
-
-    // 4. 解除警報並跳轉
-    window.onbeforeunload = null; 
-    setTimeout(() => { 
-        window.location.href = "analysis.html?mode=new"; 
-    }, 800);
 }
     // 修正後的上傳函式
   async function uploadToCloud(username, activityName, score, fullData) {
