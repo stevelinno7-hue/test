@@ -221,126 +221,114 @@
             </div>
         </div>
     </main>
-
-    <script>
+<script>
         // 手機側邊欄開關
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    
-    if (sidebar.classList.contains('-translate-x-full')) {
-        // 開啟
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
-    } else {
-        // 關閉
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-    }
-}
-    // 1. 開啟編輯視窗
-    function openProfileModal() {
-        const user = Auth.getCurrentUser();
-        if (!user) {
-            alert("請先登入！");
-            return;
-        }
-
-        // 設定下拉選單為目前的年級
-        const select = document.getElementById('editGradeSelect');
-        if (user.grade) {
-            select.value = user.grade;
-        }
-        
-        // 顯示視窗
-        document.getElementById('profileModal').classList.remove('hidden');
-    }
-
-    // 2. 關閉編輯視窗
-    function closeProfileModal() {
-        document.getElementById('profileModal').classList.add('hidden');
-    }
-        // ==========================================
-        // 🚀 遊戲化與排行榜邏輯區
-        // ==========================================
-        
-        // 🔗 填入你的 Google Apps Script 網址
-         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
-
-async function initProfile() {
-    // 1. 嘗試多次抓取，避免 Auth 物件太晚載入
-    let user = null;
-    if (window.Auth && typeof Auth.getCurrentUser === 'function') {
-        user = Auth.getCurrentUser();
-    }
-
-    // 2. 如果 Auth 暫時抓不到，嘗試直接從 localStorage 撈（最後手段）
-    if (!user) {
-        const localData = localStorage.getItem('currentUser');
-        if (localData) {
-            try {
-                user = JSON.parse(localData);
-                console.log("榮譽榜：成功從 localStorage 直接補抓資料");
-            } catch (e) {
-                console.error("解析本地資料失敗", e);
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
             }
         }
-    }
 
-    console.log("最終確認的使用者物件:", user);
-
-    const sideName = document.getElementById('sideUserName');
-    const sideRole = document.getElementById('sideUserRole');
-    const playerName = document.getElementById('playerName');
-    const playerRole = document.getElementById('playerRole');
-
-    // 3. 判斷是否為訪客或未登入
-    if (!user || user.username === 'guest') {
-        const guestName = "訪客";
-        sideName.textContent = guestName;
-        playerName.textContent = guestName;
-        sideRole.textContent = "尚未登入";
-        playerRole.textContent = "尚未登入";
-        return; 
-    }
-
-    // 4. 正式顯示資料（優先顯示本地資料，確保秒出）
-    const displayName = user.name || user.username || "使用者";
-    const displayGrade = user.grade || "學生";
-
-    sideName.textContent = displayName;
-    playerName.textContent = displayName;
-    sideRole.textContent = displayGrade;
-    playerRole.textContent = displayGrade;
-
-    // 5. 請求雲端 XP 資料
-    try {
-        const response = await fetch(`${GAS_URL}?action=get_profile&username=${user.username}`);
-        const cloudUser = await response.json();
-
-        if(!cloudUser.error) {
-            // 更新等級
-            document.getElementById('playerLevel').textContent = `Lv. ${cloudUser.level || 1}`;
-            
-            // 更新經驗值
-            const currentXP = cloudUser.xp || 0;
-            const nextLevelXP = (cloudUser.level || 1) * 100; 
-            const xpNeeded = Math.max(0, nextLevelXP - currentXP);
-            
-            document.getElementById('xpText').textContent = `${currentXP} / ${nextLevelXP}`;
-            document.getElementById('xpNeeded').textContent = xpNeeded;
-            
-            const percent = Math.min((currentXP / nextLevelXP) * 100, 100);
-            setTimeout(() => { 
-                const xpFill = document.getElementById('xpFill');
-                if(xpFill) xpFill.style.width = `${percent}%`; 
-            }, 300);
+        // 1. 開啟編輯視窗
+        function openProfileModal() {
+            const user = Auth.getCurrentUser();
+            if (!user || user.username === 'guest') {
+                alert("訪客無法修改年級，請先登入！");
+                return;
+            }
+            const select = document.getElementById('editGradeSelect');
+            if (user.grade) select.value = user.grade;
+            document.getElementById('profileModal').classList.remove('hidden');
         }
-    } catch (error) {
-        console.error("雲端資料讀取失敗:", error);
-    }
-}
-        // 2. 載入雲端排行榜
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+
+        // 🌟 2. 儲存年級修改至雲端
+        async function saveProfile() {
+            const user = Auth.getCurrentUser();
+            const newGrade = document.getElementById('editGradeSelect').value;
+            
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "update_grade",
+                        account: user.username,
+                        newGrade: newGrade
+                    })
+                });
+                const result = await response.json();
+                if (result.status === "success") {
+                    // 更新本地儲存
+                    user.grade = newGrade;
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    alert("年級修改成功！");
+                    location.reload(); // 重新載入畫面
+                } else {
+                    alert("修改失敗：" + result.message);
+                }
+            } catch (e) {
+                alert("連線異常，請稍後再試");
+            }
+        }
+
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+
+        // 🌟 3. 初始化個人資料與 XP
+        async function initProfile() {
+            let user = Auth.getCurrentUser();
+            if (!user || user.username === 'guest') {
+                document.getElementById('playerName').textContent = "訪客";
+                document.getElementById('sideUserName').textContent = "訪客";
+                return;
+            }
+
+            // 先顯示本地基礎資料
+            document.getElementById('sideUserName').textContent = user.name || user.username;
+            document.getElementById('playerName').textContent = user.name || user.username;
+            document.getElementById('sideUserRole').textContent = user.grade || "學生";
+            document.getElementById('playerRole').textContent = user.grade || "學生";
+
+            try {
+                // 這裡改用 get_leaderboard 並從中篩選出自己的資料 (因為你的 GAS 目前沒有 get_profile)
+                const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
+                const topPlayers = await response.json();
+                
+                const me = topPlayers.find(p => p.username === user.username);
+
+                if (me) {
+                    const currentXP = me.xp || 0;
+                    const level = me.level || 1;
+                    
+                    // 更新 UI
+                    document.getElementById('playerLevel').textContent = `Lv. ${level}`;
+                    
+                    // 你的 GAS 邏輯是每 100 XP 一級，所以進度是 currentXP % 100
+                    const xpInThisLevel = currentXP % 100;
+                    const xpNeeded = 100 - xpInThisLevel;
+                    
+                    document.getElementById('xpText').textContent = `${xpInThisLevel} / 100`;
+                    document.getElementById('xpNeeded').textContent = xpNeeded;
+                    
+                    setTimeout(() => {
+                        const xpFill = document.getElementById('xpFill');
+                        if (xpFill) xpFill.style.width = `${xpInThisLevel}%`;
+                    }, 500);
+                }
+            } catch (error) {
+                console.error("XP 資料載入失敗", error);
+            }
+        }
+
+        // 🌟 4. 載入排行榜
         async function loadLeaderboard() {
             const listContainer = document.getElementById('leaderboardList');
             const loadingMsg = document.getElementById('loadingMsg');
@@ -350,22 +338,21 @@ async function initProfile() {
                 const topPlayers = await response.json();
                 
                 loadingMsg.style.display = 'none'; 
-                
-                if (!topPlayers || topPlayers.length === 0) {
-                    listContainer.innerHTML = "<li class='text-center py-10 text-slate-400 font-medium bg-slate-50 rounded-2xl'>目前尚無排名紀錄，快去搶頭香！</li>";
+                listContainer.innerHTML = ""; // 清空舊內容
+
+                if (!topPlayers || topPlayers.length === 0 || topPlayers.error) {
+                    listContainer.innerHTML = "<li class='text-center py-10 text-slate-400 font-medium bg-slate-50 rounded-2xl'>目前尚無排名紀錄</li>";
                     return;
                 }
 
                 topPlayers.forEach((player, index) => {
                     const li = document.createElement('li');
-                    // 使用 Tailwind 的樣式來美化清單項目
                     li.className = 'flex items-center justify-between p-4 bg-slate-50 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-200 rounded-2xl transition-all duration-300';
                     
-                    // 處理前三名的專屬圖示與顏色
                     let rankDisplay = `<span class="text-slate-400 font-bold">${index + 1}</span>`;
-                    if (index === 0) rankDisplay = '<i class="fas fa-crown text-2xl text-yellow-400 drop-shadow-md"></i>';
-                    else if (index === 1) rankDisplay = '<i class="fas fa-medal text-2xl text-slate-300 drop-shadow-md"></i>';
-                    else if (index === 2) rankDisplay = '<i class="fas fa-award text-2xl text-amber-600 drop-shadow-md"></i>';
+                    if (index === 0) rankDisplay = '<i class="fas fa-crown text-2xl text-yellow-400"></i>';
+                    else if (index === 1) rankDisplay = '<i class="fas fa-medal text-2xl text-slate-300"></i>';
+                    else if (index === 2) rankDisplay = '<i class="fas fa-award text-2xl text-amber-600"></i>';
 
                     li.innerHTML = `
                         <div class="flex items-center gap-4">
@@ -383,12 +370,10 @@ async function initProfile() {
                 });
 
             } catch (error) {
-                loadingMsg.innerHTML = "<span class='text-red-500 font-bold'><i class='fas fa-exclamation-triangle'></i> 無法連接到伺服器</span>";
-                console.error(error);
+                loadingMsg.innerHTML = "<span class='text-red-500 font-bold'>伺服器連線失敗</span>";
             }
         }
 
-        // 網頁載入後啟動
         document.addEventListener('DOMContentLoaded', () => {
             initProfile();
             loadLeaderboard();
