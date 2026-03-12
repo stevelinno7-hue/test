@@ -985,7 +985,8 @@ async function finalSubmit() {
     // 修正後的上傳函式
   async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
-    
+    // 🌟 加這一行彈窗
+    alert("準備上傳！\n帳號：" + username + "\nXP：" + (fullData.xpGained || 0));
     // 🌟 這裡的 Key 要跟你的 GAS 腳本對應
     const detailToSave = {
         subject: urlParams.get('subject') || "unknown",           
