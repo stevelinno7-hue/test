@@ -906,19 +906,20 @@
 
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
-    async function finalSubmit() {
-        // 1. 鎖定按鈕
+   async function finalSubmit() {
+        // 1. 鎖定按鈕避免重複點擊
         const submitBtn = document.getElementById('confirmSubmitBtn');
         if (submitBtn) {
             if (submitBtn.disabled) return; 
             submitBtn.disabled = true;      
-            submitBtn.textContent = "評分中..."; 
+            submitBtn.textContent = "資料上傳中..."; 
         }
+
         if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
         const submitModal = document.getElementById('submitModal');
         if(submitModal) submitModal.classList.add('hidden');
 
-        // 2. 計算分數
+        // 2. 計算分數與封裝資料
         let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
         mockQuestions.forEach((item, idx) => {
             const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
@@ -951,42 +952,32 @@
             tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
             syncTime: new Date().toISOString(),
             subject: urlParams.get('subject') || "unknown", 
-            grade: urlParams.get('grade') || "未知年級",       
+            grade: urlParams.get('grade') || "國九",       
             xpGained: totalXP        
         };
 
-        // 🌟 修正：確保抓取當前登入者資訊
-        const currentUser = window.Auth ? Auth.getCurrentUser() : null;
+        // 3. 儲存到本地（防止跳轉失敗資料遺失）
+        localStorage.setItem('lastExamResult', JSON.stringify(resultData));
 
-        // 5. 上傳雲端
+        // 4. 上傳雲端 (確保使用 await 等待)
+        const currentUser = window.Auth ? Auth.getCurrentUser() : null;
         if (window.Auth && currentUser && currentUser.username !== 'guest') {
             try {
-                if (GAS_URL && GAS_URL !== "") {
-                    const payload = {
-                        action: "save_record",
-                        username: currentUser.username,
-                        activity: resultData.title,
-                        score: finalScore,
-                        detail: JSON.stringify(resultData)
-                    };
-
-                    fetch(GAS_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(payload)
-                    });
-
-                    Auth.addXP(totalXP); 
-                }
-            } catch (e) { console.error("雲端備份錯誤:", e); }
+                // 這裡呼叫你下方的上傳函式，並加上 await
+                await uploadToCloud(currentUser.username, resultData.title, finalScore, resultData);
+                Auth.addXP(totalXP); 
+            } catch (e) { 
+                console.error("雲端備份出錯:", e);
+                alert("上傳失敗，但資料已保存在本地。");
+            }
         }
 
-        // 6. 解除跳轉警報，跳回成績單
+        // 5. 所有的事都做完了，才解除警報並跳轉
         window.onbeforeunload = null; 
-        setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
+        setTimeout(() => { 
+            window.location.href = "analysis.html?mode=new"; 
+        }, 500);
     }
-    // 🌟 注意：我把  跳轉到分析頁面的程式碼刪掉了！
-    // 這樣網頁就會「停在原地」，方便你把跳出來的訊息截圖或看清楚！
-
 async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
     const currentSubject = urlParams.get('subject') || "unknown";
