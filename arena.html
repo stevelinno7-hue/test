@@ -268,57 +268,63 @@ function toggleSidebar() {
          const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 
 async function initProfile() {
-    // 1. 從 Auth 獲取資料
-    const user = (window.Auth && Auth.getCurrentUser()) || null;
-    
-    // 偵錯用：在瀏覽器 F12 檢查你的 user 物件到底長怎樣
-    console.log("目前登入的使用者物件:", user);
+    // 1. 嘗試多次抓取，避免 Auth 物件太晚載入
+    let user = null;
+    if (window.Auth && typeof Auth.getCurrentUser === 'function') {
+        user = Auth.getCurrentUser();
+    }
+
+    // 2. 如果 Auth 暫時抓不到，嘗試直接從 localStorage 撈（最後手段）
+    if (!user) {
+        const localData = localStorage.getItem('currentUser');
+        if (localData) {
+            try {
+                user = JSON.parse(localData);
+                console.log("榮譽榜：成功從 localStorage 直接補抓資料");
+            } catch (e) {
+                console.error("解析本地資料失敗", e);
+            }
+        }
+    }
+
+    console.log("最終確認的使用者物件:", user);
 
     const sideName = document.getElementById('sideUserName');
     const sideRole = document.getElementById('sideUserRole');
     const playerName = document.getElementById('playerName');
     const playerRole = document.getElementById('playerRole');
 
-    // 2. 判斷是否為訪客
+    // 3. 判斷是否為訪客或未登入
     if (!user || user.username === 'guest') {
         const guestName = "訪客";
-        const guestRole = "尚未登入";
         sideName.textContent = guestName;
-        sideRole.textContent = guestRole;
         playerName.textContent = guestName;
-        playerRole.textContent = guestRole;
-        document.getElementById('xpText').textContent = "0 / 0";
+        sideRole.textContent = "尚未登入";
+        playerRole.textContent = "尚未登入";
         return; 
     }
 
-    // --- 重點修正區 ---
-    // 嘗試抓取各種可能的姓名屬性，如果 user.name 是 undefined，就改用 username
-    const finalName = user.name || user.username || user.displayName || "學生";
-    const finalGrade = user.grade || "未設定年級";
+    // 4. 正式顯示資料（優先顯示本地資料，確保秒出）
+    const displayName = user.name || user.username || "使用者";
+    const displayGrade = user.grade || "學生";
 
-    // 先顯示本地現有的名字，避免畫面空白
-    sideName.textContent = finalName;
-    sideRole.textContent = finalGrade;
-    playerName.textContent = finalName;
-    playerRole.textContent = finalGrade;
-    // ----------------
+    sideName.textContent = displayName;
+    playerName.textContent = displayName;
+    sideRole.textContent = displayGrade;
+    playerRole.textContent = displayGrade;
 
-    // 3. 若為正式用戶，開始請求雲端資料
+    // 5. 請求雲端 XP 資料
     try {
         const response = await fetch(`${GAS_URL}?action=get_profile&username=${user.username}`);
         const cloudUser = await response.json();
-        console.log("雲端回傳資料:", cloudUser);
 
         if(!cloudUser.error) {
-            // 如果雲端有回傳 name，可以再次覆蓋本地的名字
-            if(cloudUser.name) {
-                sideName.textContent = cloudUser.name;
-                playerName.textContent = cloudUser.name;
-            }
-
-            document.getElementById('playerLevel').textContent = `Lv. ${cloudUser.level}`;
-            const currentXP = cloudUser.xp;
-            const nextLevelXP = cloudUser.level * 100; 
+            // 更新等級
+            document.getElementById('playerLevel').textContent = `Lv. ${cloudUser.level || 1}`;
+            
+            // 更新經驗值
+            const currentXP = cloudUser.xp || 0;
+            const nextLevelXP = (cloudUser.level || 1) * 100; 
             const xpNeeded = Math.max(0, nextLevelXP - currentXP);
             
             document.getElementById('xpText').textContent = `${currentXP} / ${nextLevelXP}`;
@@ -326,11 +332,12 @@ async function initProfile() {
             
             const percent = Math.min((currentXP / nextLevelXP) * 100, 100);
             setTimeout(() => { 
-                document.getElementById('xpFill').style.width = `${percent}%`; 
+                const xpFill = document.getElementById('xpFill');
+                if(xpFill) xpFill.style.width = `${percent}%`; 
             }, 300);
         }
     } catch (error) {
-        console.error("讀取個人資料失敗:", error);
+        console.error("雲端資料讀取失敗:", error);
     }
 }
         // 2. 載入雲端排行榜
