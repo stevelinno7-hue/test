@@ -975,7 +975,11 @@
         // 5. 所有的事都做完了，才解除警報並跳轉
         window.onbeforeunload = null; 
         setTimeout(() => { 
-            window.location.href = "analysis.html?mode=new"; 
+            // 將原本這行：
+// window.location.href = "analysis.html?mode=new"; 
+
+// 改成這行（確保在同一個資料夾層級）：
+window.location.assign("./analysis.html?mode=new");
         }, 500);
     }
 async function uploadToCloud(username, activityName, score, fullData) {
