@@ -1012,9 +1012,12 @@ async function finalSubmit() {
 
     // --- 跳轉到分析頁面 ---
     setTimeout(() => { window.location.href = `analysis.html?mode=new&xp=${totalXP}`; }, 1000);
-}async function uploadToCloud(username, activityName, score, fullData) {
+}
+        async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
     const currentSubject = urlParams.get('subject') || "unknown";
+    
+    // 📦 這是要傳給後端 detail 的包裹
     const detailToSave = {
         subject: currentSubject,           
         unitName: activityName,            
@@ -1023,7 +1026,8 @@ async function finalSubmit() {
         correctCount: fullData.correctCount,
         wrongList: fullData.wrongList,
         cheat: fullData.cheat,
-        tabSwitches: fullData.tabSwitches
+        tabSwitches: fullData.tabSwitches,
+        xpGained: fullData.xpGained // 🌟 關鍵修正：必須放在這裡！因為你的 GAS 是讀取 detailObj.xpGained
     };
 
     const payload = {
@@ -1031,13 +1035,12 @@ async function finalSubmit() {
         username: username,
         activity: activityName,
         score: score,
-        xp: fullData.xpGained, // 👈 關鍵修復：把算好的 XP 放進包裹裡送給後端！
+        xp: fullData.xpGained, // 外層也留著當雙重保險
         detail: JSON.stringify(detailToSave) 
     };
 
     return fetch(GAS_URL, {
         method: 'POST',
-        // mode: 'no-cors', // 💡 建議移除這行，這樣未來如果上傳失敗，F12 才能看到真正的原因
         body: JSON.stringify(payload)
     });
 }
