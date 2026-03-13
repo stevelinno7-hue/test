@@ -901,133 +901,141 @@
     }
 
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
+async function finalSubmit() {
+    const submitBtn = document.getElementById('confirmSubmitBtn');
+    if (submitBtn.disabled) return; 
+    submitBtn.disabled = true;      
+    submitBtn.textContent = "評分中..."; 
+    
+    if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+    if (typeof isSubmitting !== 'undefined') isSubmitting = true; 
+    
+    const submitModal = document.getElementById('submitModal');
+    if(submitModal) submitModal.classList.add('hidden');
+    
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if(loadingOverlay) loadingOverlay.classList.remove('hidden');
 
-   async function finalSubmit() {
-        const submitBtn = document.getElementById('confirmSubmitBtn');
-        if (submitBtn.disabled) return; 
-        submitBtn.disabled = true;      
-        submitBtn.textContent = "評分中..."; 
-        
-        if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
-        if (typeof isSubmitting !== 'undefined') isSubmitting = true; 
-        
-        const submitModal = document.getElementById('submitModal');
-        if(submitModal) submitModal.classList.add('hidden');
-        
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        if(loadingOverlay) loadingOverlay.classList.remove('hidden');
+    let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
 
-        let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
-
-        mockQuestions.forEach((item, idx) => {
-            const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
-            if (item.type === 'group') {
-                item.questions.forEach((subQ, sIdx) => {
-                    totalCount++;
-                    const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
-                    const isCorrect = (userAns === subQ.answer); 
-                    if (isCorrect) correctCount++;
-                    else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
-                });
-                if (timeSpent < 10) fastCount++; 
-            } else {
+    // 結算邏輯保持不變...
+    mockQuestions.forEach((item, idx) => {
+        const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
+        if (item.type === 'group') {
+            item.questions.forEach((subQ, sIdx) => {
                 totalCount++;
-                if (timeSpent < 3) fastCount++;
-                if (userAnswers[idx] === item.answer) {
-                    correctCount++;
-                } else {
-                    wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
-                }
+                const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
+                const isCorrect = (userAns === subQ.answer); 
+                if (isCorrect) correctCount++;
+                else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
+            });
+            if (timeSpent < 10) fastCount++; 
+        } else {
+            totalCount++;
+            if (timeSpent < 3) fastCount++;
+            if (userAnswers[idx] === item.answer) {
+                correctCount++;
+            } else {
+                wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
             }
-        });
-
-        const finalScore = Math.round((correctCount / totalCount) * 100);
-        const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
-
-        const baseXP = 20; 
-        const bonusXP = correctCount * 10;
-        const totalXP = baseXP + bonusXP;
-        let isLevelUp = (window.Auth && user.username !== 'guest') ? Auth.addXP(totalXP) : false;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // 🌟 這裡才是 exam.html 該有的正確打包方式！
-        const resultData = {
-            owner: user.username,
-            id: Date.now(),
-            subject: (typeof examInfo !== 'undefined' && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
-            title: (typeof examInfo !== 'undefined' && examInfo.title) ? examInfo.title : (urlParams.get('title') || "綜合測驗"),
-            score: finalScore,
-            correctCount: correctCount,
-            totalCount: totalCount,
-            // ✨ 成功把所有題目都帶上！
-            questions: mockQuestions.map((q, index) => ({
-                ...q,
-                yourAns: userAnswers[index]
-            })),
-            wrongList: wrongList,
-            tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
-            xpGained: totalXP,
-            isLevelUp: isLevelUp,
-            cheat: {
-                cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
-                fastCount: fastCount
-            },
-            analysis: { 
-                timeLog: (typeof timeLog !== 'undefined') ? timeLog : [], 
-                tabLogDetails: (typeof tabLog !== 'undefined') ? tabLog : [] 
-            }
-        };
-
-        // 將考卷存入瀏覽器，交給 analysis.html 接手
-        localStorage.setItem('examResult', JSON.stringify(resultData));
-        const historyKey = `history_${user.username}`;
-        let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-        history.push(resultData);
-        localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
-
-        if (user.username !== 'guest') {
-            try {
-                if(typeof uploadToCloud === 'function') {
-                    await Promise.race([
-                        uploadToCloud(user.username, resultData.title, finalScore, resultData),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-                    ]);
-                }
-            } catch (e) { console.error("雲端備份跳過:", e); }
         }
+    });
 
-        setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
+    const finalScore = Math.round((correctCount / totalCount) * 100);
+    const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
+
+    // --- 🌟 經驗值 (XP) 核心邏輯 ---
+    const baseXP = 20; 
+    const bonusXP = correctCount * 10;
+    const totalXP = baseXP + bonusXP;
+    let isLevelUp = false;
+
+    if (user.username !== 'guest') {
+        // 呼叫原本的 Auth 功能
+        if (window.Auth && typeof Auth.addXP === 'function') {
+            isLevelUp = Auth.addXP(totalXP);
+        } else {
+            // 備用機制：如果 Auth.js 失效，直接寫入 localStorage 讓其他網站讀取
+            user.xp = (user.xp || 0) + totalXP;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
     }
 
-    async function uploadToCloud(username, activityName, score, fullData) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentSubject = urlParams.get('subject') || "unknown";
-        const detailToSave = {
-            subject: currentSubject,           
-            unitName: activityName,            
-            grade: fullData.grade || "國九",
-            totalCount: fullData.totalCount,
-            correctCount: fullData.correctCount,
-            wrongList: fullData.wrongList,
-            cheat: fullData.cheat,
-            tabSwitches: fullData.tabSwitches
-        };
+    const urlParams = new URLSearchParams(window.location.search);
+    const resultData = {
+        owner: user.username,
+        id: Date.now(),
+        subject: (typeof examInfo !== 'undefined' && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
+        title: (typeof examInfo !== 'undefined' && examInfo.title) ? examInfo.title : (urlParams.get('title') || "綜合測驗"),
+        score: finalScore,
+        correctCount: correctCount,
+        totalCount: totalCount,
+        questions: mockQuestions.map((q, index) => ({ ...q, yourAns: userAnswers[index] })),
+        wrongList: wrongList,
+        tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
+        xpGained: totalXP, // 將獲得的 XP 傳給 analysis.html 顯示
+        isLevelUp: isLevelUp,
+        cheat: {
+            cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
+            fastCount: fastCount
+        }
+    };
 
-        const payload = {
-            action: "save_record",
-            username: username,
-            activity: activityName,
-            score: score,
-            detail: JSON.stringify(detailToSave) 
-        };
+    // 將資料存入瀏覽器，交給其他網頁 (如 analysis.html) 接手
+    localStorage.setItem('examResult', JSON.stringify(resultData));
+    
+    // 儲存歷史紀錄
+    const historyKey = `history_${user.username}`;
+    let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+    history.push(resultData);
+    localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
 
-       // 移除 no-cors，改用標準的 fetch
+    // --- 🌟 上傳至雲端同步其他網站 ---
+    if (user.username !== 'guest') {
+        try {
+            await uploadToCloud(user.username, resultData.title, finalScore, resultData, totalXP);
+        } catch (e) { 
+            console.error("雲端備份失敗:", e); 
+        }
+    }
+
+    // 攜帶分數與 XP 跳轉到分析頁面
+    setTimeout(() => { window.location.href = `analysis.html?mode=new&xp=${totalXP}`; }, 1000);
+}
+
+// 注意：函數參數多加了一個 gainedXP
+async function uploadToCloud(username, activityName, score, fullData, gainedXP) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSubject = fullData.subject || urlParams.get('subject') || "unknown";
+    
+    const detailToSave = {
+        subject: currentSubject,           
+        unitName: activityName,            
+        grade: fullData.grade || "國九",
+        totalCount: fullData.totalCount,
+        correctCount: fullData.correctCount,
+        wrongList: fullData.wrongList,
+        cheat: fullData.cheat,
+        tabSwitches: fullData.tabSwitches
+    };
+
+    const payload = {
+        action: "save_record_and_xp", // 告訴後端同時存分數與加經驗值
+        username: username,
+        activity: activityName,
+        score: score,
+        xp: gainedXP, // 新增：傳遞獲得的經驗值
+        detail: JSON.stringify(detailToSave) 
+    };
+
+    // 移除 no-cors，改用標準 POST 傳遞 JSON
     return fetch(GAS_URL, {
         method: 'POST',
-        // 不指定 mode 或設為 'cors'，GAS 後端需正確處理 OPTIONS 請求
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8', // GAS 接收 JSON 常用的方式
+        },
         body: JSON.stringify(payload)
-    }).catch(err => console.error("上傳失敗:", err));
+    });
 }
 </script>
 </body>
