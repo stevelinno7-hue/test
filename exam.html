@@ -966,26 +966,29 @@ async function finalSubmit() {
     }
 
     const urlParams = new URLSearchParams(window.location.search);
-
-    // --- 🌟 將所有資料「統一」整理進一個 resultData ---
-    const resultData = {
-        owner: user.username,
-        id: Date.now(),
-        subject: (typeof examInfo !== 'undefined' && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
-        title: (typeof examInfo !== 'undefined' && examInfo.title) ? examInfo.title : (urlParams.get('title') || "綜合測驗"),
-        score: finalScore,
-        correctCount: correctCount,
-        totalCount: totalCount,
-        questions: mockQuestions.map((q, index) => ({ ...q, yourAns: userAnswers[index] })),
-        wrongList: wrongList,
-        tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
-        xpGained: totalXP, // 👈 確保經驗值已經打包在這裡
-        isLevelUp: isLevelUp,
-        cheat: {
-            cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
-            fastCount: fastCount
-        }
-    };
+// 在 finalSubmit() 函數裡面尋找這段：
+const resultData = {
+    owner: user.username,
+    id: Date.now(),
+    subject: (typeof examInfo !== 'undefined' && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
+    title: (typeof examInfo !== 'undefined' && examInfo.title) ? examInfo.title : (urlParams.get('title') || "綜合測驗"),
+    score: finalScore,
+    correctCount: correctCount,
+    totalCount: totalCount,
+    questions: mockQuestions.map((q, index) => ({ ...q, yourAns: userAnswers[index] })),
+    wrongList: wrongList,
+    tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
+    
+    // 👇👇👇 就是這裡！你漏掉了下面這兩行，請務必補上去！ 👇👇👇
+    xpGained: totalXP, 
+    isLevelUp: isLevelUp,
+    // 👆👆👆 補上這兩行 👆👆👆
+    
+    cheat: {
+        cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
+        fastCount: fastCount
+    }
+};
 
     // --- 儲存資料到瀏覽器 (交給分析頁面) ---
     localStorage.setItem('examResult', JSON.stringify(resultData));
