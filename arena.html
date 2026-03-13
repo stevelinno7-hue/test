@@ -467,18 +467,17 @@ function getRankInfo(xp) {
     return { title: "🥚 初始學徒", bg: "bg-slate-50", badge: "bg-slate-200 text-slate-500", text: "text-slate-800" };
 }
 
-// 🎨 2. 切換「整個網頁」的背景主題
 function applyGlobalTheme(xp) {
-    console.log("正在套用主題，XP:", xp);
     const body = document.body;
-    body.classList.remove('theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
+    body.classList.remove('theme-rookie', 'theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
     
+    // 增加一個低等級的主題 (例如：100 XP 就變綠色)
     if (xp >= 50000) { body.classList.add('theme-mythic'); createStars(); }
     else if (xp >= 20000) body.classList.add('theme-legend');
     else if (xp >= 10000) body.classList.add('theme-master');
     else if (xp >= 5000) body.classList.add('theme-diamond');
+    else if (xp >= 100) body.classList.add('theme-rookie'); // 🌟 新增這一行
 }
-
 // ✨ 3. 產生流星
 function createStars() {
     const container = document.getElementById('star-container');
