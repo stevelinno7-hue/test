@@ -997,30 +997,35 @@ const resultData = {
     let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
     history.push(resultData);
     localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
+// --- 🌟 上傳至雲端 GAS ---
+    alert("🕵️‍♂️ 系統偵測目前的帳號是：" + user.username); // 💡 抓蟲雷達 1 號：確認你是不是 guest
 
-    // --- 🌟 上傳至雲端 GAS ---
     if (user.username !== 'guest') {
         try {
             if(typeof uploadToCloud === 'function') {
+                // 🌟 讓程式「乖乖等待」上傳完成，不要急著跳轉
                 await Promise.race([
-                    // 將打包好的 resultData 傳給 uploadToCloud
-                    uploadToCloud(user.username, resultData.title, finalScore, resultData, totalXP), 
+                    uploadToCloud(user.username, resultData.title, finalScore, resultData), 
                     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
                 ]);
             }
         } catch (e) { 
             console.error("雲端備份跳過或失敗:", e); 
         }
+    } else {
+        alert("⚠️ 系統判定你是 guest (訪客)，所以直接跳過上傳！請確認你有正確登入。");
     }
 
     // --- 跳轉到分析頁面 ---
-    setTimeout(() => { window.location.href = `analysis.html?mode=new&xp=${totalXP}`; }, 1000);
-}
-        async function uploadToCloud(username, activityName, score, fullData) {
+    alert("✅ 結算與上傳動作結束，準備看成績！"); // 💡 抓蟲雷達 2 號
+    
+    // 🌟 拿掉定時炸彈，等上面的 await 確定處理完後，才執行這行跳轉！
+    window.location.href = `analysis.html?mode=new&xp=${totalXP}`;
+} // <--- 這裡是 finalSubmit() 的結尾大括號
+async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
     const currentSubject = urlParams.get('subject') || "unknown";
     
-    // 📦 這是要傳給後端 detail 的包裹
     const detailToSave = {
         subject: currentSubject,           
         unitName: activityName,            
@@ -1030,7 +1035,7 @@ const resultData = {
         wrongList: fullData.wrongList,
         cheat: fullData.cheat,
         tabSwitches: fullData.tabSwitches,
-        xpGained: fullData.xpGained // 🌟 關鍵修正：必須放在這裡！因為你的 GAS 是讀取 detailObj.xpGained
+        xpGained: fullData.xpGained // 🌟 終於把它送進去了
     };
 
     const payload = {
@@ -1038,13 +1043,14 @@ const resultData = {
         username: username,
         activity: activityName,
         score: score,
-        xp: fullData.xpGained, // 外層也留著當雙重保險
+        xp: fullData.xpGained, 
         detail: JSON.stringify(detailToSave) 
     };
-alert("🚀 準備發射給伺服器的包裹：\n\n" + JSON.stringify(payload, null, 2));
+
+    alert("🚀 準備發射給伺服器的包裹：\n\n" + JSON.stringify(payload, null, 2));
+
     return fetch(GAS_URL, {
         method: 'POST',
-        // 不指定 mode 或設為 'cors'，GAS 後端需正確處理 OPTIONS 請求
         body: JSON.stringify(payload)
     }).catch(err => console.error("上傳失敗:", err));
 }
