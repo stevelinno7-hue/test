@@ -311,7 +311,48 @@ body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%
         </div>
     </main>
 <script>
-  
+  // 1. 定義主題判斷
+function updateGlobalTheme() {
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{"username":"guest", "xp":0}');
+    const xp = user.xp || 0;
+    const body = document.body;
+    
+    // 移除所有舊主題
+    body.classList.remove('theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
+
+    if (xp >= 50000) {
+        body.classList.add('theme-mythic');
+        createStars(); // 只有神話等級產生流星
+    } else if (xp >= 20000) {
+        body.classList.add('theme-legend');
+    } else if (xp >= 10000) {
+        body.classList.add('theme-master');
+    } else if (xp >= 5000) {
+        body.classList.add('theme-diamond');
+    }
+}
+
+// 2. 產生流星動畫
+function createStars() {
+    const container = document.getElementById('star-container');
+    if (!container || container.hasChildNodes()) return; // 避免重複產生
+
+    for (let i = 0; i < 5; i++) {
+        let star = document.createElement('div');
+        star.className = 'shooting-star';
+        // 隨機位置與延遲
+        star.style.top = Math.random() * 100 + 'vh';
+        star.style.right = '0px'; 
+        star.style.animationDelay = (Math.random() * 3) + 's';
+        star.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        container.appendChild(star);
+    }
+}
+
+// 3. 頁面載入時立即執行
+window.addEventListener('load', updateGlobalTheme);
+
+// 4. (選配) 如果你有在頁面內即時加 XP 的動作，請呼叫 updateGlobalTheme() 重新整理畫面
         // 手機側邊欄開關
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
