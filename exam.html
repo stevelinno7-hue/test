@@ -1012,7 +1012,7 @@ const resultData = {
     history.push(resultData);
     localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
 // --- 🌟 上傳至雲端 GAS ---
-    alert("🕵️‍♂️ 系統偵測目前的帳號是：" + user.username); // 💡 抓蟲雷達 1 號：確認你是不是 guest
+    //alert("🕵️‍♂️ 系統偵測目前的帳號是：" + user.username); // 💡 抓蟲雷達 1 號：確認你是不是 guest
 
     if (user.username !== 'guest') {
         try {
@@ -1031,7 +1031,7 @@ const resultData = {
     }
 
     // --- 跳轉到分析頁面 ---
-    alert("✅ 結算與上傳動作結束，準備看成績！"); // 💡 抓蟲雷達 2 號
+  //  alert("✅ 結算與上傳動作結束，準備看成績！"); // 💡 抓蟲雷達 2 號
     
     // 🌟 拿掉定時炸彈，等上面的 await 確定處理完後，才執行這行跳轉！
     window.location.href = `analysis.html?mode=new&xp=${totalXP}`;
@@ -1061,7 +1061,7 @@ async function uploadToCloud(username, activityName, score, fullData) {
         detail: JSON.stringify(detailToSave) 
     };
 
-    alert("🚀 準備發射給伺服器的包裹：\n\n" + JSON.stringify(payload, null, 2));
+   // alert("🚀 準備發射給伺服器的包裹：\n\n" + JSON.stringify(payload, null, 2));
 
     return fetch(GAS_URL, {
         method: 'POST',
