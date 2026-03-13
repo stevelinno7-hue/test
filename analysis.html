@@ -304,6 +304,11 @@ body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !impor
     </main>
 
 <script>
+
+// ==========================================
+// 1. 全域設定與工具
+// ==========================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
     // --- 核心主題引擎 ---
 const ThemeEngine = {
     // 1. 執行變色
@@ -341,11 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
     ThemeEngine.apply(user.xp);
 });
-// ==========================================
-// 1. 全域設定與工具
-// ==========================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
-
 document.addEventListener('DOMContentLoaded', () => {
     try {
         initUserInterface();
