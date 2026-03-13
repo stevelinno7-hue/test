@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>榮譽榜 - 雲端學院</title>
-<div id="star-container"></div>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -55,73 +55,24 @@ body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100
 /* 🔥 聖域大師：暖色調背景 */
 body.theme-master { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
 
-/* --- 全域背景過渡 --- */
-body { 
-    transition: background 1.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s ease; 
-    min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
-}
-
-/* --- 🌌 萬古神話主題 (深空 + 流星) --- */
-body.theme-mythic { 
-    background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%) !important; 
-    color: #e0e7ff; 
-}
-
-/* 流星容器 */
-#star-container {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; /* 不影響點擊 */
-    z-index: -1; /* 在最底層 */
-    display: none;
-}
-body.theme-mythic #star-container { display: block; }
-
-/* 流星本體 */
-.shooting-star {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 4px; height: 4px;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: 0 0 0 4px rgba(255,255,255,0.1), 0 0 0 8px rgba(255,255,255,0.1), 0 0 20px rgba(255,255,255,1);
-    animation: animateStar 3s linear infinite;
-}
-.shooting-star::before {
-    content: ''; position: absolute; top: 50%; transform: translateY(-50%);
-    width: 300px; height: 1px;
-    background: linear-gradient(90deg, #fff, transparent);
-}
-
-@keyframes animateStar {
-    0% { transform: rotate(315deg) translateX(0); opacity: 1; }
-    70% { opacity: 1; }
-    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
-}
-
-/* --- 👑 傳奇領主主題 (暗金) --- */
-body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%) !important; }
-        /* --- 全域背景與主題過渡 --- */
 body { transition: background 1.2s ease, color 0.5s ease; min-height: 100vh; position: relative; }
 
 /* 💎 頂尖學者：清爽藍 */
-body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); }
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%) !important; }
 /* 🔥 聖域大師：競技紅 */
-body.theme-master { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
+body.theme-master { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%) !important; }
 /* 👑 傳奇領主：暗金主題 */
 body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%) !important; color: #fef3c7; }
-body.theme-legend .bg-white { background-color: rgba(255,255,255,0.1) !important; color: white; }
+body.theme-legend .bg-white, body.theme-legend .bg-slate-50 { background-color: rgba(255,255,255,0.1) !important; color: white; }
 
-/* 🌌 萬古神話：深空流星 */
+/* 🌌 萬古神話：深空流星背景 */
 body.theme-mythic { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%) !important; color: #e0e7ff; }
-body.theme-mythic .bg-white { background-color: rgba(255,255,255,0.05) !important; color: white; border: 1px solid rgba(255,255,255,0.1); }
+body.theme-mythic .bg-white, body.theme-mythic .bg-slate-50 { background-color: rgba(255,255,255,0.05) !important; color: white; border: 1px solid rgba(255,255,255,0.1); }
 
 /* 流星動畫特效 */
-#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; display: none; }
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; display: none; }
 body.theme-mythic #star-container { display: block; }
-.shooting-star { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: animateStar 3s linear infinite; }
+.shooting-star { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: animateStar 3s linear infinite; }
 .shooting-star::before { content: ''; position: absolute; top: 50%; width: 300px; height: 1px; background: linear-gradient(90deg, #fff, transparent); transform: translateY(-50%); }
 @keyframes animateStar {
     0% { transform: rotate(315deg) translateX(0); opacity: 1; }
@@ -132,7 +83,7 @@ body.theme-mythic #star-container { display: block; }
 <script src="assets/js/auth.js"></script>
     </head>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
-
+<div id="star-container"></div>
    
     <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
         <div class="flex items-center gap-2">
@@ -504,7 +455,7 @@ function getRankInfo(xp) {
         text: "text-slate-800" 
     };
 }
-    // --- 1. 等級與主題配置 (越來越難升級) ---
+// 🎖️ 1. 等級稱號與列表顏色邏輯
 function getRankInfo(xp) {
     if (xp >= 50000) return { title: "🌌 萬古神話", bg: "bg-slate-900", badge: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-pulse", text: "text-white" };
     if (xp >= 20000) return { title: "👑 傳奇領主", bg: "bg-amber-900", badge: "bg-yellow-400 text-amber-900 shadow-lg", text: "text-amber-50" };
@@ -516,25 +467,27 @@ function getRankInfo(xp) {
     return { title: "🥚 初始學徒", bg: "bg-slate-50", badge: "bg-slate-200 text-slate-500", text: "text-slate-800" };
 }
 
-// --- 2. 切換全域背景主題 ---
+// 🎨 2. 切換「整個網頁」的背景主題
 function applyGlobalTheme(xp) {
+    console.log("正在套用主題，XP:", xp);
     const body = document.body;
     body.classList.remove('theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
+    
     if (xp >= 50000) { body.classList.add('theme-mythic'); createStars(); }
     else if (xp >= 20000) body.classList.add('theme-legend');
     else if (xp >= 10000) body.classList.add('theme-master');
     else if (xp >= 5000) body.classList.add('theme-diamond');
 }
 
-// --- 3. 產生流星 ---
+// ✨ 3. 產生流星
 function createStars() {
     const container = document.getElementById('star-container');
     if (!container || container.hasChildNodes()) return;
     for (let i = 0; i < 5; i++) {
         let star = document.createElement('div');
         star.className = 'shooting-star';
-        star.style.top = Math.random() * 80 + 'vh';
-        star.style.left = Math.random() * 100 + 'vw';
+        star.style.top = Math.random() * 50 + 'vh';
+        star.style.left = (Math.random() * 50 + 50) + 'vw';
         star.style.animationDelay = Math.random() * 3 + 's';
         container.appendChild(star);
     }
