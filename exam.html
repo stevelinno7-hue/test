@@ -1041,7 +1041,8 @@ const resultData = {
         xp: fullData.xpGained, // 外層也留著當雙重保險
         detail: JSON.stringify(detailToSave) 
     };
-alert("🚀 準備發射給伺服器的包裹：\n\n" + JSON.stringify(payload, null, 2));eturn fetch(GAS_URL, {
+alert("🚀 準備發射給伺服器的包裹：\n\n" + JSON.stringify(payload, null, 2));
+    return fetch(GAS_URL, {
         method: 'POST',
         // 不指定 mode 或設為 'cors'，GAS 後端需正確處理 OPTIONS 請求
         body: JSON.stringify(payload)
