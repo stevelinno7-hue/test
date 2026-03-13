@@ -251,13 +251,106 @@ body[class*="theme-"] .shadow-lg {
 body[class*="theme-"] .sidebar-transition {
     background-color: rgba(15, 23, 42, 0.8) !important; /* 深色半透 */
 }
+        /* 🌟 強制讓所有中間區塊、側邊欄、導覽列變透明 */
+body[class*="theme-"] nav, 
+body[class*="theme-"] aside, 
+body[class*="theme-"] main, 
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50 {
+    background-color: rgba(255, 255, 255, 0.15) !important; /* 變成微透明磨砂感 */
+    backdrop-filter: blur(10px); /* 模糊背景，增加質感 */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 針對「勤奮書生」(橘色) 主題的特別優化 */
+body.theme-bronze {
+    background-color: #ffedd5 !important; /* 明亮的橘色背景 */
+}
+body.theme-bronze * {
+    color: #9a3412 !important; /* 讓文字變成深橘褐色，才不會看不清楚 */
+}
+body.theme-bronze .bg-orange-500 {
+    background-color: #ea580c !important; /* 強化按鈕顏色 */
+}
+
+/* 解決「人頭很奇怪」：讓頭像背景變圓滑、不突兀 */
+.profile-avatar, .user-avatar {
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 2px solid white;
+    border-radius: 50%;
+    overflow: hidden;
+}
+        /* --- 終極去白框與背景穿透 --- */
+
+/* 1. 當 body 有 theme- 類別時，強制讓所有白色區塊變磨砂透明 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside,
+body[class*="theme-"] nav,
+body[class*="theme-"] main {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 變成微透明 */
+    backdrop-filter: blur(12px); /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    transition: all 0.5s ease;
+}
+
+/* 2. 修正不同等級的背景顏色 */
+body.theme-rookie { background-color: #dcfce7 !important; } /* 100+ 淺綠 */
+body.theme-bronze { background-color: #ffedd5 !important; } /* 300+ 橘色 */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important; } /* 5K+ 藍 */
+body.theme-master { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }  /* 10K+ 紅 */
+body.theme-legend { background: #451a03 !important; color: #fef3c7 !important; }          /* 20K+ 暗金 */
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; }
+
+/* 3. 解決「人頭奇怪」：讓頭像有個乾淨的底座 */
+.user-avatar-container {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    padding: 2px;
+    display: inline-block;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 4. 流星動畫 */
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.shooting-star { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: animateStar 3s linear infinite; opacity: 0; }
+@keyframes animateStar {
+    0% { transform: rotate(315deg) translateX(0); opacity: 1; }
+    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
+}
+        /* --- 讓所有卡片容器自動變色 --- */
+body[class*="theme-"] .bg-white {
+    background-color: rgba(255, 255, 255, 0.2) !important; /* 變半透明 */
+    backdrop-filter: blur(10px); /* 磨砂玻璃 */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 針對橘色主題 (theme-bronze) 的文字優化 */
+body.theme-bronze #playerName,
+body.theme-bronze h3,
+body.theme-bronze span,
+body.theme-bronze div {
+    color: #7c2d12 !important; /* 深橘色字體 */
+}
+
+/* 針對橘色主題：隱藏原本藍色的頭像背景裝飾 */
+body.theme-bronze .profile-header-bg {
+    background: linear-gradient(to r, #f97316, #fb923c) !important; /* 改成橘色漸層 */
+}
+
+/* 修正人頭圖示 */
+body.theme-bronze .relative.w-24.h-24 {
+    background-color: #fff7ed !important;
+    color: #f97316 !important;
+}
     </style>
     
 <script src="assets/js/auth.js"></script>
     </head>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
 <div id="star-container"></div>
-   
+   <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-600 to-indigo-500 profile-header-bg"></div>
     <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
         <div class="flex items-center gap-2">
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
@@ -522,45 +615,38 @@ body[class*="theme-"] .sidebar-transition {
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 
-       async function initProfile() {
+      async function initProfile() {
     let user = Auth.getCurrentUser();
     if (!user || user.username === 'guest') {
         document.getElementById('playerName').textContent = "訪客";
         return;
     }
 
-    // 初始顯示 (避免畫面空白)
+    // 初始顯示
     document.getElementById('sideUserName').textContent = user.name || user.username;
     document.getElementById('playerName').textContent = user.name || user.username;
 
+    let currentXP = user.xp || 0; // 預設值
+
     try {
-        // 強制加上 timestamp 避免瀏覽器快取舊資料
         const response = await fetch(`${GAS_URL}?action=get_leaderboard&t=${new Date().getTime()}`);
         const topPlayers = await response.json();
-        
-        // 找到自己的資料
         const me = topPlayers.find(p => p.username === user.username);
 
         if (me) {
-            const currentTotalXP = Number(me.xp) || 0;
+            currentXP = Number(me.xp) || 0;
             const level = Number(me.level) || 1;
-            
-            // 更新 UI 等級
             document.getElementById('playerLevel').textContent = `Lv. ${level}`;
             
-            // 計算當前等級進度 (假設每 100 點一級)
-            // 例如 120 XP 是 Lv.2，進度應該是 20/100
-            const xpInThisLevel = currentTotalXP % 100; 
+            const xpInThisLevel = currentXP % 100; 
             const xpNeeded = 100 - xpInThisLevel;
             
-            document.getElementById('xpText').textContent = `${currentTotalXP} XP (總計)`;
+            document.getElementById('xpText').textContent = `${currentXP} XP (總計)`;
             document.getElementById('xpNeeded').textContent = xpNeeded;
             
-            // 動畫顯示進度條
             setTimeout(() => {
                 const xpFill = document.getElementById('xpFill');
                 if (xpFill) {
-                    // 如果剛好 0 分，給一點點寬度(2%)視覺上比較好看
                     const progressWidth = Math.max((xpInThisLevel / 100) * 100, 2);
                     xpFill.style.width = `${progressWidth}%`;
                 }
@@ -568,6 +654,11 @@ body[class*="theme-"] .sidebar-transition {
         }
     } catch (error) {
         console.error("XP 同步失敗:", error);
+    } finally {
+        // 🌟 無論如何都要套用主題，確保背景變色
+        if (typeof applyGlobalTheme === 'function') {
+            applyGlobalTheme(currentXP);
+        }
     }
 }
 // 🎖️ 榮譽榜等級與樣式判斷 (越來越難升級)
@@ -632,14 +723,18 @@ function getRankInfo(xp) {
 
 function applyGlobalTheme(xp) {
     const body = document.body;
-    body.classList.remove('theme-rookie', 'theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
+    // 移除所有舊主題
+    body.classList.remove('theme-rookie', 'theme-bronze', 'theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
     
-    // 增加一個低等級的主題 (例如：100 XP 就變綠色)
+    // 判定並套用新主題
     if (xp >= 50000) { body.classList.add('theme-mythic'); createStars(); }
     else if (xp >= 20000) body.classList.add('theme-legend');
     else if (xp >= 10000) body.classList.add('theme-master');
     else if (xp >= 5000) body.classList.add('theme-diamond');
-    else if (xp >= 100) body.classList.add('theme-rookie'); // 🌟 新增這一行
+    else if (xp >= 300) body.classList.add('theme-bronze'); // ✨ 修正：加上橘色主題
+    else if (xp >= 100) body.classList.add('theme-rookie'); // 🌟 100分是綠色
+    
+    console.log("主題已更新，目前 XP:", xp);
 }
 // ✨ 3. 產生流星
 function createStars() {
