@@ -833,7 +833,7 @@ function playGacha() {
         resultDiv.classList.remove('hidden');
 
         const rand = Math.random() * 100;
-        if (rand < 10) {
+        if (rand < 8) {
             SoundEngine.playSound('gachaWin');
             resultDiv.innerHTML = "✨ 神話級獎勵：獲得 1000 XP！✨";
             resultDiv.className = "mt-4 text-xl font-bold text-yellow-300 animate-bounce";
