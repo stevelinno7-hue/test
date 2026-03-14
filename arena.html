@@ -641,243 +641,49 @@ body.theme-bronze span:not(.text-\\[11px\\]) /* 排除徽章內的 span */
     </main>
 <script>
 
+// =========================================
+// 1. 全域設定與常數 (必須放在最上面)
+// =========================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 
-// 4. (選配) 如果你有在頁面內即時加 XP 的動作，請呼叫 updateGlobalTheme() 重新整理畫面
-        // 手機側邊欄開關
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        }
+const featuresList = [
+    { xp: 100, name: "青綠學徒面板", icon: "fa-leaf", desc: "解鎖專屬淺綠色磨砂背景" },
+    { xp: 300, name: "勤奮書生面板", icon: "fa-book-open", desc: "解鎖溫暖橘色玻璃背景" },
+    { xp: 5000, name: "頂尖學者面板", icon: "fa-gem", desc: "解鎖鑽石藍尊榮主題" },
+    { xp: 10000, name: "聖域大師特權", icon: "fa-fire", desc: "解鎖專屬紅色熱血主題" },
+    { xp: 50000, name: "萬古神話流星", icon: "fa-meteor", desc: "解鎖全螢幕流星雨特效" }
+];
 
-        // 1. 開啟編輯視窗
-        function openProfileModal() {
-            const user = Auth.getCurrentUser();
-            if (!user || user.username === 'guest') {
-                alert("訪客無法修改年級，請先登入！");
-                return;
-            }
-            const select = document.getElementById('editGradeSelect');
-            if (user.grade) select.value = user.grade;
-            document.getElementById('profileModal').classList.remove('hidden');
-        }
-
-        function closeProfileModal() {
-            document.getElementById('profileModal').classList.add('hidden');
-        }
-
-        // 🌟 2. 儲存年級修改至雲端
-        async function saveProfile() {
-            const user = Auth.getCurrentUser();
-            const newGrade = document.getElementById('editGradeSelect').value;
-            
-            try {
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: "update_grade",
-                        account: user.username,
-                        newGrade: newGrade
-                    })
-                });
-                const result = await response.json();
-                if (result.status === "success") {
-                    // 更新本地儲存
-                    user.grade = newGrade;
-                    localStorage.setItem('currentUser', JSON.stringify(user));
-                    alert("年級修改成功！");
-                    location.reload(); // 重新載入畫面
-                } else {
-                    alert("修改失敗：" + result.message);
-                }
-            } catch (e) {
-                alert("連線異常，請稍後再試");
-            }
-        }
-
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
-
-      async function initProfile() {
-    let user = Auth.getCurrentUser();
-    if (!user || user.username === 'guest') {
-        document.getElementById('playerName').textContent = "訪客";
-        return;
-    }
-
-    // 初始顯示
-    document.getElementById('sideUserName').textContent = user.name || user.username;
-    document.getElementById('playerName').textContent = user.name || user.username;
-
-    let currentXP = user.xp || 0; // 預設值
-
-    try {
-        const response = await fetch(`${GAS_URL}?action=get_leaderboard&t=${new Date().getTime()}`);
-        const topPlayers = await response.json();
-        const me = topPlayers.find(p => p.username === user.username);
-
-        if (me) {
-            currentXP = Number(me.xp) || 0;
-            const level = Number(me.level) || 1;
-            document.getElementById('playerLevel').textContent = `Lv. ${level}`;
-            
-            const xpInThisLevel = currentXP % 100; 
-            const xpNeeded = 100 - xpInThisLevel;
-            
-            document.getElementById('xpText').textContent = `${currentXP} XP (總計)`;
-            document.getElementById('xpNeeded').textContent = xpNeeded;
-            
-            setTimeout(() => {
-                const xpFill = document.getElementById('xpFill');
-                if (xpFill) {
-                    const progressWidth = Math.max((xpInThisLevel / 100) * 100, 2);
-                    xpFill.style.width = `${progressWidth}%`;
-                }
-            }, 500);
-            renderUnlockedFeatures(currentXP);
-        }
-    } catch (error) {
-        console.error("XP 同步失敗:", error);
-    } finally {
-        // 🌟 無論如何都要套用主題，確保背景變色
-        if (typeof applyGlobalTheme === 'function') {
-            applyGlobalTheme(currentXP);
-        }
-    }
-}
-// 🎖️ 榮譽榜等級與樣式判斷 (越來越難升級)
-// 🎖️ 榮譽榜等級與樣式判斷 (對應全新 12 階級系統)
-function getRankInfo(xp) {
-    // 12. 創世星神 (100,000 XP)
-    if (xp >= 100000) return { 
-        title: "🌌 創世星神", 
-        bg: "bg-slate-950", // 極致黑背景
-        badge: "bg-gradient-to-r from-yellow-300 via-yellow-500 to-amber-600 text-black shadow-[0_0_15px_rgba(253,224,71,0.6)] animate-pulse font-black",
-        text: "text-yellow-400 drop-shadow-md" 
-    };
-    // 11. 萬古神話 (50,000 XP)
-    if (xp >= 50000) return { 
-        title: "✨ 萬古神話", 
-        bg: "bg-slate-900", // 深邃宇宙黑
-        badge: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-pulse shadow-lg",
-        text: "text-white" 
-    };
-    // 10. 史詩英雄 (30,000 XP)
-    if (xp >= 30000) return { 
-        title: "🌠 史詩英雄", 
-        bg: "bg-emerald-950", // 極光深綠色
-        badge: "bg-emerald-500 text-emerald-950 font-bold shadow-md",
-        text: "text-emerald-100" 
-    };
-    // 9. 傳奇領主 (20,000 XP)
-    if (xp >= 20000) return { 
-        title: "👑 傳奇領主", 
-        bg: "bg-amber-900", // 華麗深棕紅
-        badge: "bg-yellow-400 text-amber-900 shadow-lg font-bold",
-        text: "text-amber-50" 
-    };
-    // 8. 榮耀宗師 (15,000 XP)
-    if (xp >= 15000) return { 
-        title: "🔱 榮耀宗師", 
-        bg: "bg-fuchsia-900", // 尊貴紫紅色
-        badge: "bg-fuchsia-200 text-fuchsia-900 font-bold",
-        text: "text-fuchsia-50" 
-    };
-    // 7. 聖域大師 (10,000 XP)
-    if (xp >= 10000) return { 
-        title: "🔥 聖域大師", 
-        bg: "bg-red-700", // 熱血紅
-        badge: "bg-white text-red-700 font-bold shadow",
-        text: "text-red-50" 
-    };
-    // 6. 頂尖學者 (5,000 XP)
-    if (xp >= 5000) return { 
-        title: "💎 頂尖學者", 
-        bg: "bg-blue-600", // 鑽石藍
-        badge: "bg-blue-100 text-blue-800 font-bold",
-        text: "text-white" 
-    };
-    // 5. 黃金菁英 (2,500 XP)
-    if (xp >= 2500) return { 
-        title: "🏆 黃金菁英", 
-        bg: "bg-yellow-500", // 閃耀金
-        badge: "bg-yellow-100 text-yellow-800 font-bold",
-        text: "text-white" 
-    };
-    // 4. 白銀騎士 (1,000 XP)
-    if (xp >= 1000) return { 
-        title: "⚔️ 白銀騎士", 
-        bg: "bg-slate-300", // 金屬銀色
-        badge: "bg-slate-600 text-white font-bold",
-        text: "text-slate-800 font-bold" 
-    };
-    // 3. 勤奮書生 (300 XP)
-    if (xp >= 300) return { 
-        title: "📖 勤奮書生", 
-        bg: "bg-orange-100", // 淺橘/羊皮紙色
-        badge: "bg-orange-500 text-white",
-        text: "text-orange-900" 
-    };
-    // 2. 潛力新秀 (100 XP)
-    if (xp >= 100) return { 
-        title: "🌱 潛力新秀", 
-        bg: "bg-green-50", // 清新淺綠
-        badge: "bg-green-500 text-white",
-        text: "text-green-900" 
-    };
-    // 1. 初心學徒 (0 ~ 99 XP)
-    return { 
-        title: "🥚 初心學徒", 
-        bg: "bg-slate-50", // 預設淺灰
-        badge: "bg-slate-200 text-slate-500",
-        text: "text-slate-700" 
-    };
-}
-// --- 核心主題引擎 (12 個階級升級版) ---
+// =========================================
+// 2. 核心引擎 (主題變色 & 音效)
+// =========================================
 const ThemeEngine = {
-    // 1. 執行變色
     apply: function(xp) {
         console.log("當前頁面主題判定中... XP:", xp);
         const body = document.body;
         
-        // ⚠️ 必須在這裡把 12 個主題的 class 全部列出來，確保切換時能清除乾淨
         body.classList.remove(
             'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
             'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
             'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
         );
 
-        // 根據 XP 判定主題 (必須從最高分往下寫)
-        if (xp >= 100000) { 
-            body.classList.add('theme-celestial'); 
-            this.createStars(15); // 12. 創世星神 (最高階，流星加倍！)
-        } 
-        else if (xp >= 50000) { 
-            body.classList.add('theme-mythic'); 
-            this.createStars(8);  // 11. 萬古神話 (一般流星)
-        } 
-        else if (xp >= 30000) body.classList.add('theme-epic');         // 10. 史詩英雄
-        else if (xp >= 20000) body.classList.add('theme-legend');       // 9. 傳奇領主
-        else if (xp >= 15000) body.classList.add('theme-grandmaster');  // 8. 榮耀宗師
-        else if (xp >= 10000) body.classList.add('theme-master');       // 7. 聖域大師
-        else if (xp >= 5000)  body.classList.add('theme-diamond');      // 6. 頂尖學者
-        else if (xp >= 2500)  body.classList.add('theme-gold');         // 5. 黃金菁英
-        else if (xp >= 1000)  body.classList.add('theme-silver');       // 4. 白銀騎士
-        else if (xp >= 300)   body.classList.add('theme-bronze');       // 3. 勤奮書生
-        else if (xp >= 100)   body.classList.add('theme-rookie');       // 2. 潛力新秀
-        else                  body.classList.add('theme-novice');       // 1. 初心學徒 (0~99 XP)
+        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); } 
+        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         
+        else if (xp >= 20000) body.classList.add('theme-legend');       
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  
+        else if (xp >= 10000) body.classList.add('theme-master');       
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      
+        else if (xp >= 2500)  body.classList.add('theme-gold');         
+        else if (xp >= 1000)  body.classList.add('theme-silver');       
+        else if (xp >= 300)   body.classList.add('theme-bronze');       
+        else if (xp >= 100)   body.classList.add('theme-rookie');       
+        else                  body.classList.add('theme-novice');       
     },
-
-    // 2. 產生流星 (現在可以根據等級決定流星數量)
     createStars: function(starCount) {
         const container = document.getElementById('star-container');
-        if (!container || container.hasChildNodes()) return; // 避免重複產生
-        
+        if (!container || container.hasChildNodes()) return; 
         for (let i = 0; i < starCount; i++) {
             let star = document.createElement('div');
             star.className = 'shooting-star'; 
@@ -889,122 +695,6 @@ const ThemeEngine = {
     }
 };
 
-// --- 自動執行 ---
-document.addEventListener('DOMContentLoaded', () => {
-    // 讀取 currentUser，如果沒有就預設 0
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-    ThemeEngine.apply(user.xp);
-});
-        // 🌟 4. 載入排行榜
-        async function loadLeaderboard() {
-            const listContainer = document.getElementById('leaderboardList');
-            const loadingMsg = document.getElementById('loadingMsg');
-
-            try {
-                const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
-                const topPlayers = await response.json();
-                
-                loadingMsg.style.display = 'none'; 
-                listContainer.innerHTML = ""; // 清空舊內容
-
-                if (!topPlayers || topPlayers.length === 0 || topPlayers.error) {
-                    listContainer.innerHTML = "<li class='text-center py-10 text-slate-400 font-medium bg-slate-50 rounded-2xl'>目前尚無排名紀錄</li>";
-                    return;
-                }
-
-            topPlayers.forEach((player, index) => {
-    const li = document.createElement('li');
-    const rank = getRankInfo(player.xp); // 取得顏色配置
-
-    // 套用動態背景色與陰影
-    li.className = `flex items-center justify-between p-4 ${rank.bg} ${rank.text} hover:scale-[1.02] border border-transparent rounded-2xl transition-all duration-300 mb-3 shadow-sm`;
-    
-    let rankDisplay = `<span class="font-bold text-xl">${index + 1}</span>`;
-    if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl text-yellow-400"></i>';
-    else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl text-slate-300"></i>';
-    else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl text-amber-500"></i>';
-
-    li.innerHTML = `
-        <div class="flex items-center gap-4">
-            <div class="w-12 text-center">${rankDisplay}</div>
-            <div>
-                <div class="font-extrabold text-lg flex items-center gap-2">
-                    ${player.name || player.username}
-                </div>
-                <div class="text-[11px] font-black px-3 py-0.5 rounded-full inline-block mt-1 ${rank.badge}">
-                    ${rank.title}
-                </div>
-            </div>
-        </div>
-        <div class="text-right">
-            <div class="font-black text-2xl">
-                ${player.xp.toLocaleString()} <span class="text-[10px] opacity-70">XP</span>
-            </div>
-        </div>
-    `;
-    listContainer.appendChild(li);
-});
-            } catch (error) {
-                loadingMsg.innerHTML = "<span class='text-red-500 font-bold'>伺服器連線失敗</span>";
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initProfile();
-            loadLeaderboard();
-        });
-    // 在 loadLeaderboard 的 try 區塊最後面加入：
-        const currentUser = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{}');
-        if (currentUser && currentUser.xp) {
-            applyGlobalTheme(currentUser.xp);
-        }
-    // =========================================
-// 🚀 特權解鎖清單設定
-// =========================================
-const featuresList = [
-    { xp: 100, name: "青綠學徒面板", icon: "fa-leaf", desc: "解鎖專屬淺綠色磨砂背景" },
-    { xp: 300, name: "勤奮書生面板", icon: "fa-book-open", desc: "解鎖溫暖橘色玻璃背景" },
-    { xp: 5000, name: "頂尖學者面板", icon: "fa-gem", desc: "解鎖鑽石藍尊榮主題" },
-    { xp: 10000, name: "聖域大師特權", icon: "fa-fire", desc: "解鎖專屬紅色熱血主題" },
-    { xp: 50000, name: "萬古神話流星", icon: "fa-meteor", desc: "解鎖全螢幕流星雨特效" }
-];
-
-// 渲染解鎖清單的函數
-function renderUnlockedFeatures(userXp) {
-    const listContainer = document.getElementById('unlockedFeaturesList');
-    if (!listContainer) return;
-    listContainer.innerHTML = ''; // 清空舊內容
-
-    featuresList.forEach(feature => {
-        const isUnlocked = userXp >= feature.xp; // 判斷是否達標
-        
-        const li = document.createElement('li');
-        // 根據解鎖狀態套用不同的外觀 (達標會亮起，未達標會半透明)
-        li.className = `p-3 rounded-2xl border ${isUnlocked ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100 opacity-60'} flex items-center justify-between transition-all duration-300`;
-        
-        li.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center ${isUnlocked ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-200 text-slate-400'}">
-                    <i class="fas ${feature.icon}"></i>
-                </div>
-                <div>
-                    <div class="font-bold ${isUnlocked ? 'text-slate-800' : 'text-slate-500'}">${feature.name}</div>
-                    <div class="text-[11px] ${isUnlocked ? 'text-indigo-600' : 'text-slate-400'}">${feature.desc}</div>
-                </div>
-            </div>
-            <div class="text-right">
-                ${isUnlocked 
-                    ? '<i class="fas fa-unlock-alt text-emerald-500 text-lg drop-shadow-sm"></i>' 
-                    : `<div class="text-[10px] font-black text-slate-400"><i class="fas fa-lock"></i> 需 ${feature.xp} XP</div>`
-                }
-            </div>
-        `;
-        listContainer.appendChild(li);
-    });
-}
-    // ==========================================
-// 🎵 1. 音效引擎 (使用 Google 無版權音效)
-// ==========================================
 const SoundEngine = {
     bgm: new Audio('https://actions.google.com/sounds/v1/ambiences/arcade_game_hall.ogg'),
     gachaPull: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime_scifi.ogg'),
@@ -1032,14 +722,63 @@ const SoundEngine = {
     }
 };
 
-// ==========================================
-// 🎁 2. 抽獎邏輯
-// ==========================================
+// =========================================
+// 3. UI 操作與抽獎功能
+// =========================================
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+
+function openProfileModal() {
+    const user = Auth.getCurrentUser();
+    if (!user || user.username === 'guest') {
+        alert("訪客無法修改年級，請先登入！");
+        return;
+    }
+    const select = document.getElementById('editGradeSelect');
+    if (user.grade) select.value = user.grade;
+    document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+async function saveProfile() {
+    const user = Auth.getCurrentUser();
+    const newGrade = document.getElementById('editGradeSelect').value;
+    try {
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "update_grade", account: user.username, newGrade: newGrade })
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+            user.grade = newGrade;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            alert("年級修改成功！");
+            location.reload(); 
+        } else {
+            alert("修改失敗：" + result.message);
+        }
+    } catch (e) {
+        alert("連線異常，請稍後再試");
+    }
+}
+
 function updateTicketUI() {
-    // 取得當前使用者，確保有讀到抽獎券數量
     let user = Auth.getCurrentUser();
     if (user) {
-        document.getElementById('ticketCount').textContent = user.gachaTickets || 0;
+        const ticketEl = document.getElementById('ticketCount');
+        if (ticketEl) ticketEl.textContent = user.gachaTickets || 0;
     }
 }
 
@@ -1047,17 +786,14 @@ function playGacha() {
     let user = Auth.getCurrentUser();
     let tickets = user.gachaTickets || 0;
 
-    // 檢查票券夠不夠
     if (tickets <= 0) {
         alert("😢 抽獎券不足！再去多寫幾份考卷吧！");
         return;
     }
 
-    // 1. 扣掉一張票並馬上更新畫面
     Auth.updateUser('gachaTickets', tickets - 1);
     updateTicketUI();
 
-    // 2. 播放抽獎音效 & 鎖定按鈕防止連點
     SoundEngine.playSound('gachaPull');
     const btn = document.getElementById('drawGachaBtn');
     const resultDiv = document.getElementById('gachaResult');
@@ -1067,53 +803,198 @@ function playGacha() {
     btn.classList.add('opacity-70');
     resultDiv.classList.add('hidden');
 
-    // 3. 延遲 2 秒鐘開獎
     setTimeout(() => {
         btn.disabled = false;
         btn.innerText = "消耗 1 張抽獎券";
         btn.classList.remove('opacity-70');
         resultDiv.classList.remove('hidden');
 
-        // 4. 開獎機率與給予 XP
         const rand = Math.random() * 100;
-        
         if (rand < 5) {
-            // 5% 中神話大獎
             SoundEngine.playSound('gachaWin');
             resultDiv.innerHTML = "✨ 神話級獎勵：獲得 1000 XP！✨";
             resultDiv.className = "mt-4 text-xl font-bold text-yellow-300 animate-bounce";
             Auth.updateUser('xp', (user.xp || 0) + 1000);
-            
         } else if (rand < 35) {
-            // 30% 中稀有獎
             SoundEngine.playSound('gachaWin');
             resultDiv.innerHTML = "🎉 稀有獎勵：獲得 200 XP！";
             resultDiv.className = "mt-4 text-lg font-bold text-white animate-pulse";
             Auth.updateUser('xp', (user.xp || 0) + 200);
-            
         } else {
-            // 65% 安慰獎
             SoundEngine.playSound('gachaFail');
             resultDiv.innerHTML = "💨 銘謝惠顧！獲得 10 XP 安慰獎。";
             resultDiv.className = "mt-4 text-lg text-slate-300";
             Auth.updateUser('xp', (user.xp || 0) + 10);
         }
         
-        // 如果有主題變色引擎，重新整理主題
-        if (window.ThemeEngine) {
-            ThemeEngine.apply(Auth.getCurrentUser().xp);
-        }
-    }, 2000); // 轉動 2 秒
+        // 重新判定主題 (✅ 正確呼叫 ThemeEngine)
+        ThemeEngine.apply(Auth.getCurrentUser().xp);
+    }, 2000);
 }
 
-// ==========================================
-// 🚀 3. 啟動設定
-// ==========================================
+function renderUnlockedFeatures(userXp) {
+    const listContainer = document.getElementById('unlockedFeaturesList');
+    if (!listContainer) return;
+    listContainer.innerHTML = ''; 
+
+    featuresList.forEach(feature => {
+        const isUnlocked = userXp >= feature.xp; 
+        const li = document.createElement('li');
+        li.className = `p-3 rounded-2xl border ${isUnlocked ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100 opacity-60'} flex items-center justify-between transition-all duration-300`;
+        li.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center ${isUnlocked ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-200 text-slate-400'}">
+                    <i class="fas ${feature.icon}"></i>
+                </div>
+                <div>
+                    <div class="font-bold ${isUnlocked ? 'text-slate-800' : 'text-slate-500'}">${feature.name}</div>
+                    <div class="text-[11px] ${isUnlocked ? 'text-indigo-600' : 'text-slate-400'}">${feature.desc}</div>
+                </div>
+            </div>
+            <div class="text-right">
+                ${isUnlocked 
+                    ? '<i class="fas fa-unlock-alt text-emerald-500 text-lg drop-shadow-sm"></i>' 
+                    : `<div class="text-[10px] font-black text-slate-400"><i class="fas fa-lock"></i> 需 ${feature.xp} XP</div>`
+                }
+            </div>
+        `;
+        listContainer.appendChild(li);
+    });
+}
+
+function getRankInfo(xp) {
+    if (xp >= 100000) return { title: "🌌 創世星神", bg: "bg-slate-950", badge: "bg-gradient-to-r from-yellow-300 via-yellow-500 to-amber-600 text-black shadow-[0_0_15px_rgba(253,224,71,0.6)] animate-pulse font-black", text: "text-yellow-400 drop-shadow-md" };
+    if (xp >= 50000) return { title: "✨ 萬古神話", bg: "bg-slate-900", badge: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-pulse shadow-lg", text: "text-white" };
+    if (xp >= 30000) return { title: "🌠 史詩英雄", bg: "bg-emerald-950", badge: "bg-emerald-500 text-emerald-950 font-bold shadow-md", text: "text-emerald-100" };
+    if (xp >= 20000) return { title: "👑 傳奇領主", bg: "bg-amber-900", badge: "bg-yellow-400 text-amber-900 shadow-lg font-bold", text: "text-amber-50" };
+    if (xp >= 15000) return { title: "🔱 榮耀宗師", bg: "bg-fuchsia-900", badge: "bg-fuchsia-200 text-fuchsia-900 font-bold", text: "text-fuchsia-50" };
+    if (xp >= 10000) return { title: "🔥 聖域大師", bg: "bg-red-700", badge: "bg-white text-red-700 font-bold shadow", text: "text-red-50" };
+    if (xp >= 5000) return { title: "💎 頂尖學者", bg: "bg-blue-600", badge: "bg-blue-100 text-blue-800 font-bold", text: "text-white" };
+    if (xp >= 2500) return { title: "🏆 黃金菁英", bg: "bg-yellow-500", badge: "bg-yellow-100 text-yellow-800 font-bold", text: "text-white" };
+    if (xp >= 1000) return { title: "⚔️ 白銀騎士", bg: "bg-slate-300", badge: "bg-slate-600 text-white font-bold", text: "text-slate-800 font-bold" };
+    if (xp >= 300) return { title: "📖 勤奮書生", bg: "bg-orange-100", badge: "bg-orange-500 text-white", text: "text-orange-900" };
+    if (xp >= 100) return { title: "🌱 潛力新秀", bg: "bg-green-50", badge: "bg-green-500 text-white", text: "text-green-900" };
+    return { title: "🥚 初心學徒", bg: "bg-slate-50", badge: "bg-slate-200 text-slate-500", text: "text-slate-700" };
+}
+
+// =========================================
+// 4. API 呼叫 (讀取個人資料與排行榜)
+// =========================================
+async function initProfile() {
+    let user = Auth.getCurrentUser();
+    if (!user || user.username === 'guest') {
+        const playerNameEl = document.getElementById('playerName');
+        if (playerNameEl) playerNameEl.textContent = "訪客";
+        return;
+    }
+
+    document.getElementById('sideUserName').textContent = user.name || user.username;
+    document.getElementById('playerName').textContent = user.name || user.username;
+
+    let currentXP = user.xp || 0; 
+
+    try {
+        const response = await fetch(`${GAS_URL}?action=get_leaderboard&t=${new Date().getTime()}`);
+        const topPlayers = await response.json();
+        const me = topPlayers.find(p => p.username === user.username);
+
+        if (me) {
+            currentXP = Number(me.xp) || 0;
+            const level = Number(me.level) || 1;
+            document.getElementById('playerLevel').textContent = `Lv. ${level}`;
+            
+            const xpInThisLevel = currentXP % 100; 
+            const xpNeeded = 100 - xpInThisLevel;
+            
+            document.getElementById('xpText').textContent = `${currentXP} XP (總計)`;
+            document.getElementById('xpNeeded').textContent = xpNeeded;
+            
+            setTimeout(() => {
+                const xpFill = document.getElementById('xpFill');
+                if (xpFill) xpFill.style.width = `${Math.max((xpInThisLevel / 100) * 100, 2)}%`;
+            }, 500);
+            
+            renderUnlockedFeatures(currentXP);
+        }
+    } catch (error) {
+        console.error("XP 同步失敗:", error);
+    } finally {
+        // ✅ 修正點：使用新的主題引擎！
+        ThemeEngine.apply(currentXP); 
+    }
+}
+
+async function loadLeaderboard() {
+    const listContainer = document.getElementById('leaderboardList');
+    const loadingMsg = document.getElementById('loadingMsg');
+
+    try {
+        const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
+        const topPlayers = await response.json();
+        
+        loadingMsg.style.display = 'none'; 
+        listContainer.innerHTML = ""; 
+
+        if (!topPlayers || topPlayers.length === 0 || topPlayers.error) {
+            listContainer.innerHTML = "<li class='text-center py-10 text-slate-400 font-medium bg-slate-50 rounded-2xl'>目前尚無排名紀錄</li>";
+            return;
+        }
+
+        topPlayers.forEach((player, index) => {
+            const li = document.createElement('li');
+            const rank = getRankInfo(player.xp); 
+
+            li.className = `flex items-center justify-between p-4 ${rank.bg} ${rank.text} hover:scale-[1.02] border border-transparent rounded-2xl transition-all duration-300 mb-3 shadow-sm`;
+            
+            let rankDisplay = `<span class="font-bold text-xl">${index + 1}</span>`;
+            if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl text-yellow-400"></i>';
+            else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl text-slate-300"></i>';
+            else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl text-amber-500"></i>';
+
+            li.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-12 text-center">${rankDisplay}</div>
+                    <div>
+                        <div class="font-extrabold text-lg flex items-center gap-2">
+                            ${player.name || player.username}
+                        </div>
+                        <div class="text-[11px] font-black px-3 py-0.5 rounded-full inline-block mt-1 ${rank.badge}">
+                            ${rank.title}
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-black text-2xl">
+                        ${player.xp.toLocaleString()} <span class="text-[10px] opacity-70">XP</span>
+                    </div>
+                </div>
+            `;
+            listContainer.appendChild(li);
+        });
+    } catch (error) {
+        loadingMsg.innerHTML = "<span class='text-red-500 font-bold'>伺服器連線失敗</span>";
+    }
+}
+
+// =========================================
+// 5. 網頁載入時啟動所有功能
+// =========================================
 document.addEventListener('DOMContentLoaded', () => {
+    // 初始化音效與票券 UI
     SoundEngine.init();
     updateTicketUI();
     
-    // 點擊網頁任何地方啟動背景音樂
+    // 初始化個人資料與排行榜
+    initProfile();
+    loadLeaderboard();
+
+    // ✅ 修正點：使用新的主題引擎，取代舊的 applyGlobalTheme
+    const currentUser = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser && currentUser.xp !== undefined) {
+        ThemeEngine.apply(currentUser.xp);
+    }
+    
+    // 點擊網頁任何地方啟動背景音樂 (自動解除監聽避免重複)
     document.body.addEventListener('click', function startBGM() {
         SoundEngine.playBGM();
         document.body.removeEventListener('click', startBGM);
