@@ -825,33 +825,62 @@ function playGacha() {
     btn.innerText = "✨ 轉動中...";
     btn.classList.add('opacity-70');
     resultDiv.classList.add('hidden');
-
-    setTimeout(() => {
+setTimeout(() => {
         btn.disabled = false;
         btn.innerText = "消耗 1 張抽獎券";
         btn.classList.remove('opacity-70');
         resultDiv.classList.remove('hidden');
 
         const rand = Math.random() * 100;
+        let gainedXP = 0;
+        let message = "";
+        let msgClass = "";
+
         if (rand < 8) {
             SoundEngine.playSound('gachaWin');
-            resultDiv.innerHTML = "✨ 神話級獎勵：獲得 1000 XP！✨";
-            resultDiv.className = "mt-4 text-xl font-bold text-yellow-300 animate-bounce";
-            Auth.updateUser('xp', (user.xp || 0) + 1000);
+            message = "✨ 神話級獎勵：獲得 1000 XP！✨";
+            msgClass = "mt-4 text-xl font-bold text-yellow-300 animate-bounce";
+            gainedXP = 1000;
         } else if (rand < 45) {
             SoundEngine.playSound('gachaWin');
-            resultDiv.innerHTML = "🎉 稀有獎勵：獲得 200 XP！";
-            resultDiv.className = "mt-4 text-lg font-bold text-white animate-pulse";
-            Auth.updateUser('xp', (user.xp || 0) + 200);
+            message = "🎉 稀有獎勵：獲得 200 XP！";
+            msgClass = "mt-4 text-lg font-bold text-white animate-pulse";
+            gainedXP = 200;
         } else {
             SoundEngine.playSound('gachaFail');
-            resultDiv.innerHTML = "💨 銘謝惠顧！獲得 50 XP 安慰獎。";
-            resultDiv.className = "mt-4 text-lg text-slate-300";
-            Auth.updateUser('xp', (user.xp || 0) + 50);
+            message = "💨 銘謝惠顧！獲得 50 XP 安慰獎。";
+            msgClass = "mt-4 text-lg text-slate-300";
+            gainedXP = 50;
         }
+
+        resultDiv.innerHTML = message;
+        resultDiv.className = msgClass;
+
+        // 1. 更新本機端 XP
+        Auth.updateUser('xp', (user.xp || 0) + gainedXP);
         
-        // 重新判定主題 (✅ 正確呼叫 ThemeEngine)
+        // 2. 重新判定畫面主題
         ThemeEngine.apply(Auth.getCurrentUser().xp);
+
+        // 👇👇👇 🌟 關鍵修復：將抽獎獲得的 XP 傳送給雲端 (Google Sheets) 👇👇👇
+
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "save_record",
+                username: user.username,
+                activity: "幸運抽獎", // 把抽獎當成一種活動紀錄傳給雲端
+                score: 0,
+                xp: gainedXP,       // 告訴雲端要加多少經驗值
+                detail: JSON.stringify({ note: "抽獎機獲得" })
+            })
+        }).then(() => {
+            console.log(`✅ 抽獎獲得的 ${gainedXP} XP 已成功同步至雲端！`);
+        }).catch(e => {
+            console.error("❌ 抽獎 XP 雲端同步失敗", e);
+        });
+        // 👆👆👆 關鍵修復結束 👆👆👆
+
     }, 2000);
 }
 
