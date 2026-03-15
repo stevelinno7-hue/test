@@ -228,12 +228,13 @@ body[class*="theme-"] #leaderboardList .rounded-full.bg-slate-800 {
     border: 2px solid rgba(255, 255, 255, 0.6) !important;
 }
 
-/* 2. 卡片深色玻璃底：對比度高，文字才清楚 */
-body[class*="theme-"] #leaderboardList li {
-    background-color: rgba(0, 0, 0, 0.45) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+/* 2. 救回排行榜上的「等級徽章」(Badge) 顏色 */
+body[class*="theme-"] .text-\\[11px\\] {
+    backdrop-filter: none !important; /* 徽章不需要磨砂玻璃效果 */
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important; /* 加上一點微陰影讓徽章更立體 */
+    
+    /* ⚠️ 絕對不要在這裡寫 background-color 跟 color！放手讓 Tailwind 自動上色！ */
 }
 
 /* 3. 名字與分數轉白發光 (精準鎖定，絕對不波及徽章！) */
