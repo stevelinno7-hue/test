@@ -766,7 +766,7 @@ function loadExamResult() {
         // 自動同步判斷（如果沒存過才發送）
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('mode') === 'new' && !rawResult.isSaved) {
-            saveToCloud();
+           // saveToCloud();
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
