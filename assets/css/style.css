@@ -217,3 +217,37 @@ body.theme-mythic #leaderboardList li .text-slate-700 {
     color: #ffffff !important;
     text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.8) !important; /* 加上黑底光暈 */
 }
+/* ==========================================================================
+   🏆 排行榜終極完美版 (大頭貼清晰 + 卡片高質感 + 徽章顏色回歸)
+   ========================================================================== */
+
+/* 1. 大頭貼底色：強制實心亮白底，圖案不變透明 */
+body[class*="theme-"] #leaderboardList .w-12.h-12,
+body[class*="theme-"] #leaderboardList .rounded-full.bg-slate-800 {
+    background-color: #f8fafc !important; 
+    border: 2px solid rgba(255, 255, 255, 0.6) !important;
+}
+
+/* 2. 卡片深色玻璃底：對比度高，文字才清楚 */
+body[class*="theme-"] #leaderboardList li {
+    background-color: rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 3. 名字與分數轉白發光 (精準鎖定，絕對不波及徽章！) */
+body[class*="theme-"] #leaderboardList li .text-slate-800,
+body[class*="theme-"] #leaderboardList li .text-slate-700,
+body[class*="theme-"] #leaderboardList li .text-slate-300,
+body[class*="theme-"] #leaderboardList .text-2xl {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* 4. 🌟 解除徽章封印：完全不碰顏色，讓系統根據等級自動上色！ */
+body[class*="theme-"] #leaderboardList li .text-\\[11px\\] {
+    backdrop-filter: none !important; /* 關閉模糊 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5) !important; /* 加一點立體感就好 */
+    /* 這裡絕對不加 background-color 跟 color，讓 Tailwind 發揮魔法！ */
+}
