@@ -252,3 +252,48 @@ body[class*="theme-"] #leaderboardList li .text-\\[11px\\] {
     box-shadow: 0 2px 4px rgba(0,0,0,0.5) !important; /* 加一點立體感就好 */
     /* 這裡絕對不加 background-color 跟 color，讓 Tailwind 發揮魔法！ */
 }
+/* ==========================================================================
+   🌟 恢復個人資料卡片「頂部橫幅 (Banner)」的等級專屬漸層色
+   ========================================================================== */
+
+/* 1. 先解除橫幅的透明封印，讓顏色能顯現出來 */
+body[class*="theme-"] .profile-header-bg,
+body[class*="theme-"] .h-24.bg-gradient-to-r {
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+}
+
+/* 2. 針對各個等級，設定超帥的專屬卡片橫幅漸層色！ */
+
+/* 潛力新秀 (綠) */
+body.theme-rookie .profile-header-bg, body.theme-rookie .h-24.bg-gradient-to-r { background: linear-gradient(to right, #22c55e, #16a34a) !important; }
+
+/* 勤奮書生 (橘) */
+body.theme-bronze .profile-header-bg, body.theme-bronze .h-24.bg-gradient-to-r { background: linear-gradient(to right, #f97316, #fb923c) !important; }
+
+/* 堅韌白銀 (灰銀) */
+body.theme-silver .profile-header-bg, body.theme-silver .h-24.bg-gradient-to-r { background: linear-gradient(to right, #94a3b8, #cbd5e1) !important; }
+
+/* 黃金菁英 (閃耀金) */
+body.theme-gold .profile-header-bg, body.theme-gold .h-24.bg-gradient-to-r { background: linear-gradient(to right, #eab308, #fde047) !important; }
+
+/* 頂尖學者 (天藍) */
+body.theme-diamond .profile-header-bg, body.theme-diamond .h-24.bg-gradient-to-r { background: linear-gradient(to right, #0ea5e9, #38bdf8) !important; }
+
+/* 聖域大師 (火焰紅) */
+body.theme-master .profile-header-bg, body.theme-master .h-24.bg-gradient-to-r { background: linear-gradient(to right, #ef4444, #f87171) !important; }
+
+/* 榮耀宗師 (紫紅) */
+body.theme-grandmaster .profile-header-bg, body.theme-grandmaster .h-24.bg-gradient-to-r { background: linear-gradient(to right, #d946ef, #c026d3) !important; }
+
+/* 史詩英雄 (極光綠) */
+body.theme-epic .profile-header-bg, body.theme-epic .h-24.bg-gradient-to-r { background: linear-gradient(to right, #10b981, #047857) !important; }
+
+/* 傳奇領主 (暗金/熔岩) */
+body.theme-legend .profile-header-bg, body.theme-legend .h-24.bg-gradient-to-r { background: linear-gradient(to right, #b45309, #f59e0b) !important; }
+
+/* 萬古神話 (紫紅幻彩) */
+body.theme-mythic .profile-header-bg, body.theme-mythic .h-24.bg-gradient-to-r { background: linear-gradient(to right, #6366f1, #a855f7, #ec4899) !important; }
+
+/* 創世星神 (星空黑金) */
+body.theme-celestial .profile-header-bg, body.theme-celestial .h-24.bg-gradient-to-r { background: linear-gradient(to right, #000000, #4c1d95, #000000) !important; border-bottom: 2px solid #fde047; }
