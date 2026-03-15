@@ -1046,11 +1046,29 @@ document.addEventListener('DOMContentLoaded', () => {
         ThemeEngine.apply(currentUser.xp);
     }
     
-    // 點擊網頁任何地方啟動背景音樂 (自動解除監聽避免重複)
-    document.body.addEventListener('click', function startBGM() {
-        SoundEngine.playBGM();
-        document.body.removeEventListener('click', startBGM);
-    }, { once: true });
+  // 嘗試自動播放背景音樂
+    try {
+        // 先嘗試直接播放
+        const playPromise = SoundEngine.playBGM();
+        
+        // 如果 playBGM 回傳的是 Promise (標準 Audio API 行為)
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("瀏覽器阻擋了自動播放，等待使用者點擊...");
+                // 被阻擋的話，就加上點擊監聽器
+                document.body.addEventListener('click', function startBGM() {
+                    SoundEngine.playBGM();
+                    document.body.removeEventListener('click', startBGM);
+                });
+            });
+        }
+    } catch (e) {
+        // 如果出錯，退回原本的點擊播放
+        document.body.addEventListener('click', function startBGM() {
+            SoundEngine.playBGM();
+            document.body.removeEventListener('click', startBGM);
+        });
+    }
 });
     </script>
 </body>
