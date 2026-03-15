@@ -719,10 +719,11 @@ const ThemeEngine = {
 };
 
 const SoundEngine = {
-    bgm: new Audio('https://actions.google.com/sounds/v1/ambiences/arcade_game_hall.ogg'),
-    gachaPull: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime_scifi.ogg'),
-    gachaWin: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_success_fanfare.ogg'),
-    gachaFail: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'),
+    // 🚨 已將音效全面換成 MP3 格式，確保 Mac/iPhone (Safari) 也能完美播放！
+    bgm: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-game-level-music-689.mp3'), // 遊戲機台背景音
+    gachaPull: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-magical-coin-win-1936.mp3'), // 抽獎音效
+    gachaWin: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3'), // 中獎音效
+    gachaFail: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-funny-fail-low-tone-2840.mp3'), // 銘謝惠顧音效
 
     init: function() {
         this.bgm.loop = true; 
@@ -732,15 +733,19 @@ const SoundEngine = {
         this.gachaFail.volume = 0.8;
     },
     playBGM: function() {
-        let playPromise = this.bgm.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => console.log("等待使用者點擊後播放 BGM"));
-        }
+        try {
+            let playPromise = this.bgm.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => console.log("背景音樂等待使用者互動後播放"));
+            }
+        } catch(e) { console.log("音樂播放異常", e); }
     },
     playSound: function(type) {
         if (this[type]) {
-            this[type].currentTime = 0;
-            this[type].play().catch(e => console.log("音效播放失敗"));
+            try {
+                this[type].currentTime = 0;
+                this[type].play().catch(e => console.log("音效被阻擋"));
+            } catch(e) {}
         }
     }
 };
@@ -1040,35 +1045,31 @@ document.addEventListener('DOMContentLoaded', () => {
     initProfile();
     loadLeaderboard();
 
-    // ✅ 修正點：使用新的主題引擎，取代舊的 applyGlobalTheme
+    // 啟動主題引擎
     const currentUser = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (currentUser && currentUser.xp !== undefined) {
         ThemeEngine.apply(currentUser.xp);
     }
     
-  // 嘗試自動播放背景音樂
-    try {
-        // 先嘗試直接播放
-        const playPromise = SoundEngine.playBGM();
-        
-        // 如果 playBGM 回傳的是 Promise (標準 Audio API 行為)
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("瀏覽器阻擋了自動播放，等待使用者點擊...");
-                // 被阻擋的話，就加上點擊監聽器
-                document.body.addEventListener('click', function startBGM() {
-                    SoundEngine.playBGM();
-                    document.body.removeEventListener('click', startBGM);
+    // 🎵 終極音樂播放機制：延遲 0.5 秒後嘗試播放
+    setTimeout(() => {
+        try {
+            const playPromise = SoundEngine.playBGM();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("瀏覽器防護機制啟動，等待點擊...");
+                    // 如果自動播放被擋，就掛上全局點擊監聽 (點畫面任何地方都會播)
+                    window.addEventListener('click', function startBGM() {
+                        SoundEngine.playBGM();
+                        window.removeEventListener('click', startBGM); // 播了就解除，避免重複觸發
+                    });
                 });
-            });
+            }
+        } catch (e) {
+            console.log("播放邏輯錯誤", e);
         }
-    } catch (e) {
-        // 如果出錯，退回原本的點擊播放
-        document.body.addEventListener('click', function startBGM() {
-            SoundEngine.playBGM();
-            document.body.removeEventListener('click', startBGM);
-        });
-    }
+    }, 500); // 延遲 500 毫秒
 });
     </script>
 </body>
